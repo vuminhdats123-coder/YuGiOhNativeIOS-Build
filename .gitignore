@@ -1,0 +1,5 @@
+*.apk
+com.konami.ygodgtest/
+.DS_Store
+build/
+DerivedData/

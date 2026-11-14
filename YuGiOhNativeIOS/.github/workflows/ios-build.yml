@@ -1,0 +1,18 @@
+name: iOS Build
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned simulator app
+        run: xcodebuild -project YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphonesimulator -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+      - name: Package artifact
+        run: ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Release-iphonesimulator/YuGiOhNativeIOS.app YuGiOhNativeIOS-simulator.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YuGiOhNativeIOS-simulator
+          path: YuGiOhNativeIOS-simulator.zip
