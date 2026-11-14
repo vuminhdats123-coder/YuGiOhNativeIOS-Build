@@ -19,7 +19,7 @@ public struct CardCatalog {
         Card(id: 3, name: "Dark Magician", type: "Monster", attribute: "DARK", description: "The ultimate wizard in terms of attack and defense.")
     ]
     public static func load() -> [Card] {
-        guard let url = Bundle.module.url(forResource: "cards_en", withExtension: "json"),
+        guard let url = Bundle.main.url(forResource: "cards_en", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let rows = try? JSONDecoder().decode([Row].self, from: data) else { return sample }
         return rows.map { Card(id: $0.id, name: $0.name, type: "Card", attribute: "", description: $0.description) }
@@ -81,3 +81,4 @@ public struct ContentView: View {
         }
     }
 }
+
