@@ -70,10 +70,10 @@
     "Native offline AI bridge not runtime verified",
     "Current database/errata may differ from original OBB effects; consult mapping audit"
   ],
-  "packagePath": "outputs/edopro-game-v7",
-  "manifestSHA256": "2670f116a9ccbb80fc016f1f5a527e4445f2639d978e627e3c04eb0b48a98e44",
+  "packagePath": "outputs/edopro-game-v8",
+  "manifestSHA256": "bc7c087c01130e19ebab7708d7ac7bdc131d1f34524ac517acc92dd188b2d7a0",
   "payloadFiles": 46163,
-  "payloadBytes": 424855797,
+  "payloadBytes": 424875146,
   "vietnameseTexts": 7484,
   "metadataModified": false,
   "runtimeVerified": false,
@@ -87,8 +87,8 @@
     "sourceAPK_SHA256": "be126fa7f04e3df848848fb11c38f9acb5a637583b86741a67f9e9760e3c4abb",
     "sourceELF_SHA256": "a5ea1adcb17102ab8488de04bab82715c72521950c1b6220e6d182501a3588a9"
   },
-  "changedFromV6": [
+  "offlineAISHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+  "changedFromV7": [
     "offline-ai/offline_ai.js"
-  ],
-  "offlineAISHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e"
+  ]
 }

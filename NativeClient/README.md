@@ -28,8 +28,8 @@ làm migration trước khi phát hành bản nâng cấp cho người dùng.
 
 `tools/prepare_edopro_assets.py` nhận OBB, CDB, CardScripts ZIP, Distribution và
 báo cáo `ocg-coverage.json`; xuất thư mục dữ liệu mới với `package-manifest.json`.
-Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v7`: 46.163 file,
-424.855.797 byte chưa tính manifest, gồm AI, texture UI gốc và 101 ảnh chân dung.
+Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v8`: 46.163 file,
+424.875.146 byte chưa tính manifest, gồm AI, texture UI gốc và 101 ảnh chân dung.
 Xem [runtime-package-summary.json](runtime-package-summary.json)
 để đối chiếu checksum và số lượng. Gói hiện nằm trên máy này, không được đưa vào Git.
 
@@ -39,7 +39,7 @@ APK gốc để kiểm tra nguồn bảng NPC; dùng `--apk` nếu đã đổi t
 
 ```powershell
 python -m pip install -r tools/requirements-assets.txt
-python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v7
+python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v8
 ```
 
 799 deck đã đổi ID đầy đủ. 651 deck đạt kiểm tra kích thước, vị trí Main/Extra và
@@ -49,7 +49,7 @@ trong `reports/decks.json`. Đây chưa phải kiểm tra banlist hay chứng mi
 đã đặt vào thư mục BGM. Locale tùy chọn có 7.484 mô tả tiếng Việt, chỉ bảng `texts`.
 
 Xcode đã có bước copy toàn bộ thư mục thành `Bundle/game`, kiểm tra từng SHA256
-và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload v7 trong một thư mục
+và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload v8 trong một thư mục
 fixture: 46.163 file và 17 icon được chép đúng, kiểm tra từng hash. Fixture chỉ có
 tài nguyên, không có executable và không phải một ứng dụng cài được.
 
@@ -97,36 +97,22 @@ Node cho 21 nhóm prompt, chain, nguyên liệu, thông tin ẩn và đầu vào
 `DUEL_SIMPLE_AI`, không cần WindBot hoặc mạng. Lỗi protocol dừng rõ ràng, không tự
 gửi lại vô hạn. Đây là AI heuristic cơ bản có giới hạn tìm kiếm; lưu replay offline đang tắt.
 
-Đã kiểm chứng engine thật trên Windows bằng DLL upstream có nguồn C++/Lua tương
-đương pin của dự án: 36 ván với AI v7 hoàn tất, 437 lượt, 16.160 phản hồi, không có lỗi Lua
-hay phản hồi bị từ chối. Kiểm tra khởi tạo riêng đã chạy đủ 7.486 mã thẻ được ánh
-xạ và nạp 6.872 script runtime, không thiếu script bắt buộc. Đây là kiểm tra engine,
-script và logic quyết định dùng chung; chưa chạy client/JavaScriptCore trên iOS.
-Chi tiết và lệnh tái chạy ở [HOST_VALIDATION.md](HOST_VALIDATION.md).
+Với AI v8, engine Windows đã hoàn tất **36 ván, 609 lượt, 14.955 phản hồi**,
+không retry/lỗi Lua; xem [HOST_VALIDATION_V8.md](HOST_VALIDATION_V8.md).
+Kiểm tra khởi tạo lịch sử đã chạy 7.486 mã thẻ và 6.872 script runtime; database
+và Lua vẫn giữ nguyên byte. Đây chưa phải chạy client/JavaScriptCore trên iOS.
 
-Sáu kịch bản bổ sung đã đưa tám nhóm prompt còn thiếu qua engine thật: 54 phản
-hồi được chấp nhận, không retry/lỗi Lua. Kết hợp với 36 ván trước, đã quan sát đủ
-21 nhóm prompt AI hỗ trợ. Đây là kiểm tra chấp nhận phản hồi, chưa bao phủ mọi
-biến thể/hiệu ứng; xem [HOST_PROMPT_VALIDATION.md](HOST_PROMPT_VALIDATION.md).
+Bộ kiểm tra mới đạt **14/14 ca chiến thuật** và **36/36 ca hồi quy scenario**:
+chain/negate, Damage Step, Fusion/Synchro/Xyz/Link/Ritual/Pendulum và các tương tác
+đã chọn. Xem [HOST_TACTICAL_VALIDATION.md](HOST_TACTICAL_VALIDATION.md) cho kết quả,
+ca thất bại của AI cũ, thay đổi fixture và giới hạn. Scenario không được tính
+thành ván hoàn chỉnh; các JSON lịch sử vẫn được giữ riêng.
 
-Tám [kịch bản hiệu ứng](HOST_EFFECT_VALIDATION.md) bổ sung kiểm tra phá huỷ rồi
-hồi sinh, vô hiệu kích hoạt phép và trả cost, sát thương phép/chiến đấu và Fusion
-bằng Polymerization. Cả hai phía chơi đều dùng AI production và script thẻ đã pin;
-112 phản hồi được chấp nhận, không retry/lỗi Lua. Kiểm tra xác nhận LP, vị trí,
-lý do di chuyển và nguyên liệu; không tính các kịch bản này thành ván hoàn chỉnh.
-
-Bộ [kiểm tra Extra Deck](HOST_EXTRA_DECK_VALIDATION.md) bổ sung 10 kịch bản đạt:
-Synchro với hiệu ứng tăng ATK, Xyz tách material gây sát thương, Link trả cost
-phá thẻ, Solemn Judgment vô hiệu triệu hồi và dùng Link-2 làm nguyên liệu Link-3.
-106 phản hồi AI được core chấp nhận, không retry/lỗi; cả hai phía người chơi đều
-được thử. Các ca này xác nhận script/luật và lựa chọn AI, chưa kiểm chứng UI iOS.
-
-AI v7 sửa việc kết thúc chọn Pendulum sau lá đầu tiên. Bộ
-[Ritual/Pendulum](HOST_RITUAL_PENDULUM_VALIDATION.md) đạt 12/12 ca, 128 phản hồi;
-các ca cũ được chạy lại với cờ luật thực tế đã xác nhận, đạt 24/24 ca. Gói v7 chỉ
-thay file AI so với v6. [36 ván hồi quy v7](HOST_VALIDATION_V7.md) cũng hoàn tất,
-không retry/lỗi Lua. Các báo cáo scenario cũ dùng fixture trộn cờ MR3/MR5 đã được
-ghi rõ giới hạn; kết quả mới dùng fixture đã sửa.
+AI cân nhắc thế trận hiện tại và 22 profile thẻ, tránh phá bàn bất lợi, giữ negate
+cho mối đe doạ đáng chặn và dùng tăng ATK đúng lúc. Snapshot không chứa thứ tự
+deck, seed hay danh tính bài kín; prompt được che thông tin riêng tư trước quyết
+định. Chi tiết ở [AI_TACTICS.md](AI_TACTICS.md). Chưa có bộ lập combo tổng quát;
+effect tùy chọn chưa được đánh giá sẽ không tự kích hoạt khi có snapshot bàn đấu.
 
 Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
 Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.
@@ -153,6 +139,7 @@ biên dịch/chạy. High-half âm vẫn nằm ngoài miền hỗ trợ của he
 ```powershell
 python -m unittest discover -s tests -v
 node NativeClient/overlays/offline-ai/offline_ai.test.js
+node NativeClient/overlays/offline-ai/offline_ai_privacy.test.js
 python NativeClient/overlays/card-renderer/verify_renderer_contract.py
 python tools/apply_native_patches.py --check
 python tools/check_native_port.py

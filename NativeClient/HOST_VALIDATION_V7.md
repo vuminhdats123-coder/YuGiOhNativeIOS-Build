@@ -1,5 +1,9 @@
 # Windows core regression with the Pendulum AI fix
 
+Historical v7 evidence. The current tactical AI, adapters and scenario setups
+have a separate [v8 regression report](HOST_VALIDATION_V8.md); the figures below
+are not results for the latest production module.
+
 `host-validation-v7.json` records 36 completed matches with the v7 production AI:
 437 turns, 16,160 responses, zero retries and zero Lua/core errors. Thirty-five
 matches ended by LP and one by deck-out. These are the same bounded deck/seed

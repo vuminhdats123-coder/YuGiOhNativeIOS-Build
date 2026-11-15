@@ -71,6 +71,56 @@ class MatchHarnessTests(unittest.TestCase):
             with self.subTest(actual=actual,expected=expected),self.assertRaisesRegex(ValueError,'effective duel rules'):
                 m.verify_scenario_rules(m.struct.pack('<I',actual),expected)
         with self.assertRaisesRegex(ValueError,'Truncated'): m.verify_scenario_rules(b'\0\0\0',m.MR5)
+    def test_native_chain_order_uses_real_one_byte_solving_events(self):
+        events=[{'message':72,'payload':[2]},{'message':75,'payload':[1]},{'message':72,'payload':[1]}]
+        self.assertEqual(m.require_chain_order(events,[2,1]),[2,1])
+        with self.assertRaises(ValueError):m.require_chain_order(list(reversed(events)),[2,1])
+        with self.assertRaises(ValueError):m.require_chain_order([{'message':72,'payload':[2,0,0,0]}],[2])
+    def summary_bytes(self):
+        data=m.struct.pack('<I',m.MR5)
+        for player in (0,1):
+            data+=m.struct.pack('<I',8000-player*500)
+            for location,count in ((4,7),(8,8)):
+                for sequence in range(count):
+                    if location==4 and sequence==player:
+                        data+=m.struct.pack('<BBI',1,1 if player==0 else 8,0)
+                    else: data+=b'\0'
+            data+=m.struct.pack('<6I',40-player,5+player,2,3,15-player,1)
+        return data+m.struct.pack('<I',0)
+    def test_field_summary_exposes_counts_and_occupancy_only(self):
+        sides=m.public_field_summary(self.summary_bytes())
+        self.assertEqual(sides[0],{'lp':8000,'deckCount':40,'handCount':5,'extraCount':15,
+                                  'cards':[{'code':0,'location':4,'sequence':0,'position':1}]})
+        self.assertEqual(sides[1]['cards'],[{'code':0,'location':4,'sequence':1,'position':8}])
+        self.assertEqual(sides[1]['lp'],7500)
+        for data in (b'',self.summary_bytes()[:-1],self.summary_bytes()+b'\0'):
+            with self.subTest(size=len(data)),self.assertRaises(ValueError):m.public_field_summary(data)
+    def visible_card_query(self):
+        values={1:100,8:33,16:4,32:0,256:3200,512:-1,0x80000:1}
+        data=b''.join(m.struct.pack('<HI',8,flag)+m.struct.pack('<i',value) for flag,value in values.items())
+        return data+m.struct.pack('<HIII',12,0x800000,3,133)+m.struct.pack('<HI',4,0x80000000)
+    def test_visible_card_query_uses_live_stats_and_redacts_hidden_fields(self):
+        occupied={'code':999,'location':4,'sequence':0,'position':1,'futureDraw':12345}
+        visible=m.visible_query_card(self.visible_card_query(),occupied)
+        self.assertEqual((visible['code'],visible['attack'],visible['defense'],visible['link'],visible['disabled']),(100,3200,-1,3,True))
+        self.assertNotIn('futureDraw',visible)
+        hidden=m.visible_query_card(b'private unparsed bytes',{**occupied,'position':8})
+        self.assertEqual(hidden,{'code':0,'location':4,'sequence':0,'position':8})
+        with self.assertRaises(ValueError):m.visible_query_card(self.visible_card_query()[:-1],occupied)
+    def test_board_never_queries_hidden_slot_or_private_locations(self):
+        engine=m.Engine.__new__(m.Engine);engine.dll=Mock()
+        summary=C.create_string_buffer(self.summary_bytes());visible=C.create_string_buffer(self.visible_card_query())
+        def field(duel,length):length._obj.value=len(self.summary_bytes());return C.addressof(summary)
+        queried=[]
+        def query(duel,length,info):
+            queried.append((info._obj.con,info._obj.loc,info._obj.seq))
+            length._obj.value=len(self.visible_card_query());return C.addressof(visible)
+        engine.dll.OCG_DuelQueryField.side_effect=field;engine.dll.OCG_DuelQuery.side_effect=query
+        board=engine.board(None,1)
+        self.assertEqual(queried,[(0,4,0)])
+        self.assertEqual(board['self']['lp'],7500)
+        self.assertEqual(board['self']['cards'],[{'code':0,'location':4,'sequence':1,'position':8}])
+        self.assertEqual(board['opponent']['cards'][0]['attack'],3200)
     def test_scenario_evidence_requires_real_message_and_canonical_script(self):
         m.require_scenario_evidence({63,74},{50:3,63:1,74:1},{'c24094653.lua'},{'constant.lua','c24094653.lua'})
         with self.assertRaisesRegex(ValueError,'expected messages'):
@@ -83,20 +133,22 @@ class MatchHarnessTests(unittest.TestCase):
             m.require_scenario_evidence({62,74,100},{62:1,63:1,74:1,100:1},forbidden_messages={63})
     def test_answer_passes_only_declarable_codes_and_selecting_player(self):
         engine=m.Engine.__new__(m.Engine);engine.cards={100:self.card(),101:self.card(alias=100)}
-        engine.positions=Mock(return_value={'0':1});node=Mock()
+        engine.board=Mock(return_value={'self':{'cards':[{'location':4,'sequence':0,'position':1}]},'opponent':{'cards':[]}});node=Mock()
         node.call.return_value={'handled':True,'response':[100,0,0,0]}
         payload=b'\1\2'+m.struct.pack('<QQ',100,0x40000100<<32)
         self.assertEqual(engine.answer(node,'duel',142,payload),b'd\0\0\0')
         self.assertEqual(node.call.call_args.kwargs['declarable'],[100])
         self.assertEqual(node.call.call_args.kwargs['botID'],1)
-        engine.positions.assert_called_once_with('duel',1)
+        engine.board.assert_called_once_with('duel',1)
+        self.assertEqual(node.call.call_args.kwargs['ownPositions'],{'0':1})
+        self.assertEqual(node.call.call_args.kwargs['board'],engine.board.return_value)
     def test_answer_rejects_invalid_player_and_truncated_announcement(self):
         engine=m.Engine.__new__(m.Engine);node=Mock()
         for message,payload in ((13,b''),(13,b'\2'),(142,b'\0'),(142,b'\0\1')):
             with self.subTest(message=message,payload=payload),self.assertRaises(ValueError): engine.answer(node,None,message,payload)
         node.call.assert_not_called()
     def test_answer_requires_handled_nonempty_bounded_response(self):
-        engine=m.Engine.__new__(m.Engine);engine.positions=Mock(return_value={});node=Mock()
+        engine=m.Engine.__new__(m.Engine);engine.board=Mock(return_value={'self':{'cards':[]},'opponent':{'cards':[]}});node=Mock()
         for result in ({'handled':False,'response':[1]}, {'handled':True,'response':[]},
                        {'handled':True,'response':[0]*65537}):
             node.call.return_value=result

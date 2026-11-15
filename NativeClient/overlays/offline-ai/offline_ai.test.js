@@ -195,6 +195,114 @@ for(let trial=0;trial<1000;trial++) {
   } else assert.throws(()=>ai.solveSum(mode,target,min,max,mandatory,optional),/No legal sum/);
 }
 
+// Paired tactical decisions run the production policy, changing only public board facts.
+const C={DARK:53129443,RAIGEKI:12580477,REBORN:83764718,MST:5318639,JUDGMENT:41420027,
+  JAMMER:77414722,CHALICE:25789292,RUSH:70046172,POT:55144522,UPSTART:70368879,FIRE:46918794};
+const tacticsMetadata={901:{type:17,attack:300,defense:100,level:1},902:{type:17,attack:1800,defense:2000,level:4},
+  903:{type:33,attack:3000,defense:2500,level:8},904:{type:33,attack:2000,defense:1500,level:4},
+  905:{type:33,attack:1700,defense:1000,level:4},906:{type:0x20002,attack:0,defense:0,level:0},
+  ...Object.fromEntries(Object.values(C).map(code=>[code,{type:[C.JAMMER,C.JUDGMENT].includes(code)?0x100004:2,attack:0,defense:0,level:0}]))};
+const onField=(code,sequence=0,overrides={})=>({code,location:4,sequence,position:1,...tacticsMetadata[code],...overrides});
+const state=(own=[],enemy=[],options={})=>({self:{lp:8000,handCount:2,deckCount:20,extraCount:0,cards:own,...options.self},
+  opponent:{lp:8000,handCount:2,deckCount:20,extraCount:0,cards:enemy,...options.opponent}});
+const idleEffects=(codes,normal=[])=>[1,...list(normal),...empty,...empty,...empty,...empty,
+  ...list(codes.map(code=>effect(code,1,2,0))),0,1,0];
+const battlePrompt=(codes=[902],effects=[])=>[1,...list(effects.map(code=>effect(code,1,8,0))),
+  ...list(codes.map((code,index)=>[...u(code),1,4,index,0])),1,1];
+const chainPrompt=codes=>[1,0,0,...u(0),...u(0),...list(codes.map((code,index)=>[...card(code,1,8,index,8),...u(1,8),0]))];
+const chainEvent=(code,controller=0,location=8,sequence=0)=>[
+  ...card(code,controller,location,sequence,1),controller,location,...u(sequence),...u(1,8),...u(1)];
+const act=(message,payload,live,prepare)=>{const bot=ai.create(tacticsMetadata);if(prepare)prepare(bot);return bot.decide(message,payload,[],{},live).response;};
+const strongSelf=state([onField(903)],[onField(901)]),strongEnemy=state([onField(901)],[onField(903)]);
+assert.deepEqual(act(11,idleEffects([C.DARK]),strongSelf),u(7));
+assert.deepEqual(act(11,idleEffects([C.DARK]),strongEnemy),u(5));
+assert.deepEqual(act(11,idleEffects([C.DARK],[short(902)]),strongEnemy),u(5),'clear before adding our own body');
+assert.deepEqual(act(11,idleEffects([C.RAIGEKI]),state()),u(7));
+assert.deepEqual(act(11,idleEffects([C.RAIGEKI]),strongEnemy),u(5));
+assert.deepEqual(act(11,idleEffects([999999]),strongEnemy),u(7),'unknown optional effect is conservative');
+assert.throws(()=>ai.create(tacticsMetadata).decide(11,idleEffects([C.DARK]),[],{},{self:{},opponent:{}}),/tactical board/);
+
+// Current public stats, not the printed CDB value, determine whether an attack is safe.
+const printedWeakButBuffed=state([onField(902)],[onField(901,0,{attack:3200})]);
+const sameCardWeakened=state([onField(902)],[onField(901,0,{attack:500})]);
+assert.deepEqual(act(10,battlePrompt(),printedWeakButBuffed),u(2));
+assert.deepEqual(act(10,battlePrompt(),sameCardWeakened),u(1));
+assert.deepEqual(act(19,[1,...u(902),5],printedWeakButBuffed),u(4));
+assert.deepEqual(act(19,[1,...u(902),5],sameCardWeakened),u(1));
+assert.deepEqual(act(15,pick([card(C.REBORN,1,2,0,8),card(901,1,2,1,8)]),state(),b=>b.observe(2,hint(501))),selected([1]));
+const weakTributes=[1,0,...u(2),...u(2),...list([[...short(903,1,4,0),1],[...short(901,1,4,1),1],[...short(901,1,4,2),1]])];
+assert.deepEqual(act(20,weakTributes,state([onField(903),onField(901,1),onField(901,2)])),selected([1,2]));
+
+// Public Graveyard cards remain rankable; hand/deck/facedown choices do not reveal their identities.
+const privacy=ai.create(tacticsMetadata),publicGY=pick([card(901,1,16,0,1),card(903,0,16,0,1)]);
+assert.deepEqual(privacy.forHuman(15,publicGY),publicGY);
+const ownDeckChoice=pick([card(901,1,1,7,8),card(903,1,1,12,8)]);
+assert.deepEqual(privacy.forHuman(15,ownDeckChoice),ownDeckChoice,'human GetCard coordinates stay intact');
+const deckDecision=privacy.forHuman(15,ownDeckChoice,true);
+assert.deepEqual(deckDecision,pick([card(901,1,1,0,8),card(903,1,1,0,8)]),'AI sees legal IDs without deck order');
+assert.deepEqual(act(15,deckDecision,state(),b=>b.observe(2,hint(509))),selected([1]),'wire selection index survives deck-coordinate redaction');
+const shortDeckChoice=[1,0,...u(1),...u(1),...list([[...short(901,1,1,7),1]])];
+assert.deepEqual(privacy.forHuman(20,shortDeckChoice),shortDeckChoice);
+assert.deepEqual(privacy.forHuman(20,shortDeckChoice,true),[1,0,...u(1),...u(1),...list([[...short(901,1,1,0),1]])]);
+assert.deepEqual(act(15,privacy.forHuman(15,publicGY),state(),b=>b.observe(2,hint(509))),selected([1]));
+for(const [location,position] of [[1,8],[2,8],[4,8],[8,8],[32,8],[64,1]]) {
+  const raw=pick([card(903,0,location,3,position)]),hidden=privacy.forHuman(15,raw);
+  assert.deepEqual(hidden.slice(14,18),u(0));
+  assert.deepEqual(hidden.slice(18),raw.slice(18),'selection indices/locations must remain intact');
+}
+for(const [location,position] of [[4,1],[8,1],[16,8],[32,1],[128|4,2]]) {
+  const raw=pick([card(903,0,location,3,position)]);
+  assert.deepEqual(privacy.forHuman(15,raw),raw);
+}
+
+const spellBoard=(code)=>state([onField(903)],[onField(901),onField(code,0,{location:8,type:tacticsMetadata[code].type})]);
+assert.deepEqual(act(16,chainPrompt([C.JAMMER]),spellBoard(C.DARK),b=>b.observe(70,chainEvent(C.DARK))),u(0));
+assert.deepEqual(act(16,chainPrompt([C.JAMMER]),spellBoard(C.UPSTART),b=>b.observe(70,chainEvent(C.UPSTART))),u(-1));
+assert.deepEqual(act(16,chainPrompt([C.MST]),spellBoard(C.DARK),b=>b.observe(70,chainEvent(C.DARK))),u(-1),'destroying a normal spell does not negate it');
+assert.deepEqual(act(16,chainPrompt([C.MST]),spellBoard(906),b=>b.observe(70,chainEvent(906))),u(0));
+const judgment=(own)=>act(16,chainPrompt([C.JUDGMENT]),state(own),b=>b.observe(62,card(903,0,4,0,1)));
+assert.deepEqual(judgment([onField(901)]),u(0));
+assert.deepEqual(judgment([onField(903,0,{attack:4000})]),u(-1));
+assert.deepEqual(act(11,idleEffects([C.FIRE]),state([],[],{self:{lp:500}})),u(7));
+assert.deepEqual(act(11,idleEffects([C.FIRE]),state()),u(5));
+assert.deepEqual(act(11,idleEffects([C.POT]),state([],[],{self:{deckCount:1}})),u(7),'do not draw into an empty deck');
+
+// Rush waits for actual Damage Step and is spent only when +700 changes the outcome or is lethal.
+const rushBattle=state([onField(902,0,{defense:1000})],[onField(904)]);
+assert.deepEqual(act(10,battlePrompt([902],[C.RUSH]),rushBattle),u(1),'a known legal boost can justify an attack');
+const rush=ai.create(tacticsMetadata);rush.observe(110,[...loc(1,4,0,1),...loc(0,4,0,1)]);
+assert.deepEqual(rush.decide(16,chainPrompt([C.RUSH]),[],{},rushBattle).response,u(-1));
+rush.observe(113);
+assert.deepEqual(rush.decide(16,chainPrompt([C.RUSH]),[],{},rushBattle).response,u(0));
+rush.observe(2,hint(514));
+assert.deepEqual(rush.decide(15,pick([card(904,0,4,0,1),card(902,1,4,0,1)]),[],{},rushBattle).response,selected([1]));
+assert.deepEqual(act(16,chainPrompt([C.RUSH]),state([onField(902)],[onField(905)]),b=>{
+  b.observe(110,[...loc(1,4,0,1),...loc(0,4,0,1)]);b.observe(113);
+}),u(-1),'preserve a boost in an already won nonlethal battle');
+assert.deepEqual(act(16,chainPrompt([C.CHALICE]),state([onField(902)],[onField(904)]),b=>b.observe(70,chainEvent(904,0,4,0))),u(0));
+assert.deepEqual(act(16,chainPrompt([C.CHALICE]),state([onField(902)],[onField(904,0,{disabled:true})]),b=>b.observe(70,chainEvent(904,0,4,0))),u(-1));
+const bothSideEffect=ai.create(tacticsMetadata),bothSideBoard=state([onField(903)],[onField(904)]);
+bothSideEffect.observe(70,[...card(903,1,4,0,1),0,4,...u(0),...u(1,8),...u(1)]);
+assert.deepEqual(bothSideEffect.decide(16,chainPrompt([C.CHALICE]),[],{},bothSideBoard).response,u(0));
+bothSideEffect.observe(2,hint(514));
+assert.deepEqual(bothSideEffect.decide(15,pick([card(903,1,4,0,1),card(904,0,4,0,1)]),[],{},bothSideBoard).response,selected([0]),
+  'chain target uses the wire location controller, not the effect activator');
+
+// Hidden-state permutations and guessed future draws cannot affect identical current knowledge.
+const hiddenBoards=[state([onField(902)],[onField(901,0,{position:8})]),
+  state([onField(902)],[onField(903,0,{position:8,attack:999999,defense:999999})])];
+assert.deepEqual(act(10,battlePrompt(),hiddenBoards[0]),act(10,battlePrompt(),hiddenBoards[1]));
+const nextDrawBoards=[JSON.parse(JSON.stringify(strongEnemy)),JSON.parse(JSON.stringify(strongEnemy))];
+nextDrawBoards[0].self.nextDraw=903;nextDrawBoards[0].self.deck=[903,901];
+nextDrawBoards[1].self.nextDraw=901;nextDrawBoards[1].self.deck=[901,903];
+assert.deepEqual(act(11,idleEffects([C.DARK]),nextDrawBoards[0],b=>b.observe(90,[1,...u(1),...u(903),...u(8)])),
+  act(11,idleEffects([C.DARK]),nextDrawBoards[1],b=>b.observe(90,[1,...u(1),...u(901),...u(8)])));
+for(const [a,b] of [[901,903],[903,901]]) {
+  const hiddenTargets=pick([card(a,0,4,0,8),card(b,0,4,1,8)]);
+  const hiddenState=state([onField(902)],[onField(a,0,{position:8}),onField(b,1,{position:8})]);
+  assert.deepEqual(act(15,hiddenTargets,hiddenState,x=>x.observe(2,hint(502))),selected([0]));
+}
+
 // Verify the real JSON-lines adapter in a separate Node process: independent
 // state for both players, strict human routing, and no non-JSON stdout noise.
 const {spawnSync}=require('node:child_process');
@@ -217,4 +325,4 @@ for(const i of [2,3,6]) assert.deepEqual(replies[i],{ok:true,result:{handled:tru
 assert.deepEqual(replies[4],{ok:true,result:{handled:false}});
 assert.equal(replies[7].ok,false); assert.match(replies[7].error,/Unknown AI prompt/);
 assert.equal(replies[9].ok,false); assert.match(replies[9].error,/not started/);
-console.log(`Offline AI: ${fixtures.size} prompt families, human routing, malformed/forced choices, sums, timing and privacy checks passed.`);
+console.log(`Offline AI: ${fixtures.size} prompt families, paired live-board tactics, Damage Step, sums, timing and privacy checks passed.`);

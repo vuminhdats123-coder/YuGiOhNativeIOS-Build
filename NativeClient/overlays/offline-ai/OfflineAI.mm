@@ -47,6 +47,29 @@ bool readBytes(JSValue* value, std::vector<uint8_t>& out, std::string& error) {
 	}
 	return true;
 }
+// Caller holds gMutex. dField uses the human/render perspective, so translate every core player.
+NSDictionary* publicBoardSide(uint8_t corePlayer) {
+	const auto local = mainGame->LocalPlayer(corePlayer);
+	NSMutableArray* cards = [NSMutableArray array];
+	const auto appendZone = [&](const auto& zone, uint32_t location) {
+		for(const auto* card : zone) if(card) {
+			NSMutableDictionary* entry = [NSMutableDictionary dictionaryWithDictionary:@{
+				@"code":@0, @"location":@(location), @"sequence":@(card->sequence), @"position":@(card->position)}];
+			// Do not trust remembered code/stats for a card that has since been turned face-down.
+			if((card->position & POS_FACEUP) && card->code) {
+				[entry addEntriesFromDictionary:@{@"code":@(card->code), @"type":@(card->type),
+					@"attack":@(card->attack), @"defense":@(card->defense), @"level":@(card->level),
+					@"rank":@(card->rank), @"link":@(card->link), @"disabled":@((card->status & STATUS_DISABLED) != 0)}];
+			}
+			[cards addObject:entry];
+		}
+	};
+	appendZone(mainGame->dField.mzone[local], LOCATION_MZONE);
+	appendZone(mainGame->dField.szone[local], LOCATION_SZONE);
+	// Counts are public. Never enumerate hand, deck or Extra Deck identities/order for the bot.
+	return @{@"lp":@(mainGame->dInfo.lp[local]), @"handCount":@(mainGame->dField.hand[local].size()),
+		@"deckCount":@(mainGame->dField.deck[local].size()), @"extraCount":@(mainGame->dField.extra[local].size()), @"cards":cards};
+}
 }
 
 bool Start(std::string& error) {
@@ -78,21 +101,29 @@ bool Handles(uint8_t message) {
 	}
 }
 bool Observe(uint8_t message, const uint8_t* data, size_t size, std::string& error) {
+	std::vector<uint8_t> publicData;
+	if(!CopyPublicObservation(1, message, data, size, publicData)) return true;
 	@autoreleasepool {
-		[bot invokeMethod:@"observe" withArguments:@[@(message), bytes(data, size)]];
+		[bot invokeMethod:@"observe" withArguments:@[@(message), bytes(publicData.data(), publicData.size())]];
 		return checkError(error);
 	}
 }
-bool FilterForHuman(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& filtered, bool& visible, std::string& error) {
+bool FilterForHuman(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& filtered, bool& visible, std::string& error, bool hideDeckOrder) {
 	@autoreleasepool {
-		JSValue* result = [bot invokeMethod:@"forHuman" withArguments:@[@(message),bytes(data,size)]];
+		JSValue* result = [bot invokeMethod:@"forHuman" withArguments:@[@(message),bytes(data,size),@(hideDeckOrder)]];
 		if(!checkError(error)) return false;
 		visible = !result.isNull;
 		return !visible || readBytes(result, filtered, error);
 	}
 }
 bool Respond(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error) {
-	if(!Handles(message) || size == 0 || data[0] != 1) { error = "AI must respond only to player 1 prompts."; return false; }
+	if(!Handles(message) || size == 0 || !data || data[0] != 1) { error = "AI must respond only to player 1 prompts."; return false; }
+	// Despite its historical name, selector redaction is relative to the prompt's selecting player.
+	// Keep legal search/public identities and wire indices; conceal opposing hidden identities.
+	std::vector<uint8_t> prompt;
+	bool visible = false;
+	if(!FilterForHuman(message, data, size, prompt, visible, error, true)) return false;
+	if(!visible) { error = "AI selection prompt was hidden by the privacy filter."; return false; }
 	@autoreleasepool {
 		NSMutableArray* declarable = [NSMutableArray array];
 		if(message == MSG_ANNOUNCE_CARD) {
@@ -106,12 +137,14 @@ bool Respond(uint8_t message, const uint8_t* data, size_t size, std::vector<uint
 			for(auto code : codes) [declarable addObject:@(code)];
 		}
 		NSMutableDictionary* positions = [NSMutableDictionary dictionary];
+		NSDictionary* state;
 		{
 			std::lock_guard<epro::mutex> lock(mainGame->gMutex);
-			for(auto* card : mainGame->dField.mzone[1]) if(card)
+			for(auto* card : mainGame->dField.mzone[mainGame->LocalPlayer(1)]) if(card)
 				positions[[NSString stringWithFormat:@"%u", card->sequence]] = @(card->position);
+			state = @{@"self":publicBoardSide(1), @"opponent":publicBoardSide(0)};
 		}
-		JSValue* result = [bot invokeMethod:@"decide" withArguments:@[@(message),bytes(data,size),declarable,positions]];
+		JSValue* result = [bot invokeMethod:@"decide" withArguments:@[@(message),bytes(prompt.data(),prompt.size()),declarable,positions,state]];
 		if(!checkError(error)) return false;
 		if(![result[@"handled"] toBool]) { error = "Offline AI did not handle the engine prompt."; return false; }
 		if(!readBytes(result[@"response"], response, error)) return false;

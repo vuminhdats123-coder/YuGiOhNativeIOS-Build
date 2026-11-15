@@ -64,7 +64,7 @@ APK. Với chỉ số 80…99, callsite cộng 26 trước khi lấy icon; khôn
 ARC-V từ tên file. Tên hiển thị được kiểm tra lại với `LocalizationNpcNames_E.plist`
 vì bản mod đã thay tên/nhân vật so với tên gốc.
 
-Payload v7 chứa 100 portrait NPC và một avatar người chơi, ghép cho 200 deck NPC
+Payload v8 chứa 100 portrait NPC và một avatar người chơi, ghép cho 200 deck NPC
 đã chuyển đổi. 451 deck hợp lệ khác không có liên kết NPC xác thực dùng avatar
 trung tính; chúng vẫn dùng được như trước. Ảnh giữ nguyên byte từ OBB, kiểm tra
 SHA256 và alpha. Avatar người chơi chỉ là lựa chọn trang trí, không đổi nickname.

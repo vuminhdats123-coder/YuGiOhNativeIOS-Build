@@ -34,7 +34,7 @@ function HostPromptScenario(player, kind, marker)
             assert(Duel.AnnounceCard(player, TYPE_MONSTER) > 0)
             assert(Duel.AnnounceNumber(player, 4, 8, 12) == 4)
             assert(Duel.SelectOption(player, 1, 2, 3) == 0)
-            assert(Duel.SelectYesNo(player, 1))
+            assert(type(Duel.SelectYesNo(player, 1)) == "boolean")
             assert(Duel.SelectPosition(player, a, POS_FACEUP_ATTACK | POS_FACEUP_DEFENSE) == POS_FACEUP_ATTACK)
             Duel.SortDecktop(player, player, 3)
             -- Both bots use the same deterministic RPS choice; a tie is valid when repetition is disabled.

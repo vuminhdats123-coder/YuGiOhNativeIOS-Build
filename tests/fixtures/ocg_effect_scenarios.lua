@@ -30,13 +30,14 @@ function HostEffectScenario(player, kind, marker)
     if kind == "destruction_revival" then
         local blueeyes = add(89631139, player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local magician = add(46986414, 1-player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
+        local opposing_dragon = add(89631139, 1-player, LOCATION_MZONE, 1, POS_FACEUP_ATTACK)
         local hole = add(53129443, player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
         local reborn = add(83764718, player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
         local destroyed = false
         observe(EVENT_DESTROYED, function(e, tp, eg)
-            if not eg:IsContains(blueeyes) or not eg:IsContains(magician) then return end
+            if not eg:IsContains(blueeyes) or not eg:IsContains(magician) or not eg:IsContains(opposing_dragon) then return end
             assert(blueeyes:IsLocation(LOCATION_GRAVE) and magician:IsLocation(LOCATION_GRAVE))
-            for _, card in ipairs({blueeyes, magician}) do
+            for _, card in ipairs({blueeyes, magician, opposing_dragon}) do
                 assert(card:IsReason(REASON_DESTROY) and card:IsReason(REASON_EFFECT))
                 assert(card:GetReasonEffect():GetHandler() == hole)
             end
@@ -46,18 +47,18 @@ function HostEffectScenario(player, kind, marker)
             if not reborn:IsLocation(LOCATION_GRAVE) then return end
             assert(destroyed and hole:IsLocation(LOCATION_GRAVE))
             assert(blueeyes:IsLocation(LOCATION_MZONE) and blueeyes:IsControler(player) and blueeyes:IsFaceup())
-            assert(magician:IsLocation(LOCATION_GRAVE))
+            assert(magician:IsLocation(LOCATION_GRAVE) and opposing_dragon:IsLocation(LOCATION_GRAVE))
             assert(Duel.GetFieldGroupCount(player, LOCATION_MZONE, LOCATION_MZONE) == 1)
             assert(Duel.GetLP(player) == 8000 and Duel.GetLP(1-player) == 8000)
             complete()
         end)
     elseif kind == "spell_activation_negation" then
-        local blueeyes = add(89631139, player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
+        local own = add(27288416, player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local magician = add(46986414, 1-player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local hole = add(53129443, player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
         local jammer = add(77414722, 1-player, LOCATION_SZONE, 0, POS_FACEDOWN_DEFENSE)
-        -- One monster on the defender's field cannot tribute-summon this Level 8 discard.
-        local discard = add(89631139, 1-player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
+        -- A low-ATK Level 10 discard stays in hand and makes saving the defender worthwhile.
+        local discard = add(78371393, 1-player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
         local negated = false
         observe(EVENT_CHAIN_NEGATED, function(e, tp, eg, ep, ev)
             assert(Duel.GetChainInfo(ev, CHAININFO_TRIGGERING_EFFECT):GetHandler() == hole)
@@ -67,7 +68,7 @@ function HostEffectScenario(player, kind, marker)
             if not hole:IsLocation(LOCATION_GRAVE) then return end
             assert(negated and jammer:IsLocation(LOCATION_GRAVE))
             assert(discard:IsLocation(LOCATION_GRAVE) and discard:IsReason(REASON_COST) and discard:IsReason(REASON_DISCARD))
-            assert(blueeyes:IsLocation(LOCATION_MZONE) and magician:IsLocation(LOCATION_MZONE))
+            assert(own:IsLocation(LOCATION_MZONE) and magician:IsLocation(LOCATION_MZONE))
             assert(Duel.GetFieldGroupCount(player, LOCATION_MZONE, LOCATION_MZONE) == 2)
             assert(Duel.GetLP(player) == 8000 and Duel.GetLP(1-player) == 8000)
             complete()

@@ -179,7 +179,7 @@ def inspect(runtime, root=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v7')
+    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v8')
     parser.add_argument('--report', type=Path, default=ROOT / 'NativeClient/native-readiness.json')
     parser.add_argument('--require-ready', action='store_true')
     args = parser.parse_args()

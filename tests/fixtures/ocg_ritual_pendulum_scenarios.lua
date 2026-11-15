@@ -118,12 +118,15 @@ function HostRitualPendulumScenario(player, kind, marker)
         local low, high = scales()
         local hunter = add(21970285, player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local hole = add(53129443, player, LOCATION_HAND, 0, POS_FACEDOWN_DEFENSE)
+        local opposing_dragon = add(89631139, 1-player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
+        local opposing_magician = add(46986414, 1-player, LOCATION_MZONE, 1, POS_FACEUP_ATTACK)
         local destroyed = false
         observe(EVENT_CHAIN_END, function()
             if not hole:IsLocation(LOCATION_GRAVE) then return end
             assert(hunter:IsLocation(LOCATION_EXTRA) and hunter:IsFaceup())
             assert(hunter:IsReason(REASON_DESTROY) and hunter:IsReason(REASON_EFFECT))
             assert(hunter:GetReasonEffect():GetHandler() == hole)
+            assert(opposing_dragon:IsLocation(LOCATION_GRAVE) and opposing_magician:IsLocation(LOCATION_GRAVE))
             destroyed = true
         end)
         observe(EVENT_SPSUMMON_SUCCESS, function(e, tp, eg)

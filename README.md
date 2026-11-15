@@ -44,29 +44,20 @@ khởi tạo tài nguyên, đấu thật, offline AI và thao tác iPhone đư�
 Mã nguồn hiện có menu chọn hai deck và đấu offline bằng OCG core. AI dùng mô-đun
 JavaScript chạy trong JavaScriptCore của iOS; cùng mô-đun được kiểm thử bằng Node.
 Mặt thẻ được ghép bằng CoreGraphics/CoreText từ tranh OBB và thông tin database,
-có phương án hiển thị khi thiếu tranh. Kiểm tra bằng engine Windows đã hoàn tất
-36 ván và khởi tạo đủ 7.486 mã thẻ được ánh xạ, không lỗi script hoặc phản hồi bị
-từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOST_VALIDATION.md).
-Sáu [kịch bản prompt bổ sung](NativeClient/HOST_PROMPT_VALIDATION.md) đã được
-engine thật chấp nhận cả 54 phản hồi; kết hợp với các ván trước, đã quan sát đủ
-21 nhóm prompt AI hỗ trợ. Chưa bao phủ mọi biến thể prompt hoặc hiệu ứng.
-Đã thêm 8 [kịch bản hiệu ứng thật](NativeClient/HOST_EFFECT_VALIDATION.md), gồm
-phá huỷ/hồi sinh, vô hiệu phép, sát thương và Fusion; tất cả đạt với 112 phản hồi,
-không retry/lỗi Lua. Sửa nguồn bổ sung xử lý mất tín hiệu khi đóng ván và cập nhật
-HUD khi restart; các đường GUI này vẫn cần kiểm tra native.
-Thêm 10 [kịch bản Synchro/Xyz/Link](NativeClient/HOST_EXTRA_DECK_VALIDATION.md)
-đã đạt trên core Windows, gồm hiệu ứng sau triệu hồi, detach material, vô hiệu
-triệu hồi và Link Rating làm nguyên liệu. Đã sửa đồng bộ UI của prompt chọn tổng
-nguyên liệu; phần cảm ứng tương ứng chưa được chạy trên iPhone.
-AI v7 bổ sung chọn nhiều Pendulum cùng lúc. [12 ca Ritual/Pendulum](NativeClient/HOST_RITUAL_PENDULUM_VALIDATION.md),
-24 ca hồi quy scenario và [36 ván với AI mới](NativeClient/HOST_VALIDATION_V7.md)
-đều đạt. Đã sửa fixture để xác nhận cờ luật MR5 thực tế và sửa logic chọn nguyên
-liệu Ritual có giá trị Level thay thế; kiểm tra C++/giao diện vẫn đang hoãn.
+có phương án hiển thị khi thiếu tranh. AI v8 dùng thế trận công khai và 22 profile hiệu ứng để chọn nước đi, không nhận
+thứ tự deck, seed hoặc lá rút kế tiếp. Thông tin bài kín được che trước khi vào
+phần ra quyết định; xem [AI_TACTICS.md](NativeClient/AI_TACTICS.md).
+
+Kiểm tra core Windows đã hoàn tất [36 ván với AI v8](NativeClient/HOST_VALIDATION_V8.md),
+[14 ca chiến thuật/chain/Damage Step](NativeClient/HOST_TACTICAL_VALIDATION.md) và
+36 ca scenario hồi quy, không retry/lỗi Lua. Kiểm tra khởi tạo lịch sử bao phủ
+7.486 mã thẻ; database/script hiện vẫn giữ nguyên. Các ca kiểm tra có phạm vi cụ
+thể, chưa chứng minh AI chơi tối ưu mọi thẻ hoặc mọi combo.
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong
 [DUEL_GENERATION_UI_REFERENCE.md](docs/DUEL_GENERATION_UI_REFERENCE.md).
-Payload v7 giữ ảnh gốc và chân dung NPC đã đối chiếu. Mã iOS đã có bàn đấu giữa,
+Payload v8 giữ ảnh gốc và chân dung NPC đã đối chiếu. Mã iOS đã có bàn đấu giữa,
 thông tin thẻ trái, LP/chân dung phải, bảng chọn 5×3 và vùng an toàn UIKit.
 Thanh phase được đặt dưới tay bài để giữ ô Extra của MR5. Đây là triển khai
 nguồn; giao diện và cảm ứng trên iPhone vẫn chưa được chạy/kiểm chứng.

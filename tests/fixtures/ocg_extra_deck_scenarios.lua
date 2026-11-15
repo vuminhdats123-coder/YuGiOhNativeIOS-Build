@@ -83,6 +83,7 @@ function HostExtraDeckScenario(player, kind, marker)
             end)
         end
     elseif kind == "xyz_detach_damage" then
+        add(89631139, 1-player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local warwolf = add(69247929, player, LOCATION_MZONE, 0, POS_FACEUP_ATTACK)
         local dragon = add(43096270, player, LOCATION_MZONE, 1, POS_FACEUP_ATTACK)
         local cowboy = add(12014404, player, LOCATION_EXTRA, 0, POS_FACEDOWN_DEFENSE)

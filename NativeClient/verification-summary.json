@@ -1,16 +1,19 @@
 {
-  "scope": "Current v7 AI: 36 real Windows OCG matches, 12 Ritual/Pendulum and 24 corrected scenario regressions; source/config and full resource-copy checks, no iOS executable",
+  "scope": "v8 visible-state tactical AI: 36 real Windows OCG matches, 14 tactical and 36 regression scenarios, privacy boundary tests and full resource-copy checks; no iOS executable",
   "python": {
-    "run": 80,
-    "passed": 79,
+    "run": 84,
+    "passed": 83,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
   "javascript": {
     "promptFamilies": 21,
     "testsPassed": true,
-    "scriptSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
-    "engineWasNotExecuted": false
+    "scriptSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+    "engineWasNotExecuted": false,
+    "tacticalProfiles": 22,
+    "privacyBoundaryTestsPassed": true,
+    "privacyTestSHA256": "fd877bcd6b95617c8a58efb48aab9036ba85c3d721d2bc57b84ad1cb95c8e054"
   },
   "renderer": {
     "layout": {
@@ -70,7 +73,7 @@
       "lua.xcodeproj": "7d627a301f8487a02d2325b4d114c2c6037d4effd378764d3df6bf3105ba3004",
       "ocgcore.xcodeproj": "1a0241720145bcca6c331324498b71a391dac38f1b2ab1285b1941866ff1383c",
       "ocgcoreshared.xcodeproj": "846c3028b35a329f9126d731357edc77d02fa3fa055190be40133dd4a5d103ad",
-      "ygopro.xcodeproj": "cdf80fc241eebdc45e69fb167a300dc28746211375d18593eb601db90d72b353"
+      "ygopro.xcodeproj": "63709502fa4a6a26ab6e84f0f7d309d4ce4ba1481c6ed1f70ff67c9d0f09fef2"
     }
   },
   "dependencies": {
@@ -80,13 +83,13 @@
   },
   "resourceCopy": {
     "files": 46163,
-    "bytes": 424855797,
+    "bytes": 424875146,
     "icons": 17,
-    "manifestSHA256": "2670f116a9ccbb80fc016f1f5a527e4445f2639d978e627e3c04eb0b48a98e44",
+    "manifestSHA256": "bc7c087c01130e19ebab7708d7ac7bdc131d1f34524ac517acc92dd188b2d7a0",
     "allCopiedFileHashesVerified": true,
     "fixtureContainsNativeExecutable": false,
-    "packagePath": "outputs/edopro-game-v7",
-    "fixturePath": "outputs/resource-copy-check-v7/ResourceCopyFixture.app"
+    "packagePath": "outputs/edopro-game-v8",
+    "fixturePath": "outputs/resource-copy-check-v8/ResourceCopyFixture.app"
   },
   "nativeCompilerExecuted": false,
   "nativeMatchExecuted": true,
@@ -94,18 +97,18 @@
   "actionsDispatched": false,
   "ipaCreated": false,
   "windowsCoreValidation": {
-    "report": "host-validation-v7.json",
+    "report": "host-validation-v8.json",
     "matches": 36,
-    "turns": 437,
-    "responses": 16160,
+    "turns": 609,
+    "responses": 14955,
     "retries": 0,
     "scriptErrors": 0,
     "mappedCardsInitialized": 7486,
     "runtimeScriptsLoaded": 6872,
     "exactIOSBinary": false,
     "coreSourceEquivalent": true,
-    "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
-    "reportSHA256": "ae6e0d07462a665e5ce4b060284bc4e91910f5baaffa5c01442f664ed101269e",
+    "aiSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+    "reportSHA256": "329a0051de2d03a4f7ae74d0fa77e7b9b637d33f3277d42e4d390a8225916bdb",
     "poolInitializationReport": "host-validation.json",
     "poolInitializationRerun": false,
     "poolDatabaseAndLuaUnchanged": true
@@ -254,10 +257,10 @@
       "offline-ai/offline_ai.js"
     ],
     "files": 46163,
-    "bytes": 424855797,
-    "manifestSHA256": "2670f116a9ccbb80fc016f1f5a527e4445f2639d978e627e3c04eb0b48a98e44",
-    "previousPackage": "outputs/edopro-game-v6",
-    "currentPackage": "outputs/edopro-game-v7",
+    "bytes": 424875146,
+    "manifestSHA256": "bc7c087c01130e19ebab7708d7ac7bdc131d1f34524ac517acc92dd188b2d7a0",
+    "previousPackage": "outputs/edopro-game-v7",
+    "currentPackage": "outputs/edopro-game-v8",
     "databaseLuaDecksImagesAudioUnchanged": true
   },
   "windowsRitualPendulumScenarios": {
@@ -280,7 +283,9 @@
     "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
     "fullMatchesClaimed": 0,
     "nativeIOSExecuted": false,
-    "baselineFailureReport": "host-ritual-pendulum-baseline.json"
+    "baselineFailureReport": "host-ritual-pendulum-baseline.json",
+    "historical": true,
+    "currentAI": false
   },
   "windowsScenarioRegressionV7": {
     "report": "host-scenario-regression-v7.json",
@@ -294,6 +299,56 @@
       "190466": 4
     },
     "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
-    "nativeIOSExecuted": false
+    "nativeIOSExecuted": false,
+    "historical": true,
+    "currentAI": false
+  },
+  "windowsTacticalScenarios": {
+    "report": "host-tactical-validation.json",
+    "reportSHA256": "e6ea08d6053b9e62125b209fc695766d2c45f89d121647bb2e58ad4d3b5a835b",
+    "accepted": 14,
+    "responses": 181,
+    "retries": 0,
+    "scriptErrors": 0,
+    "interactions": [
+      "dark_hole_reject_bad_trade",
+      "dark_hole_take_good_trade",
+      "jammer_save_board",
+      "jammer_hold_against_upstart",
+      "mst_hold_against_normal_spell",
+      "rush_damage_step_win",
+      "rush_hold_winning_battle"
+    ],
+    "finalStateLuaAssertionsVerified": true,
+    "aiSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+    "fullMatchesClaimed": 0,
+    "nativeIOSExecuted": false,
+    "baselineReport": "host-tactical-baseline.json",
+    "baselineExpectedFailures": 6
+  },
+  "windowsScenarioRegressionV8": {
+    "report": "host-scenario-regression-v8.json",
+    "reportSHA256": "278d0bbcff4bba0fab743571deeadb9002d266da29e71a8fb09aab2d80281962",
+    "accepted": 36,
+    "responses": 388,
+    "retries": 0,
+    "scriptErrors": 0,
+    "effectiveRuleOptionsCounts": {
+      "190464": 32,
+      "190466": 4
+    },
+    "aiSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+    "nativeIOSExecuted": false,
+    "setupChangesDocumented": "HOST_TACTICAL_VALIDATION.md"
+  },
+  "tacticalPrivacy": {
+    "snapshot": "Relative field-only visible stats, LP and public counts; no hand/Deck/Extra identities or RNG seed",
+    "observe": "Validated public whitelist; private draw/shuffle/deck-top/move/battle-stat packets excluded",
+    "decision": "Hidden opponent identity and Deck sequence redaction; public/own legal choices and list indices retained",
+    "hostSpyTestsPassed": true,
+    "bothPlayersHiddenPermutationTestsPassed": true,
+    "nativePolicySourceReviewed": true,
+    "nativePolicyAssertionsExecuted": false,
+    "nativeBridgeExecuted": false
   }
 }

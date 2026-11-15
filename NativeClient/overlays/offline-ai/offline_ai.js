@@ -6,6 +6,26 @@
   'use strict';
   const PROMPTS = new Set([10,11,12,13,14,15,16,18,19,20,21,22,23,24,25,26,132,140,141,142,143]);
   const MAX_ITEMS = 4096, MAX_SEARCH = 200000;
+  // Profiles below follow the bundled, pinned official c<ID>.lua scripts. Unknown optional
+  // effects are passed in live-board mode; this is a bounded tactical policy, not an effect interpreter.
+  const CARD = {DARK_HOLE:53129443,RAIGEKI:12580477,REBORN:83764718,MST:5318639,
+    JUDGMENT:41420027,JAMMER:77414722,CHALICE:25789292,RUSH:70046172,MIRROR:44095762,
+    NEGATE_ATTACK:14315573,POLY:24094653,RITUAL:55761792,POT:55144522,CHARITY:79571449,
+    UPSTART:70368879,FISSURE:66788016,SMASHING:97169186,BOOK:14087893,
+    AQUAMIRROR:46159582,PHOENIX:2857636,COWBOY:12014404,FIRE:46918794};
+  function safeBoard(input) {
+    if (!input || !input.self || !input.opponent || !Array.isArray(input.self.cards) || !Array.isArray(input.opponent.cards)) return null;
+    const number=(v,fallback=0)=>Number.isFinite(v)?Math.max(0,Math.min(100000000,v)):fallback;
+    const side=s=>({lp:number(s.lp,8000),handCount:number(s.handCount),deckCount:number(s.deckCount),extraCount:number(s.extraCount),
+      cards:s.cards.slice(0,32).filter(c=>c && [4,8].includes(c.location) && Number.isInteger(c.sequence)).map(c=>{
+        const base={code:0,location:c.location,sequence:c.sequence,position:Number.isInteger(c.position)?c.position:0};
+        // Neither hidden identities nor extra caller-provided fields can enter tactical state.
+        if (!(base.position&5) || !Number.isInteger(c.code) || c.code<=0) return base;
+        return {...base,code:c.code,type:number(c.type),attack:number(c.attack),defense:number(c.defense),
+          level:number(c.level),rank:number(c.rank),link:number(c.link),disabled:c.disabled===true};
+      })});
+    return {self:side(input.self),opponent:side(input.opponent)};
+  }
   function fail(message) { throw new Error(message); }
   class Reader {
     constructor(bytes) {
@@ -98,17 +118,210 @@
   function create(metadata = {}, selfPlayer = 1) {
     if (selfPlayer !== 0 && selfPlayer !== 1) fail('Invalid AI player');
     const used = new Set(); let decisions = 0, lastChainPlayer = null, selectionHint = null, attackingCard = null;
+    let board=null, lastChain=null, pendingSummon=null, combat=null, damageWindow=false, canBattle=false, intent=null;
+    const field = card => board && (card.controller===selfPlayer?board.self:board.opponent).cards.find(c=>c.location===card.location&&c.sequence===card.sequence);
     function known(card) {
+      if (card.publicEvent===true) return true;
+      if (card.location===16 || (card.location&128)) return true;
+      if (card.controller!==selfPlayer && board && (card.location&12)) {
+        const current=field(card);
+        return !!(current && current.code && (current.position&5));
+      }
       return !(card.controller !== selfPlayer && (card.location === 1 || card.location === 2 || card.location === 64 ||
         (card.position & 10) || (card.position === undefined && (card.location & 12))));
     }
+    function info(card) {
+      if (!known(card)) return null;
+      const current=field(card);
+      return current && current.code ? current : metadata[String(card.code)] || null;
+    }
+    const codeOf=card=>known(card)?(field(card)?.code || card.code):0;
     function score(card) {
       // Never infer hidden opponent cards from unfiltered core selection codes.
-      if (!known(card)) return 0;
-      const info = metadata[String(card.code)]; return info ? Math.max(0, info.attack || 0) : 0;
+      const data=info(card); return data?Math.max(0,data.attack||0):0;
+    }
+    const sideCards=(self,location)=>board?(self?board.self:board.opponent).cards.filter(c=>c.location===location)
+      .map(c=>({...c,controller:self?selfPlayer:1-selfPlayer})):[];
+    const monsters=self=>sideCards(self,4), spells=self=>sideCards(self,8);
+    function value(card) {
+      const data=info(card);
+      if (!data) return card.location===8?650:900;
+      if ((data.type&1) || card.location===4 || data.attack || data.defense)
+        return 250+Math.max(0,data.attack||0)*0.7+Math.max(0,data.defense||0)*0.3+((data.type&32)&&!data.disabled?180:0)+(data.link||0)*80;
+      const code=codeOf(card);
+      if ([CARD.JUDGMENT,CARD.JAMMER,CARD.REBORN,CARD.RAIGEKI,CARD.POT].includes(code)) return 1400;
+      if ([CARD.DARK_HOLE,CARD.MIRROR,CARD.POLY,CARD.RITUAL].includes(code)) return 1150;
+      return 750;
+    }
+    const total=cards=>cards.reduce((n,c)=>n+value(c),0);
+    const strongest=self=>Math.max(0,...monsters(self).map(c=>score(c)));
+    const same=(a,b)=>a&&b&&a.controller===b.controller&&a.location===b.location&&a.sequence===b.sequence;
+    const power=c=>{ const data=info(c); return data?Math.max(0,(c.position&12)?data.defense||0:data.attack||0):null; };
+    function battlePair() {
+      if (!board || !combat) return null;
+      const attacker=field(combat.attacker), defender=combat.defender.location?field(combat.defender):null;
+      if (!attacker) return null;
+      return {attacker:{...attacker,controller:combat.attacker.controller},
+        defender:defender?{...defender,controller:combat.defender.controller}:null};
+    }
+    function incomingDanger(extraAttack=0) {
+      const pair=battlePair();
+      if (!pair || pair.attacker.controller===selfPlayer) return 0;
+      const atk=score(pair.attacker)+extraAttack, defense=pair.defender?power(pair.defender):0;
+      if (defense===null) return 0;
+      const damage=pair.defender&&(pair.defender.position&12)?0:Math.max(0,atk-defense);
+      if (damage>=board.self.lp && damage>0) return 10000;
+      return damage*0.5+(pair.defender&&atk>defense?value(pair.defender):0);
+    }
+    function boostPlan(amount,negatesOwn=false) {
+      if (!damageWindow) return {utility:0};
+      const pair=battlePair();
+      if (!pair) return {utility:0};
+      const own=pair.attacker.controller===selfPlayer?pair.attacker:pair.defender;
+      if (!own || own.controller!==selfPlayer || !(own.position&1)) return {utility:0};
+      const enemy=pair.attacker.controller===selfPlayer?pair.defender:pair.attacker;
+      const opposing=enemy?power(enemy):0;
+      if (opposing===null) return {utility:0};
+      const attack=score(own), enemyAttacks=pair.attacker.controller!==selfPlayer;
+      let benefit=attack<=opposing&&attack+amount>opposing?value(own)+(enemy?value(enemy):0):0;
+      if (!enemyAttacks && (!enemy || (enemy.position&1)) && attack-opposing<board.opponent.lp && attack+amount-opposing>=board.opponent.lp) benefit=10000;
+      if (negatesOwn && (info(own)?.type&32)) benefit-=600;
+      return {utility:Math.max(0,benefit-400),target:own};
+    }
+    function chainThreat() {
+      if (!lastChain || lastChainPlayer===selfPlayer) return 0;
+      const own=total(monsters(true)), enemy=total(monsters(false));
+      switch(lastChain.code) {
+      case CARD.DARK_HOLE:return Math.max(0,own-enemy);
+      case CARD.RAIGEKI:return own;
+      case CARD.MIRROR:return total(monsters(true).filter(c=>c.position&1));
+      case CARD.MST:return spells(true).length?650:0;
+      case CARD.POT:return 1650;
+      case CARD.CHARITY:return 1450;
+      case CARD.UPSTART:return 350; // One draw also heals us; normally not worth a discard/counter trap.
+      case CARD.REBORN:return 1800;
+      case CARD.POLY:case CARD.RITUAL:case CARD.AQUAMIRROR:return 1900;
+      case CARD.FIRE:return board.self.lp<=1000?10000:500;
+      case CARD.RUSH:return incomingDanger(700);
+      case CARD.CHALICE:return incomingDanger(400)+(lastChain.location===4?600:0);
+      case CARD.FISSURE:case CARD.SMASHING:return monsters(true).length?Math.max(...monsters(true).map(value)):0;
+      default:return lastChain.location===4?value(lastChain)*0.6:250;
+      }
+    }
+    function effectPlan(card) {
+      if (!board || !known(card)) return {utility:0};
+      const code=codeOf(card), own=monsters(true), enemy=monsters(false);
+      switch(code) {
+      case CARD.DARK_HOLE: {
+        const gain=total(enemy)-total(own);
+        return {utility:gain>350?10000+gain:incomingDanger()>=10000?12000:0};
+      }
+      case CARD.RAIGEKI:return {utility:enemy.length?9000+total(enemy):0};
+      case CARD.REBORN:return {utility:own.length<5?(own.length?1600:3000):0};
+      case CARD.MST: {
+        const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
+        targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
+        return {utility:targets.length?900+value(targets[0]):0,target:targets[0]};
+      }
+      case CARD.JAMMER:return {utility:board.self.handCount?Math.max(0,chainThreat()-(board.self.handCount<=1?1700:1150)):0};
+      case CARD.JUDGMENT: {
+        let threat=chainThreat();
+        if (!lastChain && pendingSummon && pendingSummon.controller!==selfPlayer && known(pendingSummon)) {
+          const attack=score(pendingSummon);
+          threat=attack>strongest(true)?value(pendingSummon)*0.9:0;
+          if (attack-strongest(true)>=board.self.lp) threat=10000;
+        }
+        return {utility:Math.max(0,threat-Math.max(900,board.self.lp*0.175+500))};
+      }
+      case CARD.RUSH:return boostPlan(700);
+      case CARD.CHALICE: {
+        if (lastChain && lastChainPlayer!==selfPlayer && lastChain.location===4 && !info(lastChain)?.disabled)
+          return {utility:Math.max(0,chainThreat()-300),target:lastChain};
+        return boostPlan(400,true);
+      }
+      case CARD.MIRROR:return {utility:incomingDanger()>500?total(enemy.filter(c=>c.position&1)):enemy.filter(c=>c.position&1).length>=2?total(enemy):0};
+      case CARD.NEGATE_ATTACK:return {utility:Math.max(0,incomingDanger()-500)};
+      case CARD.FISSURE:case CARD.SMASHING:return {utility:enemy.some(c=>c.position&5)?2500:0};
+      case CARD.BOOK: {
+        const targets=enemy.filter(c=>(c.position&5)&&!(info(c)?.type&0x4000000));
+        targets.sort((a,b)=>score(b)-score(a)||a.sequence-b.sequence);
+        return {utility:targets.length&&(incomingDanger()>500||score(targets[0])>strongest(true))?1700:0,target:targets[0]};
+      }
+      case CARD.POT:return {utility:board.self.deckCount>=2?4200:0};
+      case CARD.CHARITY:return {utility:board.self.deckCount>=3?2600:0};
+      case CARD.UPSTART:return {utility:board.self.deckCount>=1&&board.self.handCount<5?800:0};
+      case CARD.POLY:case CARD.RITUAL:return {utility:own.length<5?2300:0};
+      case CARD.AQUAMIRROR:return {utility:card.location===16?1300:own.length<5?2300:0};
+      case CARD.PHOENIX: {
+        const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
+        targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
+        // The discard buys removal of opposing backrow before our new Link monster can attack.
+        return {utility:targets.length&&board.self.handCount?Math.max(0,value(targets[0])+600-(board.self.handCount<=1?1000:650)):0,target:targets[0]};
+      }
+      case CARD.COWBOY: {
+        const current=field(card), defense=(current?.position||card.position||0)&12;
+        if (defense) return {utility:board.opponent.lp<=800?12000:1250};
+        // Its attack-position operation is a later battle-start +1000/-500, not the 800 burn.
+        return {utility:canBattle&&enemy.some(c=>power(c)!==null&&score(card)<=power(c)&&score(card)+1500>power(c))?2200:0};
+      }
+      case CARD.FIRE:return {utility:board.self.lp<=500||board.self.lp<=1000&&board.opponent.lp>1000?0:board.opponent.lp<=1000?12000:1400};
+      default: {
+        const data=info(card);
+        // Placing a known Pendulum monster as a scale is a specific, bounded fallback.
+        if (data&&(data.type&0x1000000)&&card.location===2&&spells(true).filter(c=>c.sequence===0||c.sequence===4).length<2)
+          return {utility:1200};
+        return {utility:0};
+      }
+      }
+    }
+    function attackValue(card,allowBoost=false) {
+      const attack=score(card), enemy=monsters(false);
+      if (card.direct || !enemy.length) return attack>0?attack+(attack>=board.opponent.lp?10000:0):0;
+      return Math.max(0,...enemy.map(target=>{
+        const defending=power(target);
+        if (defending===null) return attack>=(board.self.lp<=1000?2200:1800)?300:0;
+        if (attack>defending) return value(target)+500+((target.position&1)?(attack-defending)*0.3:0);
+        if (attack===defending && (target.position&1) && value(target)>value(card)+300) return 200;
+        return allowBoost&&attack+700>defending?Math.max(0,value(target)-500):0;
+      }));
+    }
+    function wantsDefense(card) {
+      const data=info(card)||{};
+      if (data.type&0x4000000) return false;
+      if (board&&codeOf(card)===CARD.COWBOY&&(!canBattle||board.opponent.lp<=800)) return true;
+      const attack=Math.max(0,data.attack||0), defense=Math.max(0,data.defense||0);
+      return defense>attack && (!board || attack<strongest(false) || attack<1000);
+    }
+    const actionKey=(c,prefix)=>`${prefix}:${c.controller}:${known(c)?codeOf(c):'hidden'}:${c.location}:${c.sequence}:${c.description||''}`;
+    function tacticalAction(cards,command,prefix,evaluate,plainIndex=false) {
+      const available=cards.filter(c=>!used.has(actionKey(c,prefix))).map(card=>({card,plan:evaluate(card)}))
+        .filter(c=>c.plan.utility>0).sort((a,b)=>b.plan.utility-a.plan.utility||a.card.index-b.card.index);
+      if (!available.length) return null;
+      return {utility:available[0].plan.utility,commit:()=>{
+        const {card,plan}=available[0]; used.add(actionKey(card,prefix));
+        intent=['activate','chain','battle-effect'].includes(prefix)?{code:codeOf(card),target:plan.target}:null;
+        return integer(plainIndex?card.index:card.index*65536+command);
+      }};
     }
     function rankSelection(cards, hint) {
       const ranked = cards.slice();
+      if (board) {
+        if ([500,501,504].includes(hint) && cards.every(c=>c.controller===selfPlayer))
+          return ranked.sort((a,b)=>value(a)-value(b)||a.index-b.index);
+        if (intent?.target && ![500,501,504].includes(hint))
+          return ranked.sort((a,b)=>Number(same(b,intent.target))-Number(same(a,intent.target))||value(b)-value(a)||a.index-b.index);
+        if ([506,508,509].includes(hint)) return ranked.sort((a,b)=>value(b)-value(a)||a.index-b.index);
+        if (hint===502) {
+          const removal=c=>c.controller!==selfPlayer?100000+value(c):-value(c);
+          return ranked.sort((a,b)=>removal(b)-removal(a)||a.index-b.index);
+        }
+        if (hint===549 && attackingCard) {
+          const attack=score(attackingCard);
+          const quality=c=>{const defense=power(c); return defense===null?250:attack>defense?2000+value(c):attack===defense?0:-10000-defense;};
+          return ranked.sort((a,b)=>quality(b)-quality(a)||a.index-b.index);
+        }
+        return ranked;
+      }
       if (hint === 501 && cards.every(c => c.controller === selfPlayer && c.location === 2)) {
         ranked.sort((a,b) => score(a)-score(b) || a.index-b.index);
       } else if ([506,508,509].includes(hint)) {
@@ -138,15 +351,34 @@
     }
     return {
       observe(message, bytes = []) {
-        if (message === 40) { used.clear(); decisions = 0; lastChainPlayer = null; selectionHint = null; attackingCard = null; }
+        // Whitelist public decisions/events. Draw, shuffle, deck-top and private reveal packets
+        // cannot become memory, even if an adapter accidentally passes their raw bytes here.
+        if (![2,40,41,60,61,62,63,64,65,70,71,72,73,74,75,76,110,113,114].includes(message)) return;
+        if (message === 40) {
+          used.clear(); decisions = 0; lastChainPlayer = null; selectionHint = null; attackingCard = null;
+          lastChain=null; pendingSummon=null; combat=null; damageWindow=false; canBattle=false; intent=null;
+        }
         if (message === 2) {
           const r = new Reader(bytes), type = r.u8(), player = r.u8(), value = r.u64(); r.end();
           if (type === 3 && player === selfPlayer) selectionHint = value <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(value) : null;
         }
-        if (message === 74) lastChainPlayer = null;
-        if (message === 70) { const r = new Reader(bytes); r.card(true); lastChainPlayer = r.u8(); }
+        if (message===41) { combat=null; damageWindow=false; }
+        if (message === 74) {lastChainPlayer=null;lastChain=null;intent=null;}
+        if (message === 70) {
+          const r = new Reader(bytes), card=r.card(true); lastChainPlayer=r.u8();
+          // The activating player can differ from the card's location controller (both-side effects).
+          lastChain={...card,publicEvent:true};
+        }
+        if ([60,62,64].includes(message)) {
+          const r=new Reader(bytes), card=r.card(true);r.end();
+          pendingSummon=(card.position&5)?{...card,publicEvent:true}:null;
+        }
+        if ([61,63,65].includes(message)) pendingSummon=null;
+        if (message===110) {const r=new Reader(bytes);combat={attacker:r.location(),defender:r.location()};r.end();damageWindow=false;}
+        if (message===113) damageWindow=true;
+        if (message===114) {damageWindow=false;combat=null;}
       },
-      forHuman(message, bytes) {
+      forHuman(message, bytes, hideDeckOrder = false) {
         const output = bytes.slice(), r = new Reader(output);
         const hide = offset => { for(let i=0;i<4;i++) output[offset+i]=0; };
         if (message === 90 || message === 33 || message === 39) {
@@ -166,7 +398,14 @@
           const player=r.u8();
           const hideCard=(full,extra)=>{
             const offset=r.at, entry=r.card(full);
-            if(entry.controller!==player) hide(offset);
+            const location=entry.location&~128;
+            const publicIdentity=(entry.location&128)||location===16||
+              (full&&[4,8,32].includes(location)&&(entry.position&5));
+            if(entry.controller!==player&&!publicIdentity) hide(offset);
+            // AI deck searches may inspect legal card identities, but not their future draw positions.
+            // Human ClientAnalyze still needs original GetCard coordinates, so its default stays unchanged.
+            if(hideDeckOrder===true&&entry.location===1)
+              for(let i=0;i<4;i++) output[offset+6+i]=0;
             if(extra===1) r.u8(); else if(extra===4) r.u32();
             return entry;
           };
@@ -181,7 +420,9 @@
         }
         return output;
       },
-      decide(message, bytes, declarable = [], ownPositions = {}) {
+      decide(message, bytes, declarable = [], ownPositions = {}, liveBoard = null) {
+        board=safeBoard(liveBoard);
+        if(liveBoard!==null&&liveBoard!==undefined&&!board) fail('Invalid tactical board');
         if (!PROMPTS.has(message)) fail(`Unknown AI prompt ${message}`);
         const r = new Reader(bytes), player = r.u8();
         if (player !== 0 && player !== 1) fail('Invalid selecting player');
@@ -197,25 +438,61 @@
             const reposition = r.list(() => ({code:r.u32(),controller:r.u8(),location:r.u8(),sequence:r.u8()}));
             const setMonster = r.list(() => r.card(false)), setSpell = r.list(() => r.card(false)), activate = r.list(effect);
             const battle = r.u8(), end = r.u8(); r.u8(); r.end();
+            canBattle=!!battle;
+            if (board) {
+              const summonPlan=(card,setting=false)=>{
+                const data=info(card)||{}, tributeCount=(data.level||0)>6?2:(data.level||0)>4?1:0;
+                const cost=monsters(true).map(value).sort((a,b)=>a-b).slice(0,tributeCount).reduce((a,b)=>a+b,0);
+                if (!setting && wantsDefense(card) && setMonster.some(c=>c.code===card.code&&c.sequence===card.sequence)) return {utility:0};
+                return {utility:Math.max(0,800+value(card)-(setting?0:cost))};
+              };
+              const actions=[
+                tacticalAction(activate,5,'activate',effectPlan),
+                tacticalAction(special,1,'special',c=>({utility:1300+value(c)})),
+                tacticalAction(summon,0,'normal',c=>summonPlan(c)),
+                tacticalAction(setMonster,3,'setmonster',c=>wantsDefense(c)?summonPlan(c,true):{utility:0}),
+                tacticalAction(setSpell,4,'setspell',c=>({utility:spells(true).length<4&&((info(c)?.type||0)&(4|0x10000))?200+value(c)*0.1:0})),
+                tacticalAction(reposition,2,'reposition',c=>{
+                  const position=field(c)?.position||ownPositions[String(c.sequence)]||0;
+                  return {utility:((position&1)&&wantsDefense(c))||((position&14)&&!wantsDefense(c))?1800:0};
+                })].filter(Boolean).sort((a,b)=>b.utility-a.utility);
+              response=actions.length?actions[0].commit():battle?integer(6):end?integer(7):fail('No legal idle decision');
+            } else {
             response = chooseAction(special,1,'special') || chooseAction(summon,0,'normal') || chooseAction(activate,5,'activate') ||
               chooseAction(setMonster,3,'setmonster') || chooseAction(setSpell,4,'setspell') ||
               chooseAction(reposition.filter(c => ((ownPositions[String(c.sequence)] || 0)&14) &&
                 score(c)>=(metadata[String(c.code)]?.defense || 0)),2,'reposition');
             if (!response) response = battle ? integer(6) : end ? integer(7) : fail('No legal idle decision');
+            }
           } else {
             const activate = r.list(effect);
             const attacks = r.list(() => ({code:r.u32(),controller:r.u8(),location:r.u8(),sequence:r.u8(),direct:r.u8()}));
             const main2 = r.u8(), end = r.u8(); r.end();
             // Attack availability already accounts for remaining attacks and engine restrictions.
-            attacks.sort((a,b) => score(b)-score(a) || a.index-b.index);
-            attackingCard = attacks.length ? attacks[0] : null;
-            response = attacks.length ? integer(attacks[0].index * 65536 + 1) : chooseAction(activate,0,'battle-effect');
+            if (board) {
+              const boost=activate.some(c=>codeOf(c)===CARD.RUSH&&!used.has(actionKey(c,'battle-effect'))&&!used.has(actionKey(c,'chain')));
+              const possible=attacks.map(card=>({card,utility:attackValue(card,boost)})).filter(c=>c.utility>0)
+                .sort((a,b)=>b.utility-a.utility||a.card.index-b.card.index);
+              const effect=tacticalAction(activate,0,'battle-effect',effectPlan);
+              if (effect && (!possible.length||effect.utility>possible[0].utility)) response=effect.commit();
+              else if (possible.length) {attackingCard=possible[0].card;response=integer(attackingCard.index*65536+1);}
+            } else {
+              attacks.sort((a,b) => score(b)-score(a) || a.index-b.index);
+              attackingCard = attacks.length ? attacks[0] : null;
+              response = attacks.length ? integer(attacks[0].index * 65536 + 1) : chooseAction(activate,0,'battle-effect');
+            }
             if (!response) response = main2 ? integer(2) : end ? integer(3) : fail('No legal battle decision');
           }
         } else if (message === 12) {
-          r.u32(); r.location(); r.u64(); r.end(); response = integer(1);
+          const card=r.card(true);r.u64();r.end();
+          const plan=board?effectPlan(card):{utility:1};
+          if(plan.utility>0) intent={code:codeOf(card),target:plan.target};
+          response=integer(plan.utility>0?1:0);
         } else if (message === 13) {
-          r.u64(); r.end(); response = integer(1);
+          const description=r.u64(); r.end();
+          // Pinned processor.cpp: 31 asks to attack directly; 30 asks to continue an attack replay.
+          const attackChoice=attackingCard&&(description===31n?!!attackingCard.direct:description===30n?attackValue(attackingCard)>0:false);
+          response = integer(!board||intent||attackChoice?1:0);
         } else if (message === 14 || message === 143) {
           const count = r.u8(); for (let i=0;i<count;i++) r.u64(); r.end();
           if (!count) fail('Empty option list'); response = integer(0);
@@ -231,13 +508,18 @@
           // MSG26 min/max do not cap the final group; preserve finish behavior for material pickers.
           const ownSummonCard = c => c.controller === selfPlayer && (c.location === 2 || (c.location === 64 && (c.position & 5)));
           const extendSummon = requestedHint === 509 && select.length > 0 && select.every(ownSummonCard) && unselect.every(ownSummonCard);
-          response = (finishable && !extendSummon) || (cancelable && !select.length) ? integer(-1) :
-            select.length ? [...integer(1),...integer(0)] : unselect.length ? [...integer(1),...integer(select.length)] : fail('Empty forced selection');
+          const ranked=board?rankSelection(select,extendSummon?509:requestedHint):select;
+          const preserveSpace=board&&finishable&&extendSummon&&monsters(true).length+unselect.length>=4&&value(ranked[0])<1000;
+          response = (finishable && (!extendSummon||preserveSpace)) || (cancelable && !select.length) ? integer(-1) :
+            select.length ? [...integer(1),...integer(ranked[0].index)] : unselect.length ? [...integer(1),...integer(select.length)] : fail('Empty forced selection');
         } else if (message === 16) {
           r.u8(); const forced = r.u8(); r.u32(); r.u32();
           const cards = r.list(() => ({...r.card(true),description:r.u64().toString(),flag:r.u8()})); r.end();
           if (forced && !cards.length) fail('Forced empty chain');
-          response = forced ? integer(0) : lastChainPlayer===selfPlayer ? integer(-1) : (chooseAction(cards,0,'chain',true) || integer(-1));
+          if(board) {
+            const action=lastChainPlayer===selfPlayer?null:tacticalAction(cards,0,'chain',effectPlan,true);
+            response=forced?integer(cards.slice().sort((a,b)=>value(b)-value(a)||a.index-b.index)[0].index):action?action.commit():integer(-1);
+          } else response = forced ? integer(0) : lastChainPlayer===selfPlayer ? integer(-1) : (chooseAction(cards,0,'chain',true) || integer(-1));
         } else if (message === 18 || message === 24) {
           const count = Math.max(1,r.u8()), unavailable = r.u32(); r.end(); const available = (~unavailable) >>> 0;
           const places = [];
@@ -249,15 +531,18 @@
           if (places.length < count) fail('Not enough legal zones'); response = places.slice(0,count).flat();
         } else if (message === 19) {
           const code = r.u32(), mask = r.u8(); r.end();
-          const info = metadata[String(code)], defensive = info && (info.defense || 0) > (info.attack || 0);
+          const data = metadata[String(code)], defensive = board?wantsDefense({code,controller:selfPlayer,location:0,sequence:0}):data && (data.defense || 0) > (data.attack || 0);
           const position = (defensive ? [4,8,1,2] : [1,4,8,2]).find(p => (mask&p)!==0);
           if (!position || (mask & ~15)) fail('Invalid position mask'); response = integer(position);
         } else if (message === 20) {
           const cancelable = r.u8(), min = r.count(), max = r.count();
           const cards = r.list(() => ({...r.card(false),value:r.u8()})); r.end();
-          cards.sort((a,b) => b.value-a.value || score(a)-score(b) || a.index-b.index);
-          const ids = []; let sum = 0;
-          for (const card of cards) { if (sum>=min || ids.length>=max) break; ids.push(card.index); sum+=card.value; }
+          const order=cards.slice().sort((a,b)=>board?value(a)/Math.max(1,a.value)-value(b)/Math.max(1,b.value)||a.index-b.index:b.value-a.value||score(a)-score(b)||a.index-b.index);
+          let ids = [], sum = 0;
+          for (const card of order) { if (sum>=min || ids.length>=max) break; ids.push(card.index); sum+=card.value; }
+          // If low-value single tributes cannot meet a strict card-count cap, preserve protocol legality.
+          if(sum<min&&board) {ids=[];sum=0;cards.sort((a,b)=>b.value-a.value||value(a)-value(b)||a.index-b.index);
+            for(const card of cards) {if(sum>=min||ids.length>=max) break;ids.push(card.index);sum+=card.value;}}
           if (sum < min) response = cancelable ? integer(-1) : fail('No legal tribute'); else response = selected(ids);
         } else if (message === 22) {
           r.u16(); let remaining = r.u16();
@@ -268,7 +553,8 @@
           const mode = r.u8(), target = r.u32(), min = r.count(), max = r.count();
           const read = () => ({...r.card(true),value:r.u32()});
           const mandatory = r.list(read), optional = r.list(read); r.end();
-          response = selected(solveSum(mode,target,min,max,mandatory,optional));
+          const ordered=board?optional.slice().sort((a,b)=>value(a)-value(b)||a.index-b.index):optional;
+          response = selected(solveSum(mode,target,min,max,mandatory,ordered).map(i=>ordered[i].index));
         } else if (message === 21 || message === 25) {
           r.list(() => ({code:r.u32(),controller:r.u8(),location:r.u32(),sequence:r.u32()})); r.end(); response = integer(-1);
         } else if (message === 132) {

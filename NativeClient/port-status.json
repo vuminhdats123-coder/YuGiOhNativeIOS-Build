@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand coverage beyond the current 36 full host matches and 36 bounded scenarios; verify native human selection"
+    "Expand tactics beyond 22 named profiles and current 36 full host matches/50 bounded scenarios; verify human iOS play"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -34,7 +34,11 @@
     "restartClosesIOSControls": true,
     "sumPromptUIUpdatesSynchronized": true,
     "multiplePendulumSummonSelection": true,
-    "ritualAlternateContributionSelection": true
+    "ritualAlternateContributionSelection": true,
+    "visibleStateTacticalAI": true,
+    "preObserverInformationFilter": true,
+    "preDecisionHiddenIdentityFilter": true,
+    "decisionOnlyDeckSequenceRedaction": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -45,8 +49,8 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 80,
-    "pythonTestsPassed": 79,
+    "pythonTestsRun": 84,
+    "pythonTestsPassed": 83,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
@@ -72,15 +76,22 @@
     "extraDeckHumanUITestsExecuted": false,
     "windowsCoreRitualPendulumScenarios": 12,
     "windowsCoreRitualPendulumResponses": 128,
-    "currentAIScenarioRegressionCases": 24,
+    "currentAIScenarioRegressionCases": 36,
     "effectiveScenarioRulesVerified": true,
-    "ritualSumNativeTestsExecuted": false
+    "ritualSumNativeTestsExecuted": false,
+    "tacticalNamedCardProfiles": 22,
+    "windowsCoreTacticalScenarios": 14,
+    "windowsCoreTacticalResponses": 181,
+    "hiddenInformationInvarianceNodeTestsPassed": true,
+    "nativeObservationBoundaryTestsExecuted": false,
+    "nativeTacticalBridgeExecuted": false
   },
   "limitations": [
-    "Generic bounded AI, not a competitive deck-specific bot",
+    "Bounded visible-state tactics with 22 named profiles; no universal effect/combo planner",
     "Offline replay saving is disabled",
     "Legacy Vietnamese text can differ from current effect scripts",
     "Installed package upgrades preserve user data by refusing automatic migration",
-    "Negative packed Ritual contribution alternatives remain unsupported by the AI and native greater-sum helper"
+    "Negative packed Ritual contribution alternatives remain unsupported by the AI and native greater-sum helper",
+    "Unknown optional effects are declined; full hand/Extra Deck combo planning is not implemented"
   ]
 }
