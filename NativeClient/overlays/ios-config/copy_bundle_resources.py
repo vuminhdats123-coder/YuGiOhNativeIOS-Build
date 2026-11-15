@@ -95,8 +95,12 @@ def read_manifest(source: Path, require_current: bool = True) -> tuple[bytes, di
             raise ValueError(f"Invalid SHA256 for {name}")
         if type(entry.get("bytes")) is not int or entry["bytes"] < 0:
             raise ValueError(f"Invalid byte count for {name}")
-    if inventory(source) != set(files) | {"package-manifest.json"}:
-        raise ValueError("Source resource inventory differs from its manifest")
+    actual = inventory(source)
+    expected = set(files) | {"package-manifest.json"}
+    if actual != expected:
+        missing = sorted(expected - actual)[:5]
+        extra = sorted(actual - expected)[:5]
+        raise ValueError(f"Source resource inventory differs from its manifest (missing={missing}, extra={extra})")
     return raw, files
 
 
