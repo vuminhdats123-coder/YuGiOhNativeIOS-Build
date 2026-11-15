@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "errors": [],
+  "warnings": [
+    "127 JPG names are not numeric"
+  ],
+  "counts": {
+    "files": 10747,
+    "propRecords": 7581,
+    "genreRecords": 7581,
+    "textRecords": 7581,
+    "intIdEntries": 8533,
+    "jpg": 7714,
+    "ydc": 799,
+    "plist": 679,
+    "mp3": 134,
+    "propNonEmpty": 7580,
+    "textOffsets": 15164,
+    "ENames": 7581,
+    "FNames": 7581,
+    "GNames": 7581,
+    "INames": 7581,
+    "JNames": 7581,
+    "RNames": 7581,
+    "SNames": 7581
+  }
+}
