@@ -79,6 +79,19 @@ class ResourceTests(unittest.TestCase):
         self.assertFalse((self.bundle / "game/converted-decks/sub/deck.ydk").exists())
         self.assertFalse(list(self.bundle.glob(".edopro-game-*")))
 
+    def test_managed_older_payload_can_gain_new_required_resources(self):
+        resources.copy_resources(self.source, self.icons, self.bundle)
+        old_game = self.bundle / 'game'
+        manifest_path = old_game / 'package-manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        for name in resources.REQUIRED - resources.BASE_REQUIRED:
+            (old_game / name).unlink()
+            del manifest['files'][name]
+        manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+        resources.copy_resources(self.source, self.icons, self.bundle)
+        for name in resources.REQUIRED:
+            self.assertEqual((old_game / name).read_bytes(), self.files[name])
+
     def test_rejects_unlisted_asset_and_foreign_destination(self):
         (self.source / "unexpected.txt").write_text("extra")
         with self.assertRaisesRegex(ValueError, "inventory"):

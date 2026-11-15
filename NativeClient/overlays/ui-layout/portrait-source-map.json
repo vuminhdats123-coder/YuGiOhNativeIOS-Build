@@ -1,0 +1,1049 @@
+{
+  "schemaVersion": 1,
+  "sourceAPK_SHA256": "be126fa7f04e3df848848fb11c38f9acb5a637583b86741a67f9e9760e3c4abb",
+  "sourceELF_SHA256": "a5ea1adcb17102ab8488de04bab82715c72521950c1b6220e6d182501a3588a9",
+  "sourceOBB_SHA256": "7ad6962f99ec019a57e2324f0dab23fbbdee81669ed2d2fb766706eaf05a756b",
+  "evidence": {
+    "artifact": "lib/armeabi/libcocos2dcpp.so",
+    "indexRange": [
+      0,
+      99
+    ],
+    "functions": {
+      "GetNPCDeckKeyWord": "0x318f18",
+      "GetOpponentName": "0x31911c",
+      "GetOpponentIcon": "0x319340"
+    },
+    "pointerTables": {
+      "deckPrefix": "0xc69500",
+      "nameKey": "0xc69820",
+      "icon": "0xc69c08"
+    },
+    "callSite": "SelectStageOverlay::CreateNPCPortraitBox stores the incoming index at sp+0x10 (0x39e61c), then passes it unchanged to GetOpponentIcon (0x39e74e..0x39e750).",
+    "scope": "All 100 NPC indices. Avatar indices 80..99 are shifted by +26, as shown by the StageSelectScene branch before GetOpponentIcon.",
+    "arcVRemap": {
+      "function": "StageSelectScene::CreateNPCPortraitBox",
+      "functionAddress": "0x3c2888",
+      "branchAddress": "0x3c2b98",
+      "instructions": [
+        "ldr r4, [sp, #0x24]",
+        "cmp r4, #0x4f",
+        "ble #0x3c2ba0",
+        "adds r4, #0x1a",
+        "adds r0, r4, #0",
+        "bl #0x319340"
+      ],
+      "fileBytesHex": "099c4f2c00dd1a34201c56f7cdfb",
+      "rule": "npcIndex <= 79 ? npcIndex : npcIndex + 26"
+    }
+  },
+  "playerDefault": {
+    "source": "assets/icon_default_avatar_m_1.png",
+    "icon": "player.png",
+    "sha256": "8265f8c8532a921c9075ece9bd84a7fe58f3cfed240186e7fbcb7b841395fb7f",
+    "role": "Default cosmetic; does not change player nickname or claim a character identity"
+  },
+  "entries": [
+    {
+      "npcIndex": 0,
+      "avatarIndex": 0,
+      "deckPrefix": "NPC-TeaGardner-",
+      "nameKey": "NPC-TeaGardner_Name",
+      "displayName": "Insector Haga",
+      "source": "assets/icon_YGOMD_First_Tea.png",
+      "icon": "icon_YGOMD_First_Tea.png",
+      "sha256": "70707e47a8424f2f7b8c84fc68bd6d0b348514f14396eb81e8e0756e6874bf31"
+    },
+    {
+      "npcIndex": 1,
+      "avatarIndex": 1,
+      "deckPrefix": "NPC-SolomonMuto-",
+      "nameKey": "NPC-SolomonMuto_Name",
+      "displayName": "Dinosaur Ryuzaki",
+      "source": "assets/icon_YGOMD_First_Solomon.png",
+      "icon": "icon_YGOMD_First_Solomon.png",
+      "sha256": "3ea45dbb2486034da84b4661e4877ccc59612d55983547c3a65acfa93310d607"
+    },
+    {
+      "npcIndex": 2,
+      "avatarIndex": 2,
+      "deckPrefix": "NPC-WeevilUnderwood-",
+      "nameKey": "NPC-WeevilUnderwood_Name",
+      "displayName": "Ryota Kajiki",
+      "source": "assets/icon_YGOMD_First_Weevil.png",
+      "icon": "icon_YGOMD_First_Weevil.png",
+      "sha256": "b57fe6fc3cb5b04a6ed1e8053d0145b4c1dca7e601888e155cc88cff605d5a6f"
+    },
+    {
+      "npcIndex": 3,
+      "avatarIndex": 3,
+      "deckPrefix": "NPC-BanditKeith-",
+      "nameKey": "NPC-BanditKeith_Name",
+      "displayName": "Keith Howard",
+      "source": "assets/icon_YGOMD_First_Keith.png",
+      "icon": "icon_YGOMD_First_Keith.png",
+      "sha256": "3c548d2d5441058537cc9ca4d6fa4d1f8d6d6edbb38b3113527ffde8f4658068"
+    },
+    {
+      "npcIndex": 4,
+      "avatarIndex": 4,
+      "deckPrefix": "NPC-MaximillionPegasus-",
+      "nameKey": "NPC-MaximillionPegasus_Name",
+      "displayName": "Pegasus J. Crawford",
+      "source": "assets/icon_YGOMD_First_Pegasus.png",
+      "icon": "icon_YGOMD_First_Pegasus.png",
+      "sha256": "f548606b44dd7a8b9949e50fc050b8bac1256e2609f0cfb3529a425440e7e8cd"
+    },
+    {
+      "npcIndex": 5,
+      "avatarIndex": 5,
+      "deckPrefix": "NPC-YugiMuto-",
+      "nameKey": "NPC-YugiMuto_Name",
+      "displayName": "Rishid",
+      "source": "assets/icon_YGOMD_First_Yugi.png",
+      "icon": "icon_YGOMD_First_Yugi.png",
+      "sha256": "c39c2f735bf19be50d4c942c029cff009bfdad89d470b7c932bed29a8222d093"
+    },
+    {
+      "npcIndex": 6,
+      "avatarIndex": 6,
+      "deckPrefix": "NPC-MokubaKaiba-",
+      "nameKey": "NPC-MokubaKaiba_Name",
+      "displayName": "Ishizu Ishtar",
+      "source": "assets/icon_YGOMD_First_Mokuba.png",
+      "icon": "icon_YGOMD_First_Mokuba.png",
+      "sha256": "c398234d3dc853d649cb864c8d66bc4eef7816f379c379eefd605011f2dd4ef8"
+    },
+    {
+      "npcIndex": 7,
+      "avatarIndex": 7,
+      "deckPrefix": "NPC-DukeDevlin-",
+      "nameKey": "NPC-DukeDevlin_Name",
+      "displayName": "Jonouchi Katsuya",
+      "source": "assets/icon_YGOMD_First_Duke.png",
+      "icon": "icon_YGOMD_First_Duke.png",
+      "sha256": "6bc3cc7b505f87fc3ccf080b8e748d9c6504005db9c594151d271e40488c6de0"
+    },
+    {
+      "npcIndex": 8,
+      "avatarIndex": 8,
+      "deckPrefix": "NPC-MakoTsunami-",
+      "nameKey": "NPC-MakoTsunami_Name",
+      "displayName": "Seto Kaiba",
+      "source": "assets/icon_YGOMD_First_Mako.png",
+      "icon": "icon_YGOMD_First_Mako.png",
+      "sha256": "9ff8b288ad8ca40f124c9a1bb5940b915fbc0346c12e7f2e8a903944a668a917"
+    },
+    {
+      "npcIndex": 9,
+      "avatarIndex": 9,
+      "deckPrefix": "NPC-SetoKaiba-",
+      "nameKey": "NPC-SetoKaiba_Name",
+      "displayName": "Marik Ishtar",
+      "source": "assets/icon_YGOMD_First_Kaiba.png",
+      "icon": "icon_YGOMD_First_Kaiba.png",
+      "sha256": "a0d959bc7f7839e6f03ac5ac35f5912918dbf13fd7ea178dfc19765016f4e851"
+    },
+    {
+      "npcIndex": 10,
+      "avatarIndex": 10,
+      "deckPrefix": "NPC-TristanTaylor-",
+      "nameKey": "NPC-TristanTaylor_Name",
+      "displayName": "Mai Kujaku",
+      "source": "assets/icon_YGOMD_First_Tristan.png",
+      "icon": "icon_YGOMD_First_Tristan.png",
+      "sha256": "39a0b9042f0938935d5b683159bfa4bb033bf765f0d9f9fa71b355ed81f8bb06"
+    },
+    {
+      "npcIndex": 11,
+      "avatarIndex": 11,
+      "deckPrefix": "NPC-IshizuIshtar-",
+      "nameKey": "NPC-IshizuIshtar_Name",
+      "displayName": "Amelda",
+      "source": "assets/icon_YGOMD_First_Ishizu.png",
+      "icon": "icon_YGOMD_First_Ishizu.png",
+      "sha256": "cd019d47f9a08c49ddaf2a458b39d6d2bd0c411fb76b2697d1d72780e8f739fa"
+    },
+    {
+      "npcIndex": 12,
+      "avatarIndex": 12,
+      "deckPrefix": "NPC-Shadi-",
+      "nameKey": "NPC-Shadi_Name",
+      "displayName": "Valon",
+      "source": "assets/icon_YGOMD_First_Shadi.png",
+      "icon": "icon_YGOMD_First_Shadi.png",
+      "sha256": "cdf1e834e5db9c171494d009e0a379812f5878d867c2e7349a1506c6e162ba68"
+    },
+    {
+      "npcIndex": 13,
+      "avatarIndex": 13,
+      "deckPrefix": "NPC-Odion-",
+      "nameKey": "NPC-Odion_Name",
+      "displayName": "Rafael",
+      "source": "assets/icon_YGOMD_First_Odion.png",
+      "icon": "icon_YGOMD_First_Odion.png",
+      "sha256": "62fd56ada4bc2a64a39c172f644b32e0707cfb9fd9c5a3af7ceaa2d0871319f9"
+    },
+    {
+      "npcIndex": 14,
+      "avatarIndex": 14,
+      "deckPrefix": "NPC-MarikIshtar-",
+      "nameKey": "NPC-MarikIshtar_Name",
+      "displayName": "Dartz",
+      "source": "assets/icon_YGOMD_First_Marik.png",
+      "icon": "icon_YGOMD_First_Marik.png",
+      "sha256": "392f023ef29b20236dae56f72fabd623a84f9d1eeb7f3ae3e820f55ffd789824"
+    },
+    {
+      "npcIndex": 15,
+      "avatarIndex": 15,
+      "deckPrefix": "NPC-RebeccaHawkins-",
+      "nameKey": "NPC-RebeccaHawkins_Name",
+      "displayName": "Anzu Mazaki",
+      "source": "assets/icon_YGOMD_First_Rebecca.png",
+      "icon": "icon_YGOMD_First_Rebecca.png",
+      "sha256": "d4c514685f6ac335588c82b3ac2b088dfc929bcf91be1e543ad3f4bd2a9ec6fe"
+    },
+    {
+      "npcIndex": 16,
+      "avatarIndex": 16,
+      "deckPrefix": "NPC-BakuraRyou-",
+      "nameKey": "NPC-BakuraRyou_Name",
+      "displayName": "Yugi Muto",
+      "source": "assets/icon_YGOMD_First_YamiBakura.png",
+      "icon": "icon_YGOMD_First_YamiBakura.png",
+      "sha256": "b106832a93a21f3a0c70c907896b599fa0d6bbc927e1406a27b379877054a0d0"
+    },
+    {
+      "npcIndex": 17,
+      "avatarIndex": 17,
+      "deckPrefix": "NPC-JoeyWheeler-",
+      "nameKey": "NPC-JoeyWheeler_Name",
+      "displayName": "Bakura Ryou",
+      "source": "assets/icon_YGOMD_First_joey.png",
+      "icon": "icon_YGOMD_First_joey.png",
+      "sha256": "92573b5e7e58d3dbc8f368a4e0708f2263f52a85675986a97f1891f7c8c5b3cc"
+    },
+    {
+      "npcIndex": 18,
+      "avatarIndex": 18,
+      "deckPrefix": "NPC-MaiValentine-",
+      "nameKey": "NPC-MaiValentine_Name",
+      "displayName": "Yami Yugi",
+      "source": "assets/icon_YGOMD_First_Mai.png",
+      "icon": "icon_YGOMD_First_Mai.png",
+      "sha256": "4d277ae3fdd56a1f5eea6d56a30e11260ed7ff011579307e3f29fb568c4e5401"
+    },
+    {
+      "npcIndex": 19,
+      "avatarIndex": 19,
+      "deckPrefix": "NPC-YamiYugi-",
+      "nameKey": "NPC-YamiYugi_Name",
+      "displayName": "Z-ORC Necrophades",
+      "source": "assets/icon_YGOMD_First_YamiYugi.png",
+      "icon": "icon_YGOMD_First_YamiYugi.png",
+      "sha256": "5e023ec77578ca8cd03a79df4af11b2c9a5e442f494490763ecacd3d3f16cd36"
+    },
+    {
+      "npcIndex": 20,
+      "avatarIndex": 20,
+      "deckPrefix": "NPC-ChumleyHuffington-",
+      "nameKey": "NPC-ChumleyHuffington_Name",
+      "displayName": "Cronos de Medici",
+      "source": "assets/icon_YGOMD_GX_Chumley.png",
+      "icon": "icon_YGOMD_GX_Chumley.png",
+      "sha256": "9f9c6ced63c73a746ca0baf966ff3454edb01bc0570c7d724023af52926acff0"
+    },
+    {
+      "npcIndex": 21,
+      "avatarIndex": 21,
+      "deckPrefix": "NPC-BastionMisawa-",
+      "nameKey": "NPC-BastionMisawa_Name",
+      "displayName": "Misawa Daichi",
+      "source": "assets/icon_YGOMD_GX_Bastion.png",
+      "icon": "icon_YGOMD_GX_Bastion.png",
+      "sha256": "24cb5b799a1564d3edaf09fbbc51e294bbcf043055615aadda56e89312be680b"
+    },
+    {
+      "npcIndex": 22,
+      "avatarIndex": 22,
+      "deckPrefix": "NPC-ZaneTruesdale-",
+      "nameKey": "NPC-ZaneTruesdale_Name",
+      "displayName": "Fubuki Tenjoin",
+      "source": "assets/icon_YGOMD_GX_Zane.png",
+      "icon": "icon_YGOMD_GX_Zane.png",
+      "sha256": "518ab19e636560e1f23174034bb8dbcd3501a2fb9d2fe93657bb250e13418f8c"
+    },
+    {
+      "npcIndex": 23,
+      "avatarIndex": 23,
+      "deckPrefix": "NPC-Kagemaru-",
+      "nameKey": "NPC-Kagemaru_Name",
+      "displayName": "Daitokuji",
+      "source": "assets/icon_YGOMD_GX_Kagemaru.png",
+      "icon": "icon_YGOMD_GX_Kagemaru.png",
+      "sha256": "21e85685dff746342885f2b2b846ad97c7710a7d20ed5b266a1617c192406703"
+    },
+    {
+      "npcIndex": 24,
+      "avatarIndex": 24,
+      "deckPrefix": "NPC-SartoriusKumar-",
+      "nameKey": "NPC-SartoriusKumar_Name",
+      "displayName": "Kagemaru",
+      "source": "assets/icon_YGOMD_GX_Sartorius.png",
+      "icon": "icon_YGOMD_GX_Sartorius.png",
+      "sha256": "77a49410e82c68a051c858ae5794c06344f3aea417c386e440038ab940fe6e7c"
+    },
+    {
+      "npcIndex": 25,
+      "avatarIndex": 25,
+      "deckPrefix": "NPC-VellianCrowler-",
+      "nameKey": "NPC-VellianCrowler_Name",
+      "displayName": "Jun Manjome",
+      "source": "assets/icon_YGOMD_GX_Vellian.png",
+      "icon": "icon_YGOMD_GX_Vellian.png",
+      "sha256": "7257cf102e36893a6048361d3f6c63128062475f9e4d8c8a385e9d7d168da5eb"
+    },
+    {
+      "npcIndex": 26,
+      "avatarIndex": 26,
+      "deckPrefix": "NPC-JimCook-",
+      "nameKey": "NPC-JimCook_Name",
+      "displayName": "Asuka Tenjoin",
+      "source": "assets/icon_YGOMD_GX_Jim.png",
+      "icon": "icon_YGOMD_GX_Jim.png",
+      "sha256": "f3f95d527694bc52a4457d461e7306210ecb449f5f7f43fb4f9f49fde03bd391"
+    },
+    {
+      "npcIndex": 27,
+      "avatarIndex": 27,
+      "deckPrefix": "NPC-JesseAnderson-",
+      "nameKey": "NPC-JesseAnderson_Name",
+      "displayName": "Ryo Marufuji",
+      "source": "assets/icon_YGOMD_GX_Jesse.png",
+      "icon": "icon_YGOMD_GX_Jesse.png",
+      "sha256": "022c6c25d25192c5ea463274051d6ce25771b0e17f4a42bea6c2a25b105ad90c"
+    },
+    {
+      "npcIndex": 28,
+      "avatarIndex": 28,
+      "deckPrefix": "NPC-ChazzPrinceton-",
+      "nameKey": "NPC-ChazzPrinceton_Name",
+      "displayName": "Edo Phoenix",
+      "source": "assets/icon_YGOMD_GX_Chazz.png",
+      "icon": "icon_YGOMD_GX_Chazz.png",
+      "sha256": "2fbec6faa79bf186e6f5f79be2a53a0c37c25045c79aa7570ef0a89a26c1f763"
+    },
+    {
+      "npcIndex": 29,
+      "avatarIndex": 29,
+      "deckPrefix": "NPC-Yubel-",
+      "nameKey": "NPC-Yubel_Name",
+      "displayName": "Saio Takuma",
+      "source": "assets/icon_YGOMD_GX_Yubel.png",
+      "icon": "icon_YGOMD_GX_Yubel.png",
+      "sha256": "f507d1ab87fa24d89d98c16e0c68e83362801e9f4f19b3c3c8f369f73b2cc5f9"
+    },
+    {
+      "npcIndex": 30,
+      "avatarIndex": 30,
+      "deckPrefix": "NPC-AdrianGecko-",
+      "nameKey": "NPC-AdrianGecko_Name",
+      "displayName": "Jim Crocodile Cook",
+      "source": "assets/icon_YGOMD_GX_Adrian.png",
+      "icon": "icon_YGOMD_GX_Adrian.png",
+      "sha256": "daccfe7cee54b483cef166a43d158ec7c8cef7d84e4cc11de70fd2d364c53494"
+    },
+    {
+      "npcIndex": 31,
+      "avatarIndex": 31,
+      "deckPrefix": "NPC-TyrannoHassleberry-",
+      "nameKey": "NPC-TyrannoHassleberry_Name",
+      "displayName": "Austin O'Brien",
+      "source": "assets/icon_YGOMD_GX_Tyranno.png",
+      "icon": "icon_YGOMD_GX_Tyranno.png",
+      "sha256": "a16198881c3ecf69d8adfeb0fc2efcfde077016c73584dae2d667b8452da1402"
+    },
+    {
+      "npcIndex": 32,
+      "avatarIndex": 32,
+      "deckPrefix": "NPC-AtticusRhodes-",
+      "nameKey": "NPC-AtticusRhodes_Name",
+      "displayName": "Amon Garam",
+      "source": "assets/icon_YGOMD_GX_Atticus.png",
+      "icon": "icon_YGOMD_GX_Atticus.png",
+      "sha256": "713e25292e59e32266b076f1ae223595f4876824fecb7bea4c53a15aa498e579"
+    },
+    {
+      "npcIndex": 33,
+      "avatarIndex": 33,
+      "deckPrefix": "NPC-AsterPhoenix-",
+      "nameKey": "NPC-AsterPhoenix_Name",
+      "displayName": "Johan Anderson",
+      "source": "assets/icon_YGOMD_GX_Aster.png",
+      "icon": "icon_YGOMD_GX_Aster.png",
+      "sha256": "8b57a353c0169699bdb63796ba75596d3224e2e26b7771eac78d0cb1d4658692"
+    },
+    {
+      "npcIndex": 34,
+      "avatarIndex": 34,
+      "deckPrefix": "NPC-Nightshroud-",
+      "nameKey": "NPC-Nightshroud_Name",
+      "displayName": "Yubel",
+      "source": "assets/icon_YGOMD_GX_Nightshroud.png",
+      "icon": "icon_YGOMD_GX_Nightshroud.png",
+      "sha256": "d7af621694d189d4cad6ae1d82a04cb7f363fb89bb41e4945f32efb2342c7de8"
+    },
+    {
+      "npcIndex": 35,
+      "avatarIndex": 35,
+      "deckPrefix": "NPC-BlairFlannigan-",
+      "nameKey": "NPC-BlairFlannigan_Name",
+      "displayName": "Rei Saotome",
+      "source": "assets/icon_YGOMD_GX_Blair.png",
+      "icon": "icon_YGOMD_GX_Blair.png",
+      "sha256": "f756a0fd4a6f10be74bdf4a9cb9593db2d81c250fa72fbd765386ed246e76704"
+    },
+    {
+      "npcIndex": 36,
+      "avatarIndex": 36,
+      "deckPrefix": "NPC-AxelBrodie-",
+      "nameKey": "NPC-AxelBrodie_Name",
+      "displayName": "Kenzan",
+      "source": "assets/icon_YGOMD_GX_Axel.png",
+      "icon": "icon_YGOMD_GX_Axel.png",
+      "sha256": "218d1bc18e9134e06cdb9d69a678ecc674c0eead1aee3acfdde8e01a94a77c6f"
+    },
+    {
+      "npcIndex": 37,
+      "avatarIndex": 37,
+      "deckPrefix": "NPC-SyrusTruesdale-",
+      "nameKey": "NPC-SyrusTruesdale_Name",
+      "displayName": "Sho Marufuji",
+      "source": "assets/icon_YGOMD_GX_Syrus.png",
+      "icon": "icon_YGOMD_GX_Syrus.png",
+      "sha256": "fee8460a17b7a609c718bf06997149b309a4e2999fbb90b3f73ae33d419bea3d"
+    },
+    {
+      "npcIndex": 38,
+      "avatarIndex": 38,
+      "deckPrefix": "NPC-AlexisRhodes-",
+      "nameKey": "NPC-AlexisRhodes_Name",
+      "displayName": "Judai Yuki",
+      "source": "assets/icon_YGOMD_GX_Alexis.png",
+      "icon": "icon_YGOMD_GX_Alexis.png",
+      "sha256": "2b449b96ba470ed056c252d0f1e37a9b954b69bdc60458685a50bae7ec914638"
+    },
+    {
+      "npcIndex": 39,
+      "avatarIndex": 39,
+      "deckPrefix": "NPC-JadenYuki-",
+      "nameKey": "NPC-JadenYuki_Name",
+      "displayName": "Darkness",
+      "source": "assets/icon_YGOMD_GX_Jaden.png",
+      "icon": "icon_YGOMD_GX_Jaden.png",
+      "sha256": "89efe2c6a8df597b5c7c9aa9b8b73730112827f2d0b93c8ea62d26b0c3f4211a"
+    },
+    {
+      "npcIndex": 40,
+      "avatarIndex": 40,
+      "deckPrefix": "NPC-MistyTredwell-",
+      "nameKey": "NPC-MistyTredwell_Name",
+      "displayName": "Luca",
+      "source": "assets/icon_YGOMD_5DS_Misty.png",
+      "icon": "icon_YGOMD_5DS_Misty.png",
+      "sha256": "257b040e891988261925507b6ae1d85611e2fc1fce1a43e8d6210cb1d94b50b4"
+    },
+    {
+      "npcIndex": 41,
+      "avatarIndex": 41,
+      "deckPrefix": "NPC-CarlyCarmine-",
+      "nameKey": "NPC-CarlyCarmine_Name",
+      "displayName": "Bommer",
+      "source": "assets/icon_YGOMD_5DS_Carly.png",
+      "icon": "icon_YGOMD_5DS_Carly.png",
+      "sha256": "2e11dd4eb012999370b80a0ea4081e557c351ed778d0f9fde9ee8d10df51e456"
+    },
+    {
+      "npcIndex": 42,
+      "avatarIndex": 42,
+      "deckPrefix": "NPC-Devack-",
+      "nameKey": "NPC-Devack_Name",
+      "displayName": "Aki Izayoi",
+      "source": "assets/icon_YGOMD_5DS_Devack.png",
+      "icon": "icon_YGOMD_5DS_Devack.png",
+      "sha256": "9ca5bc909bb0cae32863b84a8211b96296a53d960efb7754e9960cb4e2cf3350"
+    },
+    {
+      "npcIndex": 43,
+      "avatarIndex": 43,
+      "deckPrefix": "NPC-Roman-",
+      "nameKey": "NPC-Roman_Name",
+      "displayName": "Jack Atlas",
+      "source": "assets/icon_YGOMD_5DS_Roman.png",
+      "icon": "icon_YGOMD_5DS_Roman.png",
+      "sha256": "59046821f92aca104d38f622340cb2ddb2fd810bb3a86b5bbac668a5a36e5e15"
+    },
+    {
+      "npcIndex": 44,
+      "avatarIndex": 44,
+      "deckPrefix": "NPC-JackAtlas-",
+      "nameKey": "NPC-JackAtlas_Name",
+      "displayName": "Sayer",
+      "source": "assets/icon_YGOMD_5DS_Jack.png",
+      "icon": "icon_YGOMD_5DS_Jack.png",
+      "sha256": "eb3416c8acbb9fb23ca5f3a63bffebb8083557c3ae33f07cae06c0a0dc24b3ac"
+    },
+    {
+      "npcIndex": 45,
+      "avatarIndex": 45,
+      "deckPrefix": "NPC-HunterPace-",
+      "nameKey": "NPC-HunterPace_Name",
+      "displayName": "Demak",
+      "source": "assets/icon_YGOMD_5DS_Hunter.png",
+      "icon": "icon_YGOMD_5DS_Hunter.png",
+      "sha256": "70ee161ad80a85647c84b31e350b0845386d1c3b5d6bd64356570a49875bd87c"
+    },
+    {
+      "npcIndex": 46,
+      "avatarIndex": 46,
+      "deckPrefix": "NPC-TetsuTrudge-",
+      "nameKey": "NPC-TetsuTrudge_Name",
+      "displayName": "Rudger Godwin",
+      "source": "assets/icon_YGOMD_5DS_Tetsu.png",
+      "icon": "icon_YGOMD_5DS_Tetsu.png",
+      "sha256": "837a19eb79891a3652eba522301740665b9011e248ed745b6c6bf07769f8232b"
+    },
+    {
+      "npcIndex": 47,
+      "avatarIndex": 47,
+      "deckPrefix": "NPC-KalinKessler-",
+      "nameKey": "NPC-KalinKessler_Name",
+      "displayName": "Carly Nagisa",
+      "source": "assets/icon_YGOMD_5DS_Kalin.png",
+      "icon": "icon_YGOMD_5DS_Kalin.png",
+      "sha256": "5c8033241a4e590631a09c6f7550f552e247feb2d7cd4010dfe152c6b14946be"
+    },
+    {
+      "npcIndex": 48,
+      "avatarIndex": 48,
+      "deckPrefix": "NPC-RexGoodwin-",
+      "nameKey": "NPC-RexGoodwin_Name",
+      "displayName": "Misty Lola",
+      "source": "assets/icon_YGOMD_5DS_Rex.png",
+      "icon": "icon_YGOMD_5DS_Rex.png",
+      "sha256": "516d0b7f63075b2f31b8998fd29357fc797411b8f34c294df7bf9538d6cd5bcb"
+    },
+    {
+      "npcIndex": 49,
+      "avatarIndex": 49,
+      "deckPrefix": "NPC-Aporia-",
+      "nameKey": "NPC-Aporia_Name",
+      "displayName": "Rex Godwin",
+      "source": "assets/icon_YGOMD_5DS_Aporia.png",
+      "icon": "icon_YGOMD_5DS_Aporia.png",
+      "sha256": "d1ef80b9e2e5804993fb8820bdad8dd3f87fc5b75c4c14107dadde3cf0f8575e"
+    },
+    {
+      "npcIndex": 50,
+      "avatarIndex": 50,
+      "deckPrefix": "NPC-SherryLeBlanc-",
+      "nameKey": "NPC-SherryLeBlanc_Name",
+      "displayName": "Kiryu Kyosuke",
+      "source": "assets/icon_YGOMD_5DS_Sherry.png",
+      "icon": "icon_YGOMD_5DS_Sherry.png",
+      "sha256": "6e8b66b2c2302e2ca0cf0a0e2c6f9f1f067b596d8c3727f62b6f3926beb67ed2"
+    },
+    {
+      "npcIndex": 51,
+      "avatarIndex": 51,
+      "deckPrefix": "NPC-Sayer-",
+      "nameKey": "NPC-Sayer_Name",
+      "displayName": "Jean",
+      "source": "assets/icon_YGOMD_5DS_Sayer.png",
+      "icon": "icon_YGOMD_5DS_Sayer.png",
+      "sha256": "8bb4be5055cd9f215b71eabe5aa51885e8e7dddf831900c7e5a87111c5cda5c7"
+    },
+    {
+      "npcIndex": 52,
+      "avatarIndex": 52,
+      "deckPrefix": "NPC-BoltTanner-",
+      "nameKey": "NPC-BoltTanner_Name",
+      "displayName": "Harald",
+      "source": "assets/icon_YGOMD_5DS_Bolt.png",
+      "icon": "icon_YGOMD_5DS_Bolt.png",
+      "sha256": "d0ced31456a314fb09ef865c941cfffdfeffc65d035d697a4266c0d2e369ffe0"
+    },
+    {
+      "npcIndex": 53,
+      "avatarIndex": 53,
+      "deckPrefix": "NPC-Greiger-",
+      "nameKey": "NPC-Greiger_Name",
+      "displayName": "Crow Hogan",
+      "source": "assets/icon_YGOMD_5DS_Greiger.png",
+      "icon": "icon_YGOMD_5DS_Greiger.png",
+      "sha256": "b1e5be6fd4c1f60ff3431739b26b65f0991193fd52025d70310cff6ae6662320"
+    },
+    {
+      "npcIndex": 54,
+      "avatarIndex": 54,
+      "deckPrefix": "NPC-Zone-",
+      "nameKey": "NPC-Zone_Name",
+      "displayName": "Aporia",
+      "source": "assets/icon_YGOMD_5DS_Z-one.png",
+      "icon": "icon_YGOMD_5DS_Z-one.png",
+      "sha256": "7a4506beafd3025102fc7da23372b82626b0a202bf3b7b30d3869303e240b1d7"
+    },
+    {
+      "npcIndex": 55,
+      "avatarIndex": 55,
+      "deckPrefix": "NPC-Luna-",
+      "nameKey": "NPC-Luna_Name",
+      "displayName": "Sherry Leblanc",
+      "source": "assets/icon_YGOMD_5DS_Luna.png",
+      "icon": "icon_YGOMD_5DS_Luna.png",
+      "sha256": "9d7d2e40090568b81b4983e75c05652e675193c0fb6fd6ac4e490ae2c1071f55"
+    },
+    {
+      "npcIndex": 56,
+      "avatarIndex": 56,
+      "deckPrefix": "NPC-Leo-",
+      "nameKey": "NPC-Leo_Name",
+      "displayName": "Rua",
+      "source": "assets/icon_YGOMD_5DS_Leo.png",
+      "icon": "icon_YGOMD_5DS_Leo.png",
+      "sha256": "d256573199981e1c3fc13bea61adfea4da679f3e146f9d8f2caa24acde8b1a0b"
+    },
+    {
+      "npcIndex": 57,
+      "avatarIndex": 57,
+      "deckPrefix": "NPC-AkizaIzinski-",
+      "nameKey": "NPC-AkizaIzinski_Name",
+      "displayName": "Antinomy",
+      "source": "assets/icon_YGOMD_5DS_Akiza.png",
+      "icon": "icon_YGOMD_5DS_Akiza.png",
+      "sha256": "f689d1efb3525d5f0dd4f15fc99951f041c98c6fd1a707deb09c96388290b1ee"
+    },
+    {
+      "npcIndex": 58,
+      "avatarIndex": 58,
+      "deckPrefix": "NPC-Crow-",
+      "nameKey": "NPC-Crow_Name",
+      "displayName": "Yusei Fudo",
+      "source": "assets/icon_YGOMD_5DS_Crow.png",
+      "icon": "icon_YGOMD_5DS_Crow.png",
+      "sha256": "ac0e73eb3c67cd3bd0e3871669c573a08b302b9d2ac81c2869a0a779b5b7e373"
+    },
+    {
+      "npcIndex": 59,
+      "avatarIndex": 59,
+      "deckPrefix": "NPC-YuseiFudo-",
+      "nameKey": "NPC-YuseiFudo_Name",
+      "displayName": "Z-ONE",
+      "source": "assets/icon_YGOMD_5DS_Yusei.png",
+      "icon": "icon_YGOMD_5DS_Yusei.png",
+      "sha256": "b41fe87fac0a64de36be5355768dc518558ba1f191d88ad11d4df371b7df6869"
+    },
+    {
+      "npcIndex": 60,
+      "avatarIndex": 60,
+      "deckPrefix": "NPC-CaswellFrancis-",
+      "nameKey": "NPC-CaswellFrancis_Name",
+      "displayName": "NO.96",
+      "source": "assets/icon_YGOMD_ZEXAL_Oaswell.png",
+      "icon": "icon_YGOMD_ZEXAL_Oaswell.png",
+      "sha256": "31347d7f5a1b57b7232c87e8c8daae6422911be98a59a781c1108397b80f59b7"
+    },
+    {
+      "npcIndex": 61,
+      "avatarIndex": 61,
+      "deckPrefix": "NPC-NelsonAndrews-",
+      "nameKey": "NPC-NelsonAndrews_Name",
+      "displayName": "III",
+      "source": "assets/icon_YGOMD_ZEXAL_Sparrow.png",
+      "icon": "icon_YGOMD_ZEXAL_Sparrow.png",
+      "sha256": "470b1cc676abd52873f9f73c074104da04ca568cd5c4b8000188859710b6c73c"
+    },
+    {
+      "npcIndex": 62,
+      "avatarIndex": 62,
+      "deckPrefix": "NPC-Dextra-",
+      "nameKey": "NPC-Dextra_Name",
+      "displayName": "Ⅳ",
+      "source": "assets/icon_YGOMD_ZEXAL_Dextra.png",
+      "icon": "icon_YGOMD_ZEXAL_Dextra.png",
+      "sha256": "8fe983307bdef0390e756f86ce422acb0c0578f93aa260a3af5e117fa5af8b9f"
+    },
+    {
+      "npcIndex": 63,
+      "avatarIndex": 63,
+      "deckPrefix": "NPC-Trey-",
+      "nameKey": "NPC-Trey_Name",
+      "displayName": "V",
+      "source": "assets/icon_YGOMD_ZEXAL_Trey.png",
+      "icon": "icon_YGOMD_ZEXAL_Trey.png",
+      "sha256": "a2b703afc5964437013e75c01d4c22931812bc031ee423618e3497ecc2c582a1"
+    },
+    {
+      "npcIndex": 64,
+      "avatarIndex": 64,
+      "deckPrefix": "NPC-KiteTenjo-",
+      "nameKey": "NPC-KiteTenjo_Name",
+      "displayName": "Tron",
+      "source": "assets/icon_YGOMD_ZEXAL_Kite.png",
+      "icon": "icon_YGOMD_ZEXAL_Kite.png",
+      "sha256": "94cf155bf9e2b254f55cbe66b93c53136d95606a3202774b0929df395841c3cf"
+    },
+    {
+      "npcIndex": 65,
+      "avatarIndex": 65,
+      "deckPrefix": "NPC-ToriMeadows-",
+      "nameKey": "NPC-ToriMeadows_Name",
+      "displayName": "Anna Kozuki",
+      "source": "assets/icon_YGOMD_ZEXAL_Tori.png",
+      "icon": "icon_YGOMD_ZEXAL_Tori.png",
+      "sha256": "2257eb4bb78eeb8f93ea5feb3a3ec918703f6328dd8ebcecfd197344d432fedf"
+    },
+    {
+      "npcIndex": 66,
+      "avatarIndex": 66,
+      "deckPrefix": "NPC-Nistro-",
+      "nameKey": "NPC-Nistro_Name",
+      "displayName": "Droite",
+      "source": "assets/icon_YGOMD_ZEXAL_Nistro.png",
+      "icon": "icon_YGOMD_ZEXAL_Nistro.png",
+      "sha256": "0064e3babc718f1ee0d6e4591e564ed7d9666827f3f077c15052fb52a9d0b200"
+    },
+    {
+      "npcIndex": 67,
+      "avatarIndex": 67,
+      "deckPrefix": "NPC-Quattro-",
+      "nameKey": "NPC-Quattro_Name",
+      "displayName": "Gauche",
+      "source": "assets/icon_YGOMD_ZEXAL_Quattro.png",
+      "icon": "icon_YGOMD_ZEXAL_Quattro.png",
+      "sha256": "a538ec8013f8bff291a011fd1b80d9d1704a92bdb9fd8fce60b281b56e6142f8"
+    },
+    {
+      "npcIndex": 68,
+      "avatarIndex": 68,
+      "deckPrefix": "NPC-Quinton-",
+      "nameKey": "NPC-Quinton_Name",
+      "displayName": "Tenjo Kaito",
+      "source": "assets/icon_YGOMD_ZEXAL_Quinton.png",
+      "icon": "icon_YGOMD_ZEXAL_Quinton.png",
+      "sha256": "4b7de0023b84075656a9ac9c88c5c7474c227993dd59ec6dbd49eb141d785568"
+    },
+    {
+      "npcIndex": 69,
+      "avatarIndex": 69,
+      "deckPrefix": "NPC-Astral-",
+      "nameKey": "NPC-Astral_Name",
+      "displayName": "Dr. Faker",
+      "source": "assets/icon_YGOMD_ZEXAL_Astral.png",
+      "icon": "icon_YGOMD_ZEXAL_Astral.png",
+      "sha256": "a73da2258ccc40391a542797cc2236e9fe29233cf7cf38266937f15be5c0228b"
+    },
+    {
+      "npcIndex": 70,
+      "avatarIndex": 70,
+      "deckPrefix": "NPC-RioKastle-",
+      "nameKey": "NPC-RioKastle_Name",
+      "displayName": "Giragu",
+      "source": "assets/icon_YGOMD_ZEXAL_Rio.png",
+      "icon": "icon_YGOMD_ZEXAL_Rio.png",
+      "sha256": "86af0a21dfb0003b5fa635c71351dc687f3da06690df4a55f3afb55590cc6813"
+    },
+    {
+      "npcIndex": 71,
+      "avatarIndex": 71,
+      "deckPrefix": "NPC-FlipTurner-",
+      "nameKey": "NPC-FlipTurner_Name",
+      "displayName": "Arito",
+      "source": "assets/icon_YGOMD_ZEXAL_Flip.png",
+      "icon": "icon_YGOMD_ZEXAL_Flip.png",
+      "sha256": "351905e412b186c7ab3cd9673117cd0061217f20daee23bf180f9128dcc6cb01"
+    },
+    {
+      "npcIndex": 72,
+      "avatarIndex": 72,
+      "deckPrefix": "NPC-DrFaker-",
+      "nameKey": "NPC-DrFaker_Name",
+      "displayName": "Durbe",
+      "source": "assets/icon_YGOMD_ZEXAL_Faker.png",
+      "icon": "icon_YGOMD_ZEXAL_Faker.png",
+      "sha256": "796e27ff0282eba2d36ca0242814a3dd5898fe610ebbebb525127f9ce7ea2eab"
+    },
+    {
+      "npcIndex": 73,
+      "avatarIndex": 73,
+      "deckPrefix": "NPC-Vetrix-",
+      "nameKey": "NPC-Vetrix_Name",
+      "displayName": "Meragu",
+      "source": "assets/icon_YGOMD_ZEXAL_Vetrix.png",
+      "icon": "icon_YGOMD_ZEXAL_Vetrix.png",
+      "sha256": "0b79bfea6daae33b475d6c28051c25944cd6537a26d2cd2e9323b2daf7ec3956"
+    },
+    {
+      "npcIndex": 74,
+      "avatarIndex": 74,
+      "deckPrefix": "NPC-Vector-",
+      "nameKey": "NPC-Vector_Name",
+      "displayName": "Bekuta",
+      "source": "assets/icon_YGOMD_ZEXAL_Vector.png",
+      "icon": "icon_YGOMD_ZEXAL_Vector.png",
+      "sha256": "040c36e8f9644fb14cb6991244a99c10b87de4e83df350b4551857f9fbf56127"
+    },
+    {
+      "npcIndex": 75,
+      "avatarIndex": 75,
+      "deckPrefix": "NPC-BronkStone-",
+      "nameKey": "NPC-BronkStone_Name",
+      "displayName": "Mizael",
+      "source": "assets/icon_YGOMD_ZEXAL_Bronk.png",
+      "icon": "icon_YGOMD_ZEXAL_Bronk.png",
+      "sha256": "ee5c33165b12139817ea97e1ee1e989b035b690f705798570f58447b004c157f"
+    },
+    {
+      "npcIndex": 76,
+      "avatarIndex": 76,
+      "deckPrefix": "NPC-CathyKatherine-",
+      "nameKey": "NPC-CathyKatherine_Name",
+      "displayName": "Nash",
+      "source": "assets/icon_YGOMD_ZEXAL_Cathy.png",
+      "icon": "icon_YGOMD_ZEXAL_Cathy.png",
+      "sha256": "9f740dee307e664f34d1b64f8525501d029f96b18b2386ef93608acd4cf1278d"
+    },
+    {
+      "npcIndex": 77,
+      "avatarIndex": 77,
+      "deckPrefix": "NPC-AnnaKaboom-",
+      "nameKey": "NPC-AnnaKaboom_Name",
+      "displayName": "Kotori Mizuki",
+      "source": "assets/icon_YGOMD_ZEXAL_Anna.png",
+      "icon": "icon_YGOMD_ZEXAL_Anna.png",
+      "sha256": "255ecbd14656c2d172f8472022bf179a7b557971d44ace16d30919e4d98fb64a"
+    },
+    {
+      "npcIndex": 78,
+      "avatarIndex": 78,
+      "deckPrefix": "NPC-ReginaldKastle-",
+      "nameKey": "NPC-ReginaldKastle_Name",
+      "displayName": "Yuma Tsukumo",
+      "source": "assets/icon_YGOMD_ZEXAL_Shark.png",
+      "icon": "icon_YGOMD_ZEXAL_Shark.png",
+      "sha256": "dfa265c2b6d25784ec63bf752978b9df8abefb472190fc05904637d902429d44"
+    },
+    {
+      "npcIndex": 79,
+      "avatarIndex": 79,
+      "deckPrefix": "NPC-YumaTsukumo-",
+      "nameKey": "NPC-YumaTsukumo_Name",
+      "displayName": "Don Thousand",
+      "source": "assets/icon_YGOMD_ZEXAL_Yuma.png",
+      "icon": "icon_YGOMD_ZEXAL_Yuma.png",
+      "sha256": "f46d5460a18f9e4fd2b6bf7412e0ee344f50fc6401cfad19b8a0629d51a35a32"
+    },
+    {
+      "npcIndex": 80,
+      "avatarIndex": 106,
+      "deckPrefix": "NPC-Allie-",
+      "nameKey": "NPC-Allie_Name",
+      "displayName": "Hokuto Shijima",
+      "source": "assets/icon_YGOMD_Arcv_Allie.png",
+      "icon": "icon_YGOMD_Arcv_Allie.png",
+      "sha256": "c9f906e14a3b4f20679d6264a1e5fba272e254e88fee048b1d1e8fa50e326173"
+    },
+    {
+      "npcIndex": 81,
+      "avatarIndex": 107,
+      "deckPrefix": "NPC-Gong-",
+      "nameKey": "NPC-GongStrong_Name",
+      "displayName": "Masumi Kotsu",
+      "source": "assets/icon_YGOMD_Arcv_Gogenzaka.png",
+      "icon": "icon_YGOMD_Arcv_Gogenzaka.png",
+      "sha256": "ea81ec829baac38417e830fa8fb1bddf4d6f0bb04e4393f13932a322e1b05d79"
+    },
+    {
+      "npcIndex": 82,
+      "avatarIndex": 108,
+      "deckPrefix": "NPC-Zuzu-",
+      "nameKey": "NPC-ZuzuBoyle_Name",
+      "displayName": "Yaiba Todo",
+      "source": "assets/icon_YGOMD_Arcv_Yuzu.png",
+      "icon": "icon_YGOMD_Arcv_Yuzu.png",
+      "sha256": "f6e1dfe23dbfcff8065fa733c47d063e18494f4bc630997e798f64d0d9980c17"
+    },
+    {
+      "npcIndex": 83,
+      "avatarIndex": 109,
+      "deckPrefix": "NPC-Sora-",
+      "nameKey": "NPC-SoraPerse_Name",
+      "displayName": "Mieru Hochun",
+      "source": "assets/icon_YGOMD_Arcv_Sora.png",
+      "icon": "icon_YGOMD_Arcv_Sora.png",
+      "sha256": "6329d02d6693205e3fa9e6b2f6ab74ea967d1a3a6f46a3fd2c3cc6256f35ee41"
+    },
+    {
+      "npcIndex": 84,
+      "avatarIndex": 110,
+      "deckPrefix": "NPC-Yuto-",
+      "nameKey": "NPC-Yuto_Name",
+      "displayName": "Syun Kurosaki",
+      "source": "assets/icon_YGOMD_Arcv_Yuto.png",
+      "icon": "icon_YGOMD_Arcv_Yuto.png",
+      "sha256": "9567bc1845b44aa4e531fe19cd3f67b3d3d8392ff8224ce7d685a46aab0274a1"
+    },
+    {
+      "npcIndex": 85,
+      "avatarIndex": 111,
+      "deckPrefix": "NPC-Sylvio-",
+      "nameKey": "NPC-SylvioSawatari_Name",
+      "displayName": "Shingo Sawatari",
+      "source": "assets/icon_YGOMD_Arcv_Shingo.png",
+      "icon": "icon_YGOMD_Arcv_Shingo.png",
+      "sha256": "45a916934ec6729a21f1c346a10804fbfbd2046323f910dfed06aabe6b7615f0"
+    },
+    {
+      "npcIndex": 86,
+      "avatarIndex": 112,
+      "deckPrefix": "NPC-Dipper-",
+      "nameKey": "NPC-DipperOrion_Name",
+      "displayName": "Sora Shiunin",
+      "source": "assets/icon_YGOMD_Arcv_Hokuto.png",
+      "icon": "icon_YGOMD_Arcv_Hokuto.png",
+      "sha256": "e24eea6483043b1b8d36e3e00c471047510f44ce9dd716ce2825314e167a441a"
+    },
+    {
+      "npcIndex": 87,
+      "avatarIndex": 113,
+      "deckPrefix": "NPC-Julia-",
+      "nameKey": "NPC-JuliaKrystal_Name",
+      "displayName": "Gongenzaka Noboru",
+      "source": "assets/icon_YGOMD_Arcv_Masumi.png",
+      "icon": "icon_YGOMD_Arcv_Masumi.png",
+      "sha256": "a69311be05d6ddd52472eb60a81d61163e1082e6e3e579fb0862e76d6d0030bb"
+    },
+    {
+      "npcIndex": 88,
+      "avatarIndex": 114,
+      "deckPrefix": "NPC-Kit-",
+      "nameKey": "NPC-KitBlade_Name",
+      "displayName": "Fuma Tsukikage",
+      "source": "assets/icon_YGOMD_Arcv_Yaiba.png",
+      "icon": "icon_YGOMD_Arcv_Yaiba.png",
+      "sha256": "84976db2a8eca15b90d7c1b72a0f025ac5eadb9c23ee5ee6155570c1c0f887c3"
+    },
+    {
+      "npcIndex": 89,
+      "avatarIndex": 115,
+      "deckPrefix": "NPC-Declan-",
+      "nameKey": "NPC-DeclanAkaba_Name",
+      "displayName": "Reiji Akaba",
+      "source": "assets/icon_YGOMD_Arcv_Declan.png",
+      "icon": "icon_YGOMD_Arcv_Declan.png",
+      "sha256": "d6e60119d9836b1ab2d579e4725ae167be48d372889e796f9e021f9e36fffa25"
+    },
+    {
+      "npcIndex": 90,
+      "avatarIndex": 116,
+      "deckPrefix": "NPC-Aura-",
+      "nameKey": "NPC-AuraSentia_Name",
+      "displayName": "Chaser No.227",
+      "source": "assets/icon_YGOMD_Arcv_Aura.png",
+      "icon": "icon_YGOMD_Arcv_Aura.png",
+      "sha256": "72ceef2f2a66f699b98f6e751b14b25b31dd37e780b4ed75ca4daee7b4a7538b"
+    },
+    {
+      "npcIndex": 91,
+      "avatarIndex": 117,
+      "deckPrefix": "NPC-MoonShadow-",
+      "nameKey": "NPC-MoonShadow_Name",
+      "displayName": "Dennis Macfield",
+      "source": "assets/icon_YGOMD_Arcv_Tsukikage.png",
+      "icon": "icon_YGOMD_Arcv_Tsukikage.png",
+      "sha256": "86ff2e8c0f0087960370e6989379739c939b7d20d81e309cb08530c63c9eb833"
+    },
+    {
+      "npcIndex": 92,
+      "avatarIndex": 118,
+      "deckPrefix": "NPC-Celina-",
+      "nameKey": "NPC-Celina_Name",
+      "displayName": "Serena",
+      "source": "assets/icon_YGOMD_Arcv_Celina.png",
+      "icon": "icon_YGOMD_Arcv_Celina.png",
+      "sha256": "04d39813aee998bd748c2b2e7d5833907423eea322b6440481e500feeb72e05c"
+    },
+    {
+      "npcIndex": 93,
+      "avatarIndex": 119,
+      "deckPrefix": "NPC-Dennis-",
+      "nameKey": "NPC-DennisMcField_Name",
+      "displayName": "Crow Hogan (ARC-V)",
+      "source": "assets/icon_YGOMD_Arcv_Dennis.png",
+      "icon": "icon_YGOMD_Arcv_Dennis.png",
+      "sha256": "ccac569b26d6304569d36f141dcf2d22847789efb77cd99117e5c7306de4f5ba"
+    },
+    {
+      "npcIndex": 94,
+      "avatarIndex": 120,
+      "deckPrefix": "NPC-Shay-",
+      "nameKey": "NPC-ShayObsidian_Name",
+      "displayName": "Jack Atlas (ARC-V)",
+      "source": "assets/icon_YGOMD_Arcv_Shay.png",
+      "icon": "icon_YGOMD_Arcv_Shay.png",
+      "sha256": "beb31ec827e5d5b8d9aeaab427e07228cfc38130f3c41a44a614c3193e2c980c"
+    },
+    {
+      "npcIndex": 95,
+      "avatarIndex": 121,
+      "deckPrefix": "NPC-Officer227-",
+      "nameKey": "NPC-Officer227_Name",
+      "displayName": "Yuzu Hiragi",
+      "source": "assets/icon_YGOMD_Arcv_DuelChaser227.png",
+      "icon": "icon_YGOMD_Arcv_DuelChaser227.png",
+      "sha256": "fee6dc8e409aeb5532e890bdeed6b4b13483b0501276c98e26f79e940560544a"
+    },
+    {
+      "npcIndex": 96,
+      "avatarIndex": 122,
+      "deckPrefix": "NPC-Yugo-",
+      "nameKey": "NPC-Yugo_Name",
+      "displayName": "Yuto",
+      "source": "assets/icon_YGOMD_Arcv_Yugo.png",
+      "icon": "icon_YGOMD_Arcv_Yugo.png",
+      "sha256": "1a9aba7059968f34943af9a68ba539579c4d9744ce30842dd68d948623004488"
+    },
+    {
+      "npcIndex": 97,
+      "avatarIndex": 123,
+      "deckPrefix": "NPC-Crow2-",
+      "nameKey": "NPC-CrowHogan_Name",
+      "displayName": "Yugo",
+      "source": "assets/icon_YGOMD_Arcv_Crow.png",
+      "icon": "icon_YGOMD_Arcv_Crow.png",
+      "sha256": "797d3328de0175aa3541a9444544f628c889034ac4351287079938aaebf7432d"
+    },
+    {
+      "npcIndex": 98,
+      "avatarIndex": 124,
+      "deckPrefix": "NPC-Jack2-",
+      "nameKey": "NPC-JackAtlas_Name",
+      "displayName": "Sayer",
+      "source": "assets/icon_YGOMD_Arcv_Jack.png",
+      "icon": "icon_YGOMD_Arcv_Jack.png",
+      "sha256": "770c5ffe7c883cc75c696320345f7857c53a8a713c3f35b06b0c0b4f118ca9f1"
+    },
+    {
+      "npcIndex": 99,
+      "avatarIndex": 125,
+      "deckPrefix": "NPC-Yuya-",
+      "nameKey": "NPC-YuyaSakaki_Name",
+      "displayName": "Supreme King Z-ARC",
+      "source": "assets/icon_YGOMD_Arcv_Yuya.png",
+      "icon": "icon_YGOMD_Arcv_Yuya.png",
+      "sha256": "4114a18fbf7b51e893caf0f5e1e1dd70a7a6512e15176baabd305f94b5b5a752"
+    }
+  ],
+  "unmappedSourceNPCIndices": []
+}

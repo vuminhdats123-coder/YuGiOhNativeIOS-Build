@@ -53,9 +53,10 @@ covered by Python tests, not by an observed announce-card prompt in this sample.
 ## Reproduce without building
 
 From the repository root on Windows, with existing Node and a prepared runtime
-package (now v4 by default), first obtain the verified DLL and the source commit object
-needed by a shallow checkout. The recorded 36-match run used v3; v4 changes only
-three UI textures and adds their report. Database, Lua, decks and AI bytes are unchanged.
+package (now v6 by default), first obtain the verified DLL and the source commit object
+needed by a shallow checkout. The recorded 36-match run used v3; later packages
+add UI textures, NPC portraits and their reports. Database, Lua, decks and AI bytes
+are unchanged. Those host games do not execute the newly changed client UI paths.
 
 ```powershell
 python tools/smoke_ocg_host.py --download --report outputs/ocg-reference/host-smoke-preflight.json

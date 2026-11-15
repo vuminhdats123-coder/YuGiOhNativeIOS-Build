@@ -39,7 +39,8 @@ not successful linking against a later Xcode or behavior on an iPhone. Detailed
 hashes and member counts are in `outputs/ios-dependencies/macho-audit.json`.
 The exact cache source and its Irrlicht source pin are in the lock file.
 
-The prepared game directory must include `offline-ai/offline_ai.js`, all card
+The prepared game directory must include `offline-ai/offline_ai.js`,
+`config/duel-portraits.json`, `textures/portraits/player.png`, all card
 data, pictures, scripts, textures, fonts, audio and `package-manifest.json`.
 Supply it explicitly with `--ios-game-data`; do not point at an older payload
 without the current overlays. Payload generation and application compilation
@@ -90,3 +91,10 @@ runtime, simulator or code-signing tool is run by those checks. The symlink
 fixture is skipped on Windows hosts without permission to create symlinks.
 Native UI/input, graphics, audio, JSCore bridging and runtime resource lookup
 remain unverified until an authorized native build and device run.
+
+The new duel layout reads UIKit safe-area/point dimensions on the main queue and
+publishes normalized snapshots to the render loop. Board projection, hit-testing,
+right-side HUD, card-info panel and the 5-by-3 selection grid use shared geometry.
+Native assertions in `overlays/ui-layout/tests` are authored but unexecuted.
+The resource phase can replace an older managed build-product package whose
+baseline manifest is valid; this does not enable migration of user Documents data.

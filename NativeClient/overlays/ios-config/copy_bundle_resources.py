@@ -16,10 +16,13 @@ import shutil
 import stat
 import uuid
 
-REQUIRED = {
+BASE_REQUIRED = {
     "cards.cdb", "script/constant.lua", "script/utility.lua",
     "config/strings.conf", "fonts/NotoSansJP-Regular.otf",
+}
+REQUIRED = BASE_REQUIRED | {
     "offline-ai/offline_ai.js",
+    "config/duel-portraits.json", "textures/portraits/player.png",
 }
 ICON_NAMES = (
     "AppIcon20x20@2x.png", "AppIcon20x20@3x.png",
@@ -63,13 +66,14 @@ def inventory(root: Path) -> set[str]:
     return result
 
 
-def read_manifest(source: Path) -> tuple[bytes, dict]:
+def read_manifest(source: Path, require_current: bool = True) -> tuple[bytes, dict]:
     manifest_path = source / "package-manifest.json"
     regular(manifest_path)
     raw = manifest_path.read_bytes()
     data = json.loads(raw)
     files = data.get("files")
-    if data.get("schemaVersion") != 1 or not isinstance(files, dict) or not REQUIRED <= set(files):
+    required = REQUIRED if require_current else BASE_REQUIRED
+    if data.get("schemaVersion") != 1 or not isinstance(files, dict) or not required <= set(files):
         raise ValueError("Incomplete or unsupported game manifest")
     seen = set()
     for name, entry in files.items():
@@ -109,7 +113,7 @@ def copy_resources(source: Path, icons: Path, bundle: Path) -> dict:
     destination = bundle / "game"
     if destination.exists() or destination.is_symlink():
         # Build products may be replaced; arbitrary non-package directories may not.
-        read_manifest(destination)
+        read_manifest(destination, require_current=False)
     stage = bundle / (".edopro-game-stage-" + uuid.uuid4().hex)
     backup = bundle / (".edopro-game-old-" + uuid.uuid4().hex)
     stage.mkdir()

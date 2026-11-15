@@ -70,12 +70,21 @@
     "Native offline AI bridge not runtime verified",
     "Current database/errata may differ from original OBB effects; consult mapping audit"
   ],
-  "packagePath": "outputs/edopro-game-v4",
-  "manifestSHA256": "9317821c2617d5a4d0007f97447e124f69aee675846733547a711dc00c2c8451",
-  "payloadFiles": 46059,
-  "payloadBytes": 420383108,
+  "packagePath": "outputs/edopro-game-v6",
+  "manifestSHA256": "55167a5d615f58a7646cc343e0cfb455ca1a6460877f9ab16a47447f0d4f7191",
+  "payloadFiles": 46163,
+  "payloadBytes": 424855313,
   "vietnameseTexts": 7484,
   "metadataModified": false,
   "runtimeVerified": false,
-  "windowsCoreRuntimeVerified": true
+  "windowsCoreRuntimeVerified": true,
+  "duelPortraits": {
+    "reviewedNPCs": 100,
+    "mappedDecks": 200,
+    "neutralDecks": 451,
+    "imagesCopied": 101,
+    "catalog": "config/duel-portraits.json",
+    "sourceAPK_SHA256": "be126fa7f04e3df848848fb11c38f9acb5a637583b86741a67f9e9760e3c4abb",
+    "sourceELF_SHA256": "a5ea1adcb17102ab8488de04bab82715c72521950c1b6220e6d182501a3588a9"
+  }
 }

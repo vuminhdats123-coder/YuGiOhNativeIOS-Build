@@ -1,8 +1,8 @@
 diff --git a/gframe/image_manager.cpp b/gframe/image_manager.cpp
-index aed71e8..369fa7d 100644
+index aed71e8..cfdc293 100644
 --- a/gframe/image_manager.cpp
 +++ b/gframe/image_manager.cpp
-@@ -5,6 +5,9 @@
+@@ -5,12 +5,20 @@
  #include <IVideoDriver.h>
  #include <IrrlichtDevice.h>
  #include <IReadFile.h>
@@ -12,7 +12,68 @@ index aed71e8..369fa7d 100644
  #include "logging.h"
  #include "image_manager.h"
  #include "image_downloader.h"
-@@ -390,6 +393,7 @@ void ImageManager::RefreshCachedTextures() {
+ #include "game.h"
+ #include "config.h"
+ #include "fmt.h"
++#include "file_stream.h"
++#if EDOPRO_IOS
++#include "duel_hud_layout.h"
++#include <nlohmann/json.hpp>
++#endif
+ 
+ #define BASE_PATH EPRO_TEXT("./textures/")
+ 
+@@ -62,6 +70,7 @@ ImageManager::~ImageManager() {
+ 	pic_load.unlock();
+ 	for(auto& thread : load_threads)
+ 		thread.join();
++	ClearDuelPortraits();
+ 	for(auto& it : g_imgCache) {
+ 		if(it.second)
+ 			it.second->drop();
+@@ -71,6 +80,41 @@ ImageManager::~ImageManager() {
+ 			driver->removeTexture(it.second);
+ 	}
+ }
++void ImageManager::ClearDuelPortraits() {
++	for(int player = 0; player < 2; ++player) {
++		if(duel_portraits[player]) {
++			if(player == 0 && duel_portraits[1] == duel_portraits[0]) duel_portraits[1] = nullptr;
++			driver->removeTexture(duel_portraits[player]);
++			duel_portraits[player] = nullptr;
++		}
++	}
++	duel_opponent_name.clear();
++}
++void ImageManager::SetDuelPortraits(epro::path_stringview opponentDeck, bool offline) {
++	// This is called on the GUI/render thread before starting a duel, never from the AI worker.
++	ClearDuelPortraits();
++#if EDOPRO_IOS
++	if(!offline) return;
++	duel_portraits[0] = driver->getTexture(EPRO_TEXT("./textures/portraits/player.png"));
++	FileStream file{ EPRO_TEXT("./config/duel-portraits.json"), FileStream::in };
++	if(file.fail()) return;
++	try {
++		nlohmann::json catalog;
++		file >> catalog;
++		if(catalog.value("schemaVersion", 0) != 1 || !catalog.at("decks").is_object()) return;
++		const auto entry = catalog["decks"].find(Utils::ToUTF8IfNeeded(opponentDeck));
++		if(entry == catalog["decks"].end() || !entry->is_object()) return;
++		const auto icon = entry->at("icon").get<std::string>();
++		if(!duelui::PortraitIconIsSafe(icon)) return;
++		duel_opponent_name = BufferIO::DecodeUTF8(entry->at("displayName").get<std::string>());
++		duel_portraits[1] = driver->getTexture(epro::format(EPRO_TEXT("./textures/portraits/{}"), Utils::ToPathString(icon)).data());
++	} catch(const std::exception& error) {
++		ErrorLog("Duel portrait catalog could not be read: {}", error.what());
++	}
++#else
++	(void)opponentDeck; (void)offline;
++#endif
++}
+ irr::video::ITexture* ImageManager::loadTextureFixedSize(epro::path_stringview texture_name, int width, int height) {
+ 	width = mainGame->Scale(width);
+ 	height = mainGame->Scale(height);
+@@ -390,6 +434,7 @@ void ImageManager::RefreshCachedTextures() {
  			auto* texture = loaded.texture;
  			if(texture->getDimension().Width != static_cast<irr::u32>(size.first) || texture->getDimension().Height != static_cast<irr::u32>(size.second)) {
  				readd.push_back(loaded.code);
@@ -20,7 +81,7 @@ index aed71e8..369fa7d 100644
  				ret_texture = nullptr;
  				continue;
  			}
-@@ -399,7 +403,7 @@ void ImageManager::RefreshCachedTextures() {
+@@ -399,7 +444,7 @@ void ImageManager::RefreshCachedTextures() {
  		if(readd.size()) {
  			std::lock_guard<epro::mutex> lck(pic_load);
  			for(auto& code : readd)
@@ -29,7 +90,7 @@ index aed71e8..369fa7d 100644
  			cv_load.notify_all();
  		}
  	};
-@@ -458,13 +462,17 @@ void ImageManager::LoadPic() {
+@@ -458,13 +503,17 @@ void ImageManager::LoadPic() {
  		auto loaded = std::move(to_load.front());
  		to_load.pop_front();
  		lck.unlock();
@@ -49,7 +110,7 @@ index aed71e8..369fa7d 100644
  	std::lock_guard<epro::mutex> lck(obj_clear_lock);
  	{
  		std::lock_guard<epro::mutex> lck2(pic_load);
-@@ -575,15 +583,71 @@ irr::video::ITexture* ImageManager::GetTextureFromFile(const irr::io::path& file
+@@ -575,15 +624,71 @@ irr::video::ITexture* ImageManager::GetTextureFromFile(const irr::io::path& file
  	}
  	return driver->getTexture(file);
  }
@@ -124,7 +185,7 @@ index aed71e8..369fa7d 100644
  		if(width != _width || height != _height) {
  			width = _width;
  			height = _height;
-@@ -610,6 +674,9 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
+@@ -610,6 +715,9 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
  	irr::video::IImage* img;
  
  	auto status = gImageDownloader->GetDownloadStatus(code, type);
@@ -134,7 +195,7 @@ index aed71e8..369fa7d 100644
  	if(status == ImageDownloader::downloadStatus::DOWNLOADED) {
  		if(call_timestamp_id != source_timestamp_id.load())
  			return ret;
-@@ -641,14 +708,24 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
+@@ -641,14 +749,24 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
  					file = epro::format(EPRO_TEXT("{}{}{}"), path, code, extension);
  					base_img = driver->createImageFromFile({ file.data(), static_cast<irr::u32>(file.size()) });
  				}
@@ -161,7 +222,7 @@ index aed71e8..369fa7d 100644
  		gImageDownloader->AddToDownloadQueue(code, type);
  		ret.status = loadStatus::WAIT_DOWNLOAD;
  		return ret;
-@@ -688,6 +765,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+@@ -688,6 +806,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
  	auto& elem = map[code];
  	if(elem.preload_status != preloadStatus::LOADED) {
  		auto status = gImageDownloader->GetDownloadStatus(code, type);
@@ -171,7 +232,7 @@ index aed71e8..369fa7d 100644
  		if(status == ImageDownloader::downloadStatus::DOWNLOADING) {
  			if(chk)
  				*chk = 2;
-@@ -706,8 +786,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+@@ -706,8 +827,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
  			*chk = 2;
  		if(elem.preload_status == preloadStatus::NONE || (elem.preload_status == preloadStatus::WAIT_DOWNLOAD && status == ImageDownloader::downloadStatus::DOWNLOADED)) {
  			elem.preload_status = preloadStatus::LOADING;
@@ -182,7 +243,7 @@ index aed71e8..369fa7d 100644
  				auto& rmap = map[code].texture;
  				if(load_result.status == loadStatus::LOAD_OK) {
  					rmap = driver->addTexture(load_result.path.data(), load_result.texture);
-@@ -722,7 +803,7 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+@@ -722,7 +844,7 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
  				return (rmap) ? rmap : ret_unk;
  			} else {
  				std::lock_guard<epro::mutex> lck(pic_load);
@@ -192,20 +253,21 @@ index aed71e8..369fa7d 100644
  			}
  		}
 diff --git a/gframe/image_manager.h b/gframe/image_manager.h
-index fad467a..c45e8c5 100644
+index fad467a..25be00b 100644
 --- a/gframe/image_manager.h
 +++ b/gframe/image_manager.h
-@@ -8,6 +8,9 @@
+@@ -8,6 +8,10 @@
  #include <map>
  #include <atomic>
  #include <queue>
 +#include <memory>
 +#include <utility>
++#include <string>
 +#include "iOS/card_face.h"
  #include "epro_mutex.h"
  #include "epro_condition_variable.h"
  #include "epro_thread.h"
-@@ -59,11 +62,13 @@ private:
+@@ -59,11 +63,13 @@ private:
  		const std::atomic<irr::s32>& reference_height;
  		chrono_time timestamp;
  		const std::atomic<chrono_time>& reference_timestamp;
@@ -221,7 +283,27 @@ index fad467a..c45e8c5 100644
  		}
  	};
  	enum class loadStatus {
-@@ -146,7 +151,8 @@ private:
+@@ -87,6 +93,10 @@ public:
+ 	void ClearTexture(bool resize = false);
+ 	void RefreshCachedTextures();
+ 	void ClearCachedTextures();
++	void SetDuelPortraits(epro::path_stringview opponentDeck, bool offline);
++	void ClearDuelPortraits();
++	irr::video::ITexture* GetDuelPortrait(int player) const { return player >= 0 && player < 2 ? duel_portraits[player] : nullptr; }
++	const std::wstring& GetDuelOpponentName() const { return duel_opponent_name; }
+ 	static bool imageScaleNNAA(irr::video::IImage* src, irr::video::IImage* dest, chrono_time timestamp_id, const std::atomic<chrono_time>& source_timestamp_id);
+ 	irr::video::IImage* GetScaledImage(irr::video::IImage* srcimg, int width, int height, chrono_time timestamp_id, const std::atomic<chrono_time>& source_timestamp_id);
+ 	irr::video::IImage* GetScaledImageFromFile(const irr::io::path& file, int width, int height);
+@@ -105,6 +115,8 @@ private:
+ 	texture_map tThumb;
+ 	std::unordered_map<uint32_t, irr::video::ITexture*> tFields;
+ 	texture_map tCovers;
++	irr::video::ITexture* duel_portraits[2]{};
++	std::wstring duel_opponent_name;
+ 	irr::IrrlichtDevice* device;
+ 	irr::video::IVideoDriver* driver;
+ public:
+@@ -146,7 +158,8 @@ private:
  	irr::video::ITexture* loadTextureAnySize(epro::path_stringview texture_name);
  	void replaceTextureLoadingFixedSize(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_stringview texture_name, int width, int height);
  	void replaceTextureLoadingAnySize(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_stringview texture_name);

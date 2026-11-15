@@ -14,6 +14,7 @@ REQUIRED_RUNTIME = (
     'cards.cdb', 'script/constant.lua', 'script/utility.lua', 'config/strings.conf',
     'config/configs.json', 'fonts/NotoSansJP-Regular.otf', 'reports/upstream.lock.json',
     'offline-ai/offline_ai.js',
+    'config/duel-portraits.json', 'textures/portraits/player.png',
 )
 
 
@@ -178,7 +179,7 @@ def inspect(runtime, root=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v4')
+    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v6')
     parser.add_argument('--report', type=Path, default=ROOT / 'NativeClient/native-readiness.json')
     parser.add_argument('--require-ready', action='store_true')
     args = parser.parse_args()

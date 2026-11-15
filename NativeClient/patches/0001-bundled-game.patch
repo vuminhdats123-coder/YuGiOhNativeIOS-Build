@@ -1,8 +1,20 @@
 diff --git a/gframe/iOS/porting_ios.mm b/gframe/iOS/porting_ios.mm
-index bfe00c1..457491a 100644
+index bfe00c1..eb0b473 100644
 --- a/gframe/iOS/porting_ios.mm
 +++ b/gframe/iOS/porting_ios.mm
-@@ -67,18 +67,7 @@ static void sendTextInputResult(NSString* nstext) {
+@@ -10,6 +10,11 @@
+ #include "../bufferio.h"
+ #include "../game.h"
+ #include "porting_ios.h"
++#include "ios_view_metrics.h"
++#include <algorithm>
++#include <atomic>
++#include <chrono>
++#include <cmath>
+ 
+ static epro::mutex* queued_messages_mutex;
+ static std::deque<std::function<void()>>* events;
+@@ -67,18 +72,7 @@ static void sendTextInputResult(NSString* nstext) {
  }
  
  
@@ -22,7 +34,7 @@ index bfe00c1..457491a 100644
  }
  @end
  
-@@ -91,11 +80,20 @@ static void sendTextInputResult(NSString* nstext) {
+@@ -91,11 +85,20 @@ static void sendTextInputResult(NSString* nstext) {
  
  - (void)setElements:(NSMutableArray*)elems elements_size:(NSInteger)elsize
  {
@@ -44,7 +56,7 @@ index bfe00c1..457491a 100644
  - (NSInteger)getSelected
  {
  	return selected;
-@@ -119,41 +117,12 @@ static void sendTextInputResult(NSString* nstext) {
+@@ -119,41 +122,51 @@ static void sendTextInputResult(NSString* nstext) {
  
  @end
  
@@ -82,12 +94,51 @@ index bfe00c1..457491a 100644
  
  namespace {
  
++epro::mutex metrics_mutex;
++IosViewMetrics view_metrics;
++std::atomic_bool metrics_pending{false};
++
++void requestViewMetrics() {
++	static auto next_update = std::chrono::steady_clock::time_point{};
++	const auto now = std::chrono::steady_clock::now();
++	if(now < next_update || metrics_pending.exchange(true)) return;
++	next_update = now + std::chrono::milliseconds(200);
++	dispatch_async(dispatch_get_main_queue(), ^{
++		UIView* renderView = nil;
++		// The legacy Irrlicht app owns the key window; ignore presented alert-controller bounds.
++		for(UIWindow* window in [UIApplication sharedApplication].windows) {
++			if(window.isKeyWindow) { renderView = window.rootViewController.view; break; }
++		}
++		if(renderView.window) {
++			const auto bounds = renderView.bounds;
++			const auto insets = renderView.safeAreaInsets;
++			if(std::isfinite(bounds.size.width) && std::isfinite(bounds.size.height)
++				&& bounds.size.width > 0 && bounds.size.height > 0) {
++				auto fraction = [](double value, double size) {
++					return std::isfinite(value) ? std::clamp(value / size, 0.0, 0.45) : 0.0;
++				};
++				IosViewMetrics next{fraction(insets.left, bounds.size.width), fraction(insets.top, bounds.size.height),
++					fraction(insets.right, bounds.size.width), fraction(insets.bottom, bounds.size.height),
++					bounds.size.width, bounds.size.height, 0};
++				std::lock_guard<epro::mutex> lock(metrics_mutex);
++				if(next.left != view_metrics.left || next.top != view_metrics.top
++					|| next.right != view_metrics.right || next.bottom != view_metrics.bottom
++					|| next.viewWidthPoints != view_metrics.viewWidthPoints || next.viewHeightPoints != view_metrics.viewHeightPoints) {
++					next.revision = view_metrics.revision + 1;
++					view_metrics = next;
++				}
++			}
++		}
++		metrics_pending = false;
++	});
++}
++
  UIViewController* getRootViewController() {
 +	if(!ios_exposed_data.exposed_data) return nil;
  	switch(porting::ios_exposed_data.device_type) {
  		case irr::EIDT_SDL2:
  		case irr::EIDT_SDL3: {
-@@ -170,111 +139,205 @@ UIViewController* getRootViewController() {
+@@ -170,111 +183,210 @@ UIViewController* getRootViewController() {
  }
  
  IosExposedVideoData ios_exposed_data{};
@@ -115,6 +166,10 @@ index bfe00c1..457491a 100644
 -			exit(0);
 -		}
 -	}
++IosViewMetrics getViewMetrics() {
++	std::lock_guard<epro::mutex> lock(metrics_mutex);
++	return view_metrics;
++}
 +void showErrorDialog(epro::stringview context, epro::stringview message) {
 +	NSString* title = [NSString stringWithUTF8String:std::string(context.data(), context.size()).c_str()];
 +	NSString* text = [NSString stringWithUTF8String:std::string(message.data(), message.size()).c_str()];
@@ -231,8 +286,7 @@ index bfe00c1..457491a 100644
 +			userInfo:@{NSLocalizedDescriptionKey: message}];
 +	return false;
 +}
- 
--		dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
++
 +bool regularNonemptyFile(NSFileManager* manager, NSURL* url, NSError** error) {
 +	NSDictionary* attributes = [manager attributesOfItemAtPath:url.path error:error];
 +	if(!attributes)
@@ -241,7 +295,8 @@ index bfe00c1..457491a 100644
 +		return bootstrapFailure(error, [@"Missing or invalid game file: " stringByAppendingString:url.lastPathComponent]);
 +	return true;
 +}
-+
+ 
+-		dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 +NSData* validateGameFolder(NSFileManager* manager, NSURL* directory, NSError** error) {
 +	NSDictionary* attributes = [manager attributesOfItemAtPath:directory.path error:error];
 +	if(!attributes)
@@ -251,7 +306,8 @@ index bfe00c1..457491a 100644
 +		return nil;
 +	}
 +	NSArray* required = @[@"package-manifest.json", @"cards.cdb", @"script/constant.lua", @"script/utility.lua",
-+		@"config/strings.conf", @"fonts/NotoSansJP-Regular.otf", @"offline-ai/offline_ai.js"];
++		@"config/strings.conf", @"fonts/NotoSansJP-Regular.otf", @"offline-ai/offline_ai.js",
++		@"config/duel-portraits.json", @"textures/portraits/player.png"];
 +	for(NSString* relative in required) {
 +		if(!regularNonemptyFile(manager, [directory URLByAppendingPathComponent:relative], error))
 +			return nil;
@@ -312,7 +368,7 @@ index bfe00c1..457491a 100644
 +		if(!root) {
 +			for(UIWindow* window in [UIApplication sharedApplication].windows)
 +				if(window.isKeyWindow) { root = window.rootViewController; break; }
- 		}
++		}
 +		if(!root) {
 +			// Bootstrap can fail before Irrlicht creates its window. Show a useful error.
 +			static UIWindow* failureWindow = nil;
@@ -322,7 +378,7 @@ index bfe00c1..457491a 100644
 +			failureWindow.rootViewController = root;
 +			[root release]; // UIWindow retains its root controller.
 +			[failureWindow makeKeyAndVisible];
-+		}
+ 		}
 +		while(root.presentedViewController) root = root.presentedViewController;
 +		UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"EDOPro data unavailable"
 +			message:message preferredStyle:UIAlertControllerStyleAlert];
@@ -380,7 +436,15 @@ index bfe00c1..457491a 100644
  	}
  }
  
-@@ -352,7 +415,10 @@ void irrlicht_main(){
+@@ -325,6 +437,7 @@ int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
+ }
+ 
+ void dispatchQueuedMessages() {
++	requestViewMetrics();
+ 	auto& _events = *events;
+ 	std::unique_lock<epro::mutex> lock(*queued_messages_mutex);
+ 	while(!_events.empty()) {
+@@ -352,7 +465,10 @@ void irrlicht_main(){
  	std::deque<std::function<void()>> _events;
  	events = &_events;
  

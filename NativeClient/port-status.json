@@ -7,9 +7,9 @@
   "fullGameReady": false,
   "remaining": [
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
-    "Verify native rendering, touch input, suspend/resume and audio on an iPhone",
-    "Execute native response/restart cancellation tests; Windows host tests do not run the iOS client",
-    "Expand runtime effect-interaction coverage beyond the 36-match regression suite"
+    "Run authored native layout/projection/grid/HUD and response/restart tests",
+    "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
+    "Expand effect-interaction runtime coverage beyond the existing 36-match regression suite"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -19,7 +19,12 @@
     "directoryPreservingBundleResources": true,
     "pinnedIPhoneOSDependencies": true,
     "originalCardBackAndMenuTexture": true,
-    "clampedIOSTouchActionMenu": true
+    "clampedIOSTouchActionMenu": true,
+    "threeColumnIOSDuelLayout": true,
+    "rightLifePointPortraitHUD": true,
+    "cardSelectionGrid15": true,
+    "uiSafeAreaSnapshots": true,
+    "duelControlPopover": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -30,15 +35,20 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 69,
-    "pythonTestsPassed": 68,
+    "pythonTestsRun": 72,
+    "pythonTestsPassed": 71,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
     "windowsCoreCardInitialization": true,
     "responseMailboxNativeTestsExecuted": false,
     "touchMenuNativeTestsExecuted": false,
-    "uiReferenceObserved": true
+    "uiReferenceObserved": true,
+    "duelLayoutNativeTestsExecuted": false,
+    "cardGridNativeTestsExecuted": false,
+    "hudNativeTestsExecuted": false,
+    "portraitNPCsVerified": 100,
+    "portraitDeckMappingsVerified": 200
   },
   "limitations": [
     "Generic bounded AI, not a competitive deck-specific bot",

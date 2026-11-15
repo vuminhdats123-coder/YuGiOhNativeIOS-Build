@@ -51,9 +51,10 @@ từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOS
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong
 [DUEL_GENERATION_UI_REFERENCE.md](docs/DUEL_GENERATION_UI_REFERENCE.md).
-Payload v4 giữ mặt sau thẻ/nền menu gốc; menu hành động iOS có vùng bấm lớn hơn
-và được giới hạn trong viewport. Bố cục LP/chân dung chưa được chuyển hoàn toàn
-sang dạng trong video.
+Payload v6 giữ ảnh gốc và chân dung NPC đã đối chiếu. Mã iOS đã có bàn đấu giữa,
+thông tin thẻ trái, LP/chân dung phải, bảng chọn 5×3 và vùng an toàn UIKit.
+Thanh phase được đặt dưới tay bài để giữ ô Extra của MR5. Đây là triển khai
+nguồn; giao diện và cảm ứng trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Recipe Xcode, dependency iPhoneOS đã kiểm tra và bước copy toàn bộ `Bundle/game`
 nằm trong [NativeClient/iOS/README.md](NativeClient/iOS/README.md). Project sinh

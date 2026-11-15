@@ -45,8 +45,8 @@
   "fullGameReady": false,
   "remaining": [
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
-    "Verify native rendering, touch input, suspend/resume and audio on an iPhone",
-    "Execute native response/restart cancellation tests; Windows host tests do not run the iOS client",
-    "Expand runtime effect-interaction coverage beyond the 36-match regression suite"
+    "Run authored native layout/projection/grid/HUD and response/restart tests",
+    "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
+    "Expand effect-interaction runtime coverage beyond the existing 36-match regression suite"
   ]
 }

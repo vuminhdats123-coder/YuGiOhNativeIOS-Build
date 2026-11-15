@@ -1,0 +1,686 @@
+diff --git a/gframe/client_field.cpp b/gframe/client_field.cpp
+index 03648fb..d875aa2 100644
+--- a/gframe/client_field.cpp
++++ b/gframe/client_field.cpp
+@@ -84,6 +84,14 @@ void ClientField::Clear() {
+ 	chains.clear();
+ 	activatable_cards.clear();
+ 	queued_panel_confirm_cards.clear();
++	selectable_cards.clear();
++	selected_cards.clear();
++	must_select_cards.clear();
++	selectsum_cards.clear();
++	selectsum_all.clear();
++	display_cards.clear();
++	select_panel_chain = false;
++	select_panel_ok = false;
+ 	summonable_cards.clear();
+ 	spsummonable_cards.clear();
+ 	msetable_cards.clear();
+@@ -359,222 +367,223 @@ void ClientField::ClearChainSelect() {
+ 	pzone_act[0] = pzone_act[1] = false;
+ 	conti_act = false;
+ }
+-// needs to be synchronized with EGET_SCROLL_BAR_CHANGED
+-void ClientField::ShowSelectCard(bool buttonok, bool chain) {
+-	size_t startpos;
+-	size_t ct;
+-	if(selectable_cards.size() <= 5) {
+-		startpos = 30 + 125 * (5 - selectable_cards.size()) / 2;
+-		ct = selectable_cards.size();
+-	} else {
+-		startpos = 30;
+-		ct = 5;
++std::size_t ClientField::CardListOffset(bool display) const {
++	const auto& cards = display ? display_cards : selectable_cards;
++	const int position = (display ? mainGame->scrDisplayList : mainGame->scrCardList)->getPos();
++#if EDOPRO_IOS
++	return selectionui::Offset(position, cards.size());
++#else
++	const auto maximum = cards.size() > CardListSlotCount ? cards.size() - CardListSlotCount : 0;
++	return std::min(static_cast<std::size_t>(std::max(0, position / 10)), maximum);
++#endif
++}
++std::size_t ClientField::CardListIndex(int slot, bool display) const {
++	const auto& cards = display ? display_cards : selectable_cards;
++#if EDOPRO_IOS
++	return selectionui::Index(slot, (display ? mainGame->scrDisplayList : mainGame->scrCardList)->getPos(), cards.size());
++#else
++	if(slot < 0 || slot >= CardListSlotCount) return cards.size();
++	const auto index = CardListOffset(display) + static_cast<std::size_t>(slot);
++	return index < cards.size() ? index : cards.size();
++#endif
++}
++void ClientField::RefreshCardPanelsLayout() {
++#if EDOPRO_IOS
++	const auto layout = mainGame->GetDuelLayout();
++	const auto& r = layout.selection;
++	const irr::core::recti panelRect = layout.valid ? irr::core::recti(r.left, r.top, r.right, r.bottom)
++		: irr::core::recti(0, 0, 1, 1);
++	mainGame->wCardSelect->setRelativePosition(panelRect);
++	mainGame->wCardDisplay->setRelativePosition(panelRect);
++	// An in-flight show/hide must finish at the resized rectangle without losing its response signal.
++	for(auto& fade : mainGame->fadingList)
++		if(fade.guiFading == mainGame->wCardSelect || fade.guiFading == mainGame->wCardDisplay)
++			fade.fadingSize = panelRect;
++	mainGame->wCardSelect->setDraggable(false);
++	mainGame->wCardDisplay->setDraggable(false);
++	// Hidden panels may retain references from an old prompt; only repaint live visible lists.
++	if(mainGame->wCardSelect->isVisible()) RefreshCardList(false);
++	if(mainGame->wCardDisplay->isVisible()) RefreshCardList(true);
++#endif
++}
++void ClientField::SetSelectCardOK(bool visible) {
++	select_panel_ok = visible;
++	mainGame->btnSelectOK->setVisible(visible && select_panel_layout_valid);
++}
++void ClientField::UpdateCardPanelStatus() {
++#if EDOPRO_IOS
++	std::wstring status;
++	switch(mainGame->dInfo.curMsg) {
++	case MSG_SELECT_CARD:
++		status = epro::format(L"Selected: {}   Required: {}-{}", selected_cards.size(), select_min, select_max);
++		break;
++	case MSG_SELECT_UNSELECT_CARD:
++		status = epro::format(L"Marked: {}   Required: {}-{}",
++			std::count_if(selectable_cards.begin(), selectable_cards.end(), [](const auto* card) { return card->is_selected; }), select_min, select_max);
++		break;
++	case MSG_SELECT_SUM:
++		status = epro::format(L"Selected: {} + {} mandatory\nTarget: {}", selected_cards.size(), must_select_cards.size(), select_sumval);
++		break;
++	case MSG_SORT_CARD:
++	case MSG_SORT_CHAIN:
++		status = epro::format(L"Ordered: {} / {}", select_min, select_max);
++		break;
++	default:
++		status = epro::format(L"Cards: {}", selectable_cards.size());
++		break;
+ 	}
+-	for(size_t i = 0; i < ct; ++i) {
+-		auto& curstring = mainGame->stCardPos[i];
+-		auto& curcard = selectable_cards[i];
+-		curstring->enableOverrideColor(false);
+-		// image
+-		if(curcard->code)
+-			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
+-		else if(conti_selecting)
+-			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
+-		else
+-			mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+-		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+-		mainGame->btnCardSelect[i]->setPressed(false);
+-		mainGame->btnCardSelect[i]->setVisible(true);
+-		if(mainGame->dInfo.curMsg != MSG_SORT_CHAIN && mainGame->dInfo.curMsg != MSG_SORT_CARD) {
+-			sort_list.clear();
+-			// text
+-			std::wstring text = L"";
+-			if(conti_selecting)
+-				text = std::wstring{ DataManager::unknown_string };
+-			else if(curcard->location == LOCATION_OVERLAY) {
+-				text = epro::format(L"{}[{}]({})", gDataManager->FormatLocation(curcard->overlayTarget->location, curcard->overlayTarget->sequence),
+-					curcard->overlayTarget->sequence + 1, curcard->sequence + 1);
+-			} else if(curcard->location) {
+-				text = epro::format(L"{}[{}]", gDataManager->FormatLocation(curcard->location, curcard->sequence),
+-					curcard->sequence + 1);
+-			}
+-			curstring->setText(text.data());
+-			// color
+-			if (curcard->is_selected)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELECTED_WINDOW_BACKGROUND_VAL);
+-			else {
+-				if(conti_selecting)
+-					curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-				else if(curcard->location == LOCATION_OVERLAY) {
+-					if(curcard->owner != curcard->overlayTarget->controler)
+-						curstring->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_OVERLAY_TEXT_VAL);
+-					if(curcard->overlayTarget->controler)
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-					else
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-				} else if(curcard->location == LOCATION_DECK || curcard->location == LOCATION_EXTRA || curcard->location == LOCATION_REMOVED) {
+-					if(curcard->position & POS_FACEDOWN)
+-						curstring->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_SET_TEXT_VAL);
+-					if(curcard->controler)
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-					else
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-				} else {
+-					if(curcard->controler)
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-					else
+-						curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-				}
+-			}
+-		} else {
+-			if(sort_list[i]) {
+-				curstring->setText(epro::to_wstring(sort_list[i]).data());
+-			} else
+-				curstring->setText(L"");
+-			curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
++	mainGame->stCardSelectCount->setText(status.data());
++	mainGame->stCardDisplayCount->setText(epro::format(L"Cards: {}", display_cards.size()).data());
++	mainGame->btnCardSelectCancel->setText(mainGame->btnCancelOrFinish->getText());
++	mainGame->btnCardSelectCancel->setVisible(select_panel_layout_valid && mainGame->btnCancelOrFinish->isVisible());
++#endif
++}
++void ClientField::RefreshCardList(bool display) {
++	const auto& cards = display ? display_cards : selectable_cards;
++	auto* window = display ? mainGame->wCardDisplay : mainGame->wCardSelect;
++	auto* scroll = display ? mainGame->scrDisplayList : mainGame->scrCardList;
++	auto** buttons = display ? mainGame->btnCardDisplay : mainGame->btnCardSelect;
++	auto** labels = display ? mainGame->stDisplayPos : mainGame->stCardPos;
++	const bool chain = !display && select_panel_chain;
++	const bool sorting = !display && !chain && (mainGame->dInfo.curMsg == MSG_SORT_CHAIN || mainGame->dInfo.curMsg == MSG_SORT_CARD);
++#if EDOPRO_IOS
++	const auto layout = mainGame->GetDuelLayout();
++	const auto grid = selectionui::MakeGrid(window->getRelativePosition().getWidth(), window->getRelativePosition().getHeight(),
++		layout.minimumTouchPixels, window->getClientRect().UpperLeftCorner.Y);
++	if(!display) select_panel_layout_valid = grid.valid;
++	if(!grid.valid) {
++		for(int slot = 0; slot < CardListSlotCount; ++slot) {
++			mainGame->imageLoading.erase(buttons[slot]);
++			buttons[slot]->setImage();
++			buttons[slot]->setVisible(false);
++			labels[slot]->setVisible(false);
+ 		}
+-		curstring->setVisible(true);
+-		curstring->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 30, static_cast<irr::s32>(startpos + 120 + i * 125), 50));
++		scroll->setVisible(false);
++		(display ? mainGame->btnDisplayOK : mainGame->btnSelectOK)->setVisible(false);
++		(display ? mainGame->stCardDisplayCount : mainGame->stCardSelectCount)->setVisible(false);
++		if(!display) mainGame->btnCardSelectCancel->setVisible(false);
++		mainGame->stCardListTip->setVisible(false);
++		// Keep the pending engine prompt and the separate duel-exit controls; a later resize restores this list.
++		return;
+ 	}
+-	if(selectable_cards.size() <= 5) {
+-		for(auto i = selectable_cards.size(); i < 5; ++i) {
+-			mainGame->btnCardSelect[i]->setVisible(false);
+-			mainGame->stCardPos[i]->setVisible(false);
++	(display ? mainGame->btnDisplayOK : mainGame->btnSelectOK)->setVisible(display || select_panel_ok);
++	(display ? mainGame->stCardDisplayCount : mainGame->stCardSelectCount)->setVisible(true);
++	const auto rect = [](const duelui::Rect& r) { return irr::core::recti(r.left, r.top, r.right, r.bottom); };
++	scroll->setRelativePosition(rect(grid.scrollbar));
++	scroll->setMin(0);
++	scroll->setMax(selectionui::MaximumScrollRow(cards.size()));
++	scroll->setSmallStep(1);
++	scroll->setLargeStep(selectionui::Rows);
++	(display ? mainGame->btnDisplayOK : mainGame->btnSelectOK)->setRelativePosition(rect(grid.confirm));
++	(display ? mainGame->stCardDisplayCount : mainGame->stCardSelectCount)->setRelativePosition(rect(grid.status));
++	if(display)
++		mainGame->stCardDisplayCount->setRelativePosition({grid.cancel.left, grid.status.top, grid.status.right, grid.status.bottom});
++	else
++		mainGame->btnCardSelectCancel->setRelativePosition(rect(grid.cancel));
++#else
++	scroll->setMin(0);
++	scroll->setMax(cards.size() > CardListSlotCount ? static_cast<irr::s32>(cards.size() - CardListSlotCount) * 10 + 9 : 0);
++	const int startpos = cards.size() <= CardListSlotCount ? 30 + 125 * (CardListSlotCount - static_cast<int>(cards.size())) / 2 : 30;
++#endif
++	scroll->setVisible(cards.size() > CardListSlotCount);
++	if(cards.size() <= CardListSlotCount) scroll->setPos(0);
++	const auto offset = CardListOffset(display);
++	for(int slot = 0; slot < CardListSlotCount; ++slot) {
++		auto* button = buttons[slot];
++		auto* label = labels[slot];
++		mainGame->imageLoading.erase(button);
++		const auto index = offset + static_cast<std::size_t>(slot);
++		if(index >= cards.size()) {
++			button->setVisible(false);
++			label->setVisible(false);
++			button->setImage();
++			continue;
+ 		}
+-		mainGame->scrCardList->setPos(0);
+-		mainGame->scrCardList->setVisible(false);
+-	} else {
+-		mainGame->scrCardList->setVisible(true);
+-		mainGame->scrCardList->setMin(0);
+-		mainGame->scrCardList->setMax(static_cast<irr::s32>(selectable_cards.size() - 5) * 10 + 9);
+-		mainGame->scrCardList->setPos(0);
++		auto* card = cards[index];
++		label->enableOverrideColor(false);
++		button->setImage(mainGame->imageManager.tUnknown);
++		if(card->code)
++			mainGame->imageLoading[button] = card->code;
++		else if(!display && !chain && conti_selecting && card->chain_code)
++			mainGame->imageLoading[button] = card->chain_code;
++		else
++			button->setImage(mainGame->imageManager.tCover[card->controler]);
++#if EDOPRO_IOS
++		button->setRelativePosition(rect(grid.images[slot]));
++		label->setRelativePosition(rect(grid.labels[slot]));
++		button->setImageSize({grid.imageWidth, grid.imageHeight});
++#else
++		button->setRelativePosition(mainGame->Scale(startpos + slot * 125, 55, startpos + 120 + slot * 125, 225));
++		label->setRelativePosition(mainGame->Scale(startpos + slot * 125, 30, startpos + 120 + slot * 125, 50));
++#endif
++		button->setPressed(false);
++		button->setVisible(true);
++		std::wstring text;
++		if(sorting) {
++			if(index < sort_list.size() && sort_list[index]) text = epro::to_wstring(sort_list[index]);
++		} else if(!display && !chain && conti_selecting)
++			text = std::wstring{DataManager::unknown_string};
++		else if(card->location == LOCATION_OVERLAY && card->overlayTarget) {
++			text = epro::format(L"{}[{}]({})", gDataManager->FormatLocation(card->overlayTarget->location, card->overlayTarget->sequence),
++				card->overlayTarget->sequence + 1, card->sequence + 1);
++		} else if(card->location)
++			text = epro::format(L"{}[{}]", gDataManager->FormatLocation(card->location, card->sequence), card->sequence + 1);
++		label->setText(text.data());
++		const bool overlay = card->location == LOCATION_OVERLAY && card->overlayTarget;
++		const auto controller = overlay ? card->overlayTarget->controler : card->controler;
++		if(overlay && card->owner != controller)
++			label->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_OVERLAY_TEXT_VAL);
++		else if(!chain && (card->location == LOCATION_DECK || card->location == LOCATION_EXTRA || card->location == LOCATION_REMOVED)
++		        && (card->position & POS_FACEDOWN))
++			label->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_SET_TEXT_VAL);
++		if(!display && !chain && card->is_selected)
++			label->setBackgroundColor(skin::DUELFIELD_CARD_SELECTED_WINDOW_BACKGROUND_VAL);
++		else if(sorting || (!display && !chain && conti_selecting))
++			label->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
++		else
++			label->setBackgroundColor(controller ? skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL : skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
++		label->setVisible(true);
+ 	}
+-	mainGame->btnSelectOK->setVisible(buttonok);
++	UpdateCardPanelStatus();
++}
++void ClientField::PreviewCardListCard(int slot, bool display) {
++	const auto& cards = display ? display_cards : selectable_cards;
++	const auto index = CardListIndex(slot, display);
++	if(index >= cards.size()) return;
++	auto* card = cards[index];
++	SetShowMark(card, true);
++	ShowCardInfoInList(card, display ? mainGame->btnCardDisplay[slot] : mainGame->btnCardSelect[slot],
++		display ? mainGame->wCardDisplay : mainGame->wCardSelect);
++	if(card->code) mainGame->ShowCardInfo(card->code);
++	else if(card->cover) mainGame->ShowCardInfo(card->cover, false, imgType::COVER);
++	else mainGame->ClearCardInfo(card->controler);
++}
++void ClientField::ShowSelectCard(bool buttonok, bool chain) {
++	(void)chain;
++	select_panel_chain = false;
++	if(mainGame->dInfo.curMsg != MSG_SORT_CHAIN && mainGame->dInfo.curMsg != MSG_SORT_CARD) sort_list.clear();
++	mainGame->scrCardList->setPos(0);
++	SetSelectCardOK(buttonok);
++	RefreshCardPanelsLayout();
++	RefreshCardList(false);
+ 	mainGame->PopupElement(mainGame->wCardSelect);
+ }
+ void ClientField::ShowChainCard() {
+ 	sort_list.clear();
+-	size_t startpos;
+-	size_t ct;
+-	if(selectable_cards.size() <= 5) {
+-		startpos = 30 + 125 * (5 - selectable_cards.size()) / 2;
+-		ct = selectable_cards.size();
+-	} else {
+-		startpos = 30;
+-		ct = 5;
+-	}
+-	for(size_t i = 0; i < ct; ++i) {
+-		auto& curstring = mainGame->stCardPos[i];
+-		auto& curcard = selectable_cards[i];
+-		if(curcard->code)
+-			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
+-		else
+-			mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+-		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+-		mainGame->btnCardSelect[i]->setPressed(false);
+-		mainGame->btnCardSelect[i]->setVisible(true);
+-		curstring->setText(epro::format(L"{}[{}]", gDataManager->FormatLocation(curcard->location, curcard->sequence),
+-			curcard->sequence + 1).data());
+-		if(curcard->location == LOCATION_OVERLAY) {
+-			if(curcard->owner != curcard->overlayTarget->controler)
+-				curstring->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_OVERLAY_TEXT_VAL);
+-			if(curcard->overlayTarget->controler)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-			else
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-		} else {
+-			if(curcard->controler)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-			else
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-		}
+-		curstring->setVisible(true);
+-		curstring->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 30, static_cast<irr::s32>(startpos + 120 + i * 125), 50));
+-	}
+-	if(selectable_cards.size() <= 5) {
+-		for(auto i = selectable_cards.size(); i < 5; ++i) {
+-			mainGame->btnCardSelect[i]->setVisible(false);
+-			mainGame->stCardPos[i]->setVisible(false);
+-		}
+-		mainGame->scrCardList->setPos(0);
+-		mainGame->scrCardList->setVisible(false);
+-	} else {
+-		mainGame->scrCardList->setVisible(true);
+-		mainGame->scrCardList->setMin(0);
+-		mainGame->scrCardList->setMax(static_cast<irr::s32>(selectable_cards.size() - 5) * 10 + 9);
+-		mainGame->scrCardList->setPos(0);
+-	}
+-	if(!chain_forced)
+-		mainGame->btnSelectOK->setVisible(true);
+-	else mainGame->btnSelectOK->setVisible(false);
++	select_panel_chain = true;
++	mainGame->scrCardList->setPos(0);
++	SetSelectCardOK(!chain_forced);
++	RefreshCardPanelsLayout();
++	RefreshCardList(false);
+ 	mainGame->PopupElement(mainGame->wCardSelect);
+ }
+ void ClientField::ShowLocationCard() {
+-	size_t startpos;
+-	size_t ct;
+-	if(display_cards.size() <= 5) {
+-		startpos = 30 + 125 * (5 - display_cards.size()) / 2;
+-		ct = display_cards.size();
+-	} else {
+-		startpos = 30;
+-		ct = 5;
+-	}
+-	for(size_t i = 0; i < ct; ++i) {
+-		auto& curstring = mainGame->stDisplayPos[i];
+-		auto& curcard = display_cards[i];
+-		curstring->enableOverrideColor(false);
+-		if(curcard->code)
+-			mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->code;
+-		else
+-			mainGame->btnCardDisplay[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+-		mainGame->btnCardDisplay[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+-		mainGame->btnCardDisplay[i]->setPressed(false);
+-		mainGame->btnCardDisplay[i]->setVisible(true);
+-		std::wstring text;
+-		if(curcard->location == LOCATION_OVERLAY) {
+-			text = epro::format(L"{}[{}]({})", gDataManager->FormatLocation(curcard->overlayTarget->location, curcard->overlayTarget->sequence),
+-				curcard->overlayTarget->sequence + 1, curcard->sequence + 1);
+-		} else if(curcard->location) {
+-			text = epro::format(L"{}[{}]", gDataManager->FormatLocation(curcard->location, curcard->sequence),
+-				curcard->sequence + 1);
+-		}
+-		curstring->setText(text.data());
+-		if(curcard->location == LOCATION_OVERLAY) {
+-			if(curcard->owner != curcard->overlayTarget->controler)
+-				curstring->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_OVERLAY_TEXT_VAL);
+-			if(curcard->overlayTarget->controler)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-			else
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-		} else if(curcard->location == LOCATION_EXTRA || curcard->location == LOCATION_REMOVED) {
+-			if(curcard->position & POS_FACEDOWN)
+-				curstring->setOverrideColor(skin::DUELFIELD_CARD_SELECT_WINDOW_SET_TEXT_VAL);
+-			if(curcard->controler)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-			else
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-		} else {
+-			if(curcard->controler)
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
+-			else
+-				curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+-		}
+-		curstring->setVisible(true);
+-		curstring->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 30, static_cast<irr::s32>(startpos + 120 + i * 125), 50));
+-	}
+-	if(display_cards.size() <= 5) {
+-		for(auto i = display_cards.size(); i < 5; ++i) {
+-			mainGame->btnCardDisplay[i]->setVisible(false);
+-			mainGame->stDisplayPos[i]->setVisible(false);
+-		}
+-		mainGame->scrDisplayList->setPos(0);
+-		mainGame->scrDisplayList->setVisible(false);
+-	} else {
+-		mainGame->scrDisplayList->setVisible(true);
+-		mainGame->scrDisplayList->setMin(0);
+-		mainGame->scrDisplayList->setMax(static_cast<irr::s32>(display_cards.size() - 5) * 10 + 9);
+-		mainGame->scrDisplayList->setPos(0);
+-	}
++	mainGame->scrDisplayList->setPos(0);
++	RefreshCardPanelsLayout();
++	RefreshCardList(true);
++#if !EDOPRO_IOS
+ 	mainGame->btnDisplayOK->setVisible(true);
++#endif
+ 	mainGame->PopupElement(mainGame->wCardDisplay);
+ }
+ void ClientField::ShowSelectOption(uint64_t select_hint, bool should_lock) {
+diff --git a/gframe/client_field.h b/gframe/client_field.h
+index 3729dad..88a0a1a 100644
+--- a/gframe/client_field.h
++++ b/gframe/client_field.h
+@@ -87,6 +87,8 @@ public:
+ 	bool last_chain;
+ 	bool deck_reversed;
+ 	bool conti_selecting;
++	bool select_panel_chain = false;
++	bool select_panel_ok = false, select_panel_layout_valid = true;
+ 
+ 	ClientField();
+ 	void Clear();
+@@ -103,6 +105,13 @@ public:
+ 	void ShowSelectCard(bool buttonok = false, bool chain = false);
+ 	void ShowChainCard();
+ 	void ShowLocationCard();
++	void RefreshCardPanelsLayout();
++	void RefreshCardList(bool display = false);
++	void UpdateCardPanelStatus();
++	void SetSelectCardOK(bool visible);
++	std::size_t CardListOffset(bool display = false) const;
++	std::size_t CardListIndex(int slot, bool display = false) const;
++	void PreviewCardListCard(int slot, bool display = false);
+ 	void ShowSelectOption(uint64_t select_hint = 0, bool should_lock = true);
+ 	void ReplaySwap();
+ 	void RefreshAllCards();
+diff --git a/gframe/drawing.cpp b/gframe/drawing.cpp
+index 918406c..6320cbd 100644
+--- a/gframe/drawing.cpp
++++ b/gframe/drawing.cpp
+@@ -10,6 +10,12 @@
+ #include "custom_skin_enum.h"
+ #include "image_manager.h"
+ #include "fmt.h"
++#include "logging.h"
++#include "bufferio.h"
++#include "config.h"
++#if EDOPRO_IOS
++#include "duel_hud_layout.h"
++#endif
+ 
+ namespace ygo {
+ void Game::DrawSelectionLine(const Materials::QuadVertex vec, bool strip, int width, irr::video::SColor color) {
+@@ -525,6 +531,122 @@ void Game::DrawMisc() {
+ 		driver->setTransform(irr::video::ETS_WORLD, it);
+ 		driver->drawVertexPrimitiveList(matManager.vChainNum, 4, matManager.iRectangle, 2);
+ 	}
++#if EDOPRO_IOS
++	// Keep the original animation state update exactly once; layout changes only where it is drawn.
++	if(lpframe > 0 && delta_frames) {
++		dInfo.lp[lpplayer] -= lpd * delta_frames;
++		dInfo.strLP[lpplayer] = epro::to_wstring(std::max(0, dInfo.lp[lpplayer]));
++		lpcalpha -= 0x19 * delta_frames;
++		lpframe -= delta_frames;
++	}
++	const auto layout = GetDuelLayout();
++	if(layout.valid) {
++		const auto rect = [](duelui::Rect r) { return irr::core::recti(r.left, r.top, r.right, r.bottom); };
++		const auto activePlayer = ((dInfo.turn % 2 && dInfo.isFirst) || (!(dInfo.turn % 2) && !dInfo.isFirst)) ? 0 : 1;
++		const auto& self = dInfo.isTeam1 ? dInfo.selfnames : dInfo.opponames;
++		const auto& oppo = dInfo.isTeam1 ? dInfo.opponames : dInfo.selfnames;
++		for(int player = 0; player < 2; ++player) {
++			const auto panel = player == 0 ? layout.selfHUD : layout.opponentHUD;
++			auto hud = duelui::MakeHudPanel(panel, static_cast<int>(textFont->getDimensionustring(L"Mg").Height));
++			const auto panelRect = rect(panel);
++			irr::gui::IGUIFont* fonts[] = {numFont, adFont, textFont, guiFont, env->getBuiltInFont()};
++			const auto fits = [](irr::gui::IGUIFont* font, const std::wstring& text, duelui::Rect area) {
++				if(!font || area.Width() <= 0 || area.Height() <= 0) return false;
++				const auto size = font->getDimension(text.c_str());
++				return size.Width <= static_cast<irr::u32>(area.Width()) && size.Height <= static_cast<irr::u32>(area.Height());
++			};
++			const auto chooseFont = [&](const std::wstring& text, duelui::Rect area) -> irr::gui::IGUIFont* {
++				for(auto* font : fonts) if(fits(font, text, area)) return font;
++				return nullptr;
++			};
++			std::wstring lifeText = epro::format(L"LP {}", dInfo.strLP[player]);
++			auto* lifeFont = chooseFont(lifeText, hud.life);
++			if(!lifeFont) { lifeText = dInfo.strLP[player]; lifeFont = chooseFont(lifeText, hud.life); }
++			if(!lifeFont) {
++				hud = duelui::MakeHudPanel(panel, panel.Height());
++				lifeFont = chooseFont(lifeText, hud.life);
++			}
++			if(!lifeFont) {
++				// Compact mode may wrap the exact digits; it never rounds or abbreviates the LP value.
++				for(auto* font : fonts) {
++					if(!font) continue;
++					std::wstring wrapped, line;
++					for(const auto digit : lifeText) {
++						if(!line.empty() && font->getDimension((line + digit).c_str()).Width > static_cast<irr::u32>(hud.life.Width())) {
++							wrapped += line + L'\n'; line.clear();
++						}
++						line += digit;
++					}
++					wrapped += line;
++					if(fits(font, wrapped, hud.life)) { lifeText = std::move(wrapped); lifeFont = font; break; }
++				}
++			}
++			if(!lifeFont) {
++				// shortcut: physically unusable viewports cannot display LP; reject these sizes during device calibration.
++				static irr::core::dimension2di lastUnusableSize[2];
++				const irr::core::dimension2di size(panel.Width(), panel.Height());
++				if(lastUnusableSize[player] != size) {
++					ErrorLog("HUD viewport {}x{} cannot fit LP text {}", size.Width, size.Height, BufferIO::EncodeUTF8(dInfo.strLP[player]));
++					lastUnusableSize[player] = size;
++				}
++			}
++			const auto accent = irr::video::SColor(player == 0 ? 0xff36cff4 : 0xffff5a85);
++			driver->draw2DRectangle(0xe6061022, panelRect);
++			driver->draw2DRectangleOutline(panelRect, dInfo.turn > 0 && activePlayer == player ? irr::video::SColor(0xffffdc78) : accent);
++			if(hud.portrait.Width() > 0 && hud.portrait.Height() > 0) {
++				driver->draw2DRectangle(0xff0b2030, rect(hud.portrait));
++				if(auto* portrait = imageManager.GetDuelPortrait(player)) {
++					const auto size = portrait->getOriginalSize();
++					if(size.Width && size.Height) {
++						const double fit = std::min(double(hud.portrait.Width()) / size.Width, double(hud.portrait.Height()) / size.Height);
++						const int width = std::max(1, int(std::lround(size.Width * fit))), height = std::max(1, int(std::lround(size.Height * fit)));
++						const int x = hud.portrait.left + (hud.portrait.Width() - width) / 2;
++						const int y = hud.portrait.top + (hud.portrait.Height() - height) / 2;
++						driver->draw2DImage(portrait, {x, y, x + width, y + height}, {0, 0, int(size.Width), int(size.Height)}, &panelRect, nullptr, true);
++					}
++				} else {
++					// No guessed NPC identity: unknown or unbundled portraits use a neutral player marker.
++					textFont->drawustring(player == 0 ? L"P1" : L"P2", rect(hud.portrait), accent, true, true, &panelRect);
++				}
++				driver->draw2DRectangleOutline(rect(hud.portrait), accent);
++			}
++			const auto& names = player == 0 ? self : oppo;
++			std::wstring name = names.empty() ? (player == 0 ? L"Player" : L"Opponent") : names[std::min<size_t>(std::max(0, dInfo.current_player[player]), names.size() - 1)];
++			if(hud.name.Width() > 0 && hud.name.Height() > 0) {
++				if(textFont->getDimensionustring(name).Width > static_cast<irr::u32>(hud.name.Width())) {
++					while(!name.empty() && textFont->getDimensionustring(name + L"…").Width > static_cast<irr::u32>(hud.name.Width())) name.pop_back();
++					name += L"…";
++				}
++				const auto nameRect = rect(hud.name);
++				textFont->drawustring(name, nameRect, 0xffffffff, true, true, &nameRect);
++			}
++			driver->draw2DRectangle(0xff101828, rect(hud.life));
++			auto fill = hud.life;
++			fill.right = fill.left + int(std::lround(fill.Width() * duelui::LifeFraction(dInfo.lp[player], dInfo.startlp)));
++			if(fill.Width() > 0) driver->draw2DRectangle(player == 0 ? 0xff176eaa : 0xffa82e5f, rect(fill));
++			driver->draw2DRectangleOutline(rect(hud.life), accent);
++			const auto lifeRect = rect(hud.life);
++			if(lifeFont) lifeFont->draw(lifeText.c_str(), lifeRect, 0xffffffff, true, true, &lifeRect);
++			if(hud.timer.Height() > 0 && !dInfo.isReplay && !dInfo.isSingleMode && dInfo.player_type < 7 && dInfo.time_limit) {
++				driver->draw2DRectangle(0xff101828, rect(hud.timer));
++				auto timer = hud.timer;
++				timer.right = timer.left + int(std::lround(timer.Width() * duelui::LifeFraction(dInfo.time_left[player], dInfo.time_limit)));
++				if(timer.Width() > 0) driver->draw2DRectangle(accent, rect(timer));
++			}
++			if(hud.change.Height() > 0 && player == lpplayer && !lpcstring.empty() && lpcalpha > 0) {
++				const auto alpha = static_cast<irr::u32>(std::clamp(lpcalpha, 0, 255)) << 24;
++				const auto changeRect = rect(hud.change);
++				textFont->drawustring(lpcstring, changeRect, alpha | (static_cast<irr::u32>(lpccolor) & 0xffffff), true, true, &changeRect);
++			}
++		}
++		const auto controls = duelui::MakeHudControls(layout);
++		if(controls.turn.Width() > 0 && controls.turn.Height() > 0) {
++			const auto turnRect = rect(controls.turn);
++			driver->draw2DRectangle(0xe6061022, turnRect);
++			textFont->drawustring(epro::format(L"{} {}", gDataManager->GetSysString(2009), dInfo.turn), turnRect, 0xff78e8f4, true, true, &turnRect);
++		}
++	}
++#else
+ 	//lp bar
+ 	const auto& self = dInfo.isTeam1 ? dInfo.selfnames : dInfo.opponames;
+ 	const auto& oppo = dInfo.isTeam1 ? dInfo.opponames : dInfo.selfnames;
+@@ -618,6 +740,7 @@ void Game::DrawMisc() {
+ #undef DRAWRECT
+ #undef LPCOLOR
+ #undef SKCOLOR
++#endif
+ 
+ 	ClientCard* pcard;
+ 	const size_t pzones[]{ dInfo.GetPzoneIndex(0), dInfo.GetPzoneIndex(1) };
+@@ -800,11 +923,11 @@ void Game::DrawGUI() {
+ 							btnPSDD->setDrawImage(true);
+ 						}
+ 						if(fu.guiFading == wCardSelect) {
+-							for(int i = 0; i < 5; ++i)
++							for(int i = 0; i < CardListSlotCount; ++i)
+ 								btnCardSelect[i]->setDrawImage(true);
+ 						}
+ 						if(fu.guiFading == wCardDisplay) {
+-							for(int i = 0; i < 5; ++i)
++							for(int i = 0; i < CardListSlotCount; ++i)
+ 								btnCardDisplay[i]->setDrawImage(true);
+ 						}
+ 					} else
+@@ -832,11 +955,11 @@ void Game::DrawGUI() {
+ 							btnPSDD->setDrawImage(true);
+ 						}
+ 						if(fu.guiFading == wCardSelect) {
+-							for(int i = 0; i < 5; ++i)
++							for(int i = 0; i < CardListSlotCount; ++i)
+ 								btnCardSelect[i]->setDrawImage(true);
+ 						}
+ 						if(fu.guiFading == wCardDisplay) {
+-							for(int i = 0; i < 5; ++i)
++							for(int i = 0; i < CardListSlotCount; ++i)
+ 								btnCardDisplay[i]->setDrawImage(true);
+ 						}
+ 					} else
+@@ -1116,11 +1239,11 @@ void Game::ShowElement(irr::gui::IGUIElement * win, int autoframe) {
+ 		btnPSDD->setDrawImage(false);
+ 	}
+ 	if(win == wCardSelect) {
+-		for(int i = 0; i < 5; ++i)
++		for(int i = 0; i < CardListSlotCount; ++i)
+ 			btnCardSelect[i]->setDrawImage(false);
+ 	}
+ 	if(win == wCardDisplay) {
+-		for(int i = 0; i < 5; ++i)
++		for(int i = 0; i < CardListSlotCount; ++i)
+ 			btnCardDisplay[i]->setDrawImage(false);
+ 	}
+ 	win->setRelativePosition(Scale(center.X, center.Y, 0, 0));
+@@ -1153,17 +1276,20 @@ void Game::HideElement(irr::gui::IGUIElement * win, bool set_action) {
+ 		btnPSDD->setDrawImage(false);
+ 	}
+ 	if(win == wCardSelect) {
+-		for(int i = 0; i < 5; ++i)
++		for(int i = 0; i < CardListSlotCount; ++i)
+ 			btnCardSelect[i]->setDrawImage(false);
+ 		dField.conti_selecting = false;
+ 	}
+ 	if(win == wCardDisplay) {
+-		for(int i = 0; i < 5; ++i)
++		for(int i = 0; i < CardListSlotCount; ++i)
+ 			btnCardDisplay[i]->setDrawImage(false);
+ 	}
+ 	fadingList.push_back(fu);
+ }
+ void Game::PopupElement(irr::gui::IGUIElement * element, int hideframe) {
++#if EDOPRO_IOS
++	if(wDuelTools && element != wDuelTools) CloseDuelControls();
++#endif
+ 	element->getParent()->bringToFront(element);
+ 	if(!is_building)
+ 		dField.panel = element;

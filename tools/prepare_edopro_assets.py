@@ -7,6 +7,7 @@ import hashlib
 from io import BytesIO
 import json
 import logging
+import plistlib
 import re
 from pathlib import Path, PurePosixPath
 import shutil
@@ -55,6 +56,63 @@ def ui_png_info(data: bytes, name: str) -> dict:
     if alpha[1] == 0:
         raise ValueError(f"Fully transparent UI PNG cannot replace a visible texture: {name}")
     return {"dimensions": dimensions, "alphaRange": list(alpha)}
+
+
+def prepare_portraits(source, spec, decks, stage):
+    names = plistlib.loads(source.read("assets/LocalizationNpcNames_E.plist"))
+    if spec.get("playerDefault", {}).get("icon") != "player.png":
+        raise ValueError("Player portrait must use the native player.png alias")
+    reviewed, prefixes, images = [], set(), {}
+    rows = spec.get("entries", [])
+    if not isinstance(rows, list):
+        raise ValueError("Invalid portrait mapping entries")
+    for row in rows:
+        prefix = row.get("deckPrefix", "")
+        if (not re.fullmatch(r"NPC-[A-Za-z0-9_-]+-", prefix) or prefix in prefixes
+                or not row.get("displayName") or names.get(row.get("nameKey")) != row["displayName"]):
+            raise ValueError("Invalid or ambiguous NPC portrait identity")
+        prefixes.add(prefix)
+        reviewed.append(row)
+    for row in [spec["playerDefault"], *reviewed]:
+        icon, entry = row["icon"], row["source"]
+        if not isinstance(icon, str) or not re.fullmatch(r"[A-Za-z0-9_-]+\.png", icon):
+            raise ValueError("Unsafe portrait filename")
+        safe_relative(entry)
+        data = source.read(entry)
+        checksum = hashlib.sha256(data).hexdigest()
+        if checksum != row["sha256"]:
+            raise ValueError("Portrait source hash differs from reviewed mapping")
+        details = ui_png_info(data, entry)
+        if icon in images and images[icon]["sha256"] != checksum:
+            raise ValueError("Conflicting portrait aliases")
+        target = stage / "textures/portraits" / icon
+        if target.exists() and target.read_bytes() != data:
+            raise ValueError("Portrait would replace unrelated base data")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        images[icon] = {"source": entry, "output": target.relative_to(stage).as_posix(), "sha256": checksum, **details}
+    catalog = {"schemaVersion": 1, "decks": {}}
+    unmapped = []
+    for deck in decks:
+        if not deck.get("eligibleForLocalDuel"):
+            continue
+        matches = [row for row in reviewed if PurePosixPath(deck["source"]).stem.startswith(row["deckPrefix"])]
+        matches.sort(key=lambda row: len(row["deckPrefix"]), reverse=True)
+        if not matches:
+            unmapped.append(deck["deckFile"])
+            continue
+        row = matches[0]
+        key = PurePosixPath(deck["deckFile"]).stem
+        if key in catalog["decks"]:
+            raise ValueError("Duplicate portrait deck alias")
+        catalog["decks"][key] = {"icon": row["icon"], "displayName": row["displayName"]}
+    target = stage / "config/duel-portraits.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {"catalog": "config/duel-portraits.json", "mappedDecks": len(catalog["decks"]),
+            "unmappedDecks": unmapped, "reviewedNPCs": len(reviewed), "images": list(images.values()),
+            "sourceAPK_SHA256": spec["sourceAPK_SHA256"], "sourceELF_SHA256": spec["sourceELF_SHA256"],
+            "runtimeVerified": False}
 
 
 def safe_relative(name: str) -> Path:
@@ -147,7 +205,8 @@ def copy_tree(source: Path, target: Path) -> None:
 
 def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: Path,
             output: Path, reviewed_mappings: Path | None = None, source_lock: Path | None = None,
-            include_vi: bool = False, offline_ai: Path | None = None) -> dict:
+            include_vi: bool = False, offline_ai: Path | None = None,
+            portrait_map: Path | None = None, source_apk: Path | None = None) -> dict:
     obb, cdb, scripts, base_assets, audit_path, output = map(Path.resolve,
         (obb, cdb, scripts, base_assets, audit_path, output))
     if output.exists():
@@ -158,6 +217,18 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     if digest(obb) != audit["sources"]["OBB"]["sha256"]:
         raise ValueError("OBB hash differs from mapping audit")
+    portrait_spec = None
+    if portrait_map is not None:
+        portrait_spec = json.loads(portrait_map.read_text(encoding="utf-8"))
+        if (portrait_spec.get("schemaVersion") != 1 or source_apk is None
+                or portrait_spec.get("sourceOBB_SHA256") != audit["sources"]["OBB"]["sha256"]
+                or digest(source_apk) != portrait_spec.get("sourceAPK_SHA256")):
+            raise ValueError("Portrait mapping source provenance differs")
+        with zipfile.ZipFile(source_apk) as apk:
+            artifact = portrait_spec["evidence"]["artifact"]
+            safe_relative(artifact)
+            if hashlib.sha256(apk.read(artifact)).hexdigest() != portrait_spec.get("sourceELF_SHA256"):
+                raise ValueError("Portrait APK library hash differs")
     downloads = audit["sources"]["downloads"]
     cdb_hashes = {item["sha256"] for name, item in downloads.items() if name.endswith(".cdb")}
     if digest(cdb) not in cdb_hashes:
@@ -308,6 +379,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
 
         logging.info("Converting OBB decks, art and audio without modifying the archive")
         deck_report, image_report, audio_report, ui_report, codes_written = [], [], [], [], set()
+        portrait_report = None
         with zipfile.ZipFile(obb) as source:
             entries = archive_entries(source)
             for name, destinations in UI_TEXTURES.items():
@@ -394,7 +466,12 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                     audio_report.append({"source": name, "output": relative.as_posix(),
                                          "sha256": hashlib.sha256(data).hexdigest(),
                                          "usedAsMusic": relative.parts[0] == "sound"})
+            if portrait_spec is not None:
+                portrait_report = prepare_portraits(source, portrait_spec, deck_report, stage)
         (stage / "reports").mkdir(exist_ok=True)
+        if portrait_map is not None:
+            copy_file(portrait_map, stage / "reports/portrait-source-map.json")
+            (stage / "reports/portraits.json").write_text(json.dumps(portrait_report, ensure_ascii=False, indent=2), encoding="utf-8")
         locale_report = None
         if include_vi:
             logging.info("Preparing optional OBB Vietnamese text locale; default language stays unchanged")
@@ -423,6 +500,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                    "sourceJPGs": len(image_report), "passcodePictures": len(codes_written),
                    "sourceMP3s": len(audio_report), "mappedMusicFiles": sum(row["usedAsMusic"] for row in audio_report),
                    "originalUITextures": ui_report,
+                   "duelPortraits": portrait_report,
                    "pictureFormat": "art-only from OBB", "nativeCardFaceRenderingRequired": True,
                    "missingMappedPictures": sorted(set(mapping.values()) - codes_written),
                    "optionalLocale": locale_report,
@@ -451,11 +529,14 @@ def main() -> None:
     parser.add_argument("--reviewed-mappings", type=Path)
     parser.add_argument("--source-lock", type=Path)
     parser.add_argument("--include-vi", action="store_true", help="Include the audited OBB Vietnamese text locale without making it the default")
+    parser.add_argument("--apk", type=Path, default=Path(__file__).resolve().parents[1] / "游戏王-源数超世代.apk",
+                        help="Original APK used to verify NPC portrait mapping provenance")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     result = prepare(args.obb, args.cdb, args.scripts, args.base_assets, args.audit, args.out,
                      args.reviewed_mappings, args.source_lock, args.include_vi,
-                     Path(__file__).resolve().parents[1] / "NativeClient/overlays/offline-ai/offline_ai.js")
+                     Path(__file__).resolve().parents[1] / "NativeClient/overlays/offline-ai/offline_ai.js",
+                     Path(__file__).resolve().parents[1] / "NativeClient/overlays/ui-layout/portrait-source-map.json", args.apk)
     print(json.dumps({key: value for key, value in result.items() if key != "files"}, ensure_ascii=False, indent=2))
 
 

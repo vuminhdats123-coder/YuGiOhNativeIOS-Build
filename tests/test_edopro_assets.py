@@ -2,6 +2,8 @@ import importlib.util
 from contextlib import closing
 from io import BytesIO
 import json
+import hashlib
+import plistlib
 from pathlib import Path
 import sqlite3
 import struct
@@ -193,6 +195,57 @@ class AssetTests(unittest.TestCase):
         self.audit["sources"]["OBB"]["sha256"] = "0" * 64; self.save_audit()
         with self.assertRaisesRegex(ValueError, "OBB hash"): self.prepare()
         self.assertFalse((self.root / "game").exists())
+
+    def portrait_fixture(self):
+        image = self.png((40, 80, 120, 255))
+        with zipfile.ZipFile(self.obb, "a") as archive:
+            archive.writestr("assets/NPC-Fixture-A.ydc", ydc(self.main))
+            archive.writestr("assets/LocalizationNpcNames_E.plist", plistlib.dumps({"NPC-Fixture_Name": "Modified Character"}))
+            archive.writestr("assets/portrait.png", image)
+        self.audit['sources']['OBB']['sha256'] = builder.digest(self.obb)
+        self.save_audit()
+        apk = self.root / 'source.apk'
+        with zipfile.ZipFile(apk, 'w') as archive:
+            archive.writestr('lib/fixture.so', b'reviewed table fixture')
+        spec = {'schemaVersion': 1, 'sourceOBB_SHA256': builder.digest(self.obb),
+                'sourceAPK_SHA256': builder.digest(apk),
+                'sourceELF_SHA256': hashlib.sha256(b'reviewed table fixture').hexdigest(),
+                'evidence': {'artifact': 'lib/fixture.so'},
+                'playerDefault': {'source': 'assets/portrait.png', 'icon': 'player.png', 'sha256': hashlib.sha256(image).hexdigest()},
+                'entries': [{'deckPrefix': 'NPC-Fixture-', 'nameKey': 'NPC-Fixture_Name', 'displayName': 'Modified Character',
+                             'source': 'assets/portrait.png', 'icon': 'portrait.png', 'sha256': hashlib.sha256(image).hexdigest()}]}
+        plan = self.root / 'portrait-map.json'
+        plan.write_text(json.dumps(spec), encoding='utf-8')
+        return apk, plan, spec, image
+
+    def test_portraits_follow_reviewed_deck_identity_and_preserve_source_name(self):
+        apk, plan, _, image = self.portrait_fixture()
+        report = builder.prepare(self.obb, self.cdb, self.scripts, self.base, self.audit_path,
+                                 self.root / 'portraits', portrait_map=plan, source_apk=apk)
+        game = self.root / 'portraits'
+        catalog = json.loads((game / 'config/duel-portraits.json').read_text())
+        key = Path(builder.client_deck_filename('assets/NPC-Fixture-A.ydc')).stem
+        self.assertEqual(catalog['decks'], {key: {'icon': 'portrait.png', 'displayName': 'Modified Character'}})
+        self.assertEqual((game / 'textures/portraits/player.png').read_bytes(), image)
+        self.assertEqual((game / 'textures/portraits/portrait.png').read_bytes(), image)
+        self.assertEqual(report['duelPortraits']['mappedDecks'], 1)
+        self.assertIn('deck/' + builder.client_deck_filename('assets/full.ydc'), report['duelPortraits']['unmappedDecks'])
+
+    def test_portrait_provenance_and_modified_name_are_required(self):
+        apk, plan, spec, _ = self.portrait_fixture()
+        for index, (section, key, value, error) in enumerate([
+                ('root', 'sourceAPK_SHA256', '0' * 64, 'provenance'),
+                ('root', 'sourceELF_SHA256', '0' * 64, 'library hash'),
+                ('entry', 'displayName', 'Guessed Vanilla Name', 'identity'),
+                ('entry', 'sha256', '0' * 64, 'source hash'),
+                ('entry', 'icon', '../escape.png', 'Unsafe portrait')]):
+            changed = json.loads(json.dumps(spec))
+            (changed if section == 'root' else changed['entries'][0])[key] = value
+            plan.write_text(json.dumps(changed), encoding='utf-8')
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, error):
+                builder.prepare(self.obb, self.cdb, self.scripts, self.base, self.audit_path,
+                                self.root / f'portrait-error-{index}', portrait_map=plan, source_apk=apk)
+            self.assertFalse((self.root / f'portrait-error-{index}').exists())
 
     def test_traversal_in_scripts_is_rejected(self):
         with zipfile.ZipFile(self.scripts, "a") as archive: archive.writestr("../escape.lua", "bad")
