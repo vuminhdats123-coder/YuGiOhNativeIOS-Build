@@ -199,6 +199,13 @@ def canonical_distribution_relative(value: str) -> str:
     # Windows checkouts can expose a UTF-8 filename through a legacy code page,
     # producing e.g. ``FranÃ§ais``. Repair only a reversible latin1->UTF-8 form;
     # ordinary Unicode names are left untouched.
+    replacement_names = {
+        "Espa\ufffdol": "Espa\u00f1ol",
+        "Fran\ufffdais": "Fran\u00e7ais",
+        "Portugu\ufffds": "Portugu\u00eas",
+    }
+    for source, target in replacement_names.items():
+        value = value.replace(source, target)
     try:
         repaired = value.encode("latin1").decode("utf-8")
     except UnicodeError:
