@@ -62,7 +62,12 @@
     "GeneratedData/card-relations.json": true,
     "GeneratedData/card-id-names.json": true,
     "GeneratedData/ydc-decks.json": true,
-    "GeneratedData/plist-sanitized/TempTutorial01_it.plist": true
+    "GeneratedData/plist-sanitized/TempTutorial01_it.plist": true,
+    "GeneratedData/card-kana-index.json": true,
+    "GeneratedData/card-pass.json": true,
+    "GeneratedData/card-pack-summary.json": true,
+    "GeneratedData/card-aux-tables.json": true,
+    "GeneratedData/relation-validation.json": true
   },
   "workflow": {
     "manualOnly": true
