@@ -122,8 +122,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: YuGiOhNativeIOS-unsigned-${{ github.run_number }}
-          path: |
-            ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
-            ${{ runner.temp }}/YuGiOhNativeIOS.xcarchive
+          path: ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
           if-no-files-found: error
 
