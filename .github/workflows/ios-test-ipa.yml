@@ -1,0 +1,107 @@
+name: Native EDOPro unsigned test IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_release_tag:
+        description: "GitHub Release tag containing the verified game payload archive"
+        required: true
+        type: string
+      payload_asset_name:
+        description: "Release asset name (.tar.zst or .zip) containing package-manifest.json"
+        required: true
+        default: "edopro-game-v11.tar.zst"
+        type: string
+      dependencies_asset_name:
+        description: "Release asset containing the pinned vcpkg iPhoneOS dependency tree"
+        required: true
+        default: "vcpkg-20260914.tar.zst"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: brew install premake
+
+      - name: Download verified game payload from the release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAYLOAD_TAG: ${{ inputs.payload_release_tag }}
+          PAYLOAD_ASSET: ${{ inputs.payload_asset_name }}
+          DEPS_ASSET: ${{ inputs.dependencies_asset_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/payload"
+          gh release download "$PAYLOAD_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$PAYLOAD_ASSET" --dir "$RUNNER_TEMP"
+          gh release download "$PAYLOAD_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$DEPS_ASSET" --dir "$RUNNER_TEMP"
+          case "$PAYLOAD_ASSET" in
+            *.tar.zst) tar --use-compress-program=unzstd -xf "$RUNNER_TEMP/$PAYLOAD_ASSET" -C "$RUNNER_TEMP/payload" ;;
+            *.zip) ditto -x -k "$RUNNER_TEMP/$PAYLOAD_ASSET" "$RUNNER_TEMP/payload" ;;
+            *) echo "Unsupported payload archive: $PAYLOAD_ASSET" >&2; exit 1 ;;
+          esac
+          mkdir -p "$RUNNER_TEMP/vcpkg"
+          case "$DEPS_ASSET" in
+            *.tar.zst) tar --use-compress-program=unzstd -xf "$RUNNER_TEMP/$DEPS_ASSET" -C "$RUNNER_TEMP/vcpkg" ;;
+            *.zip) ditto -x -k "$RUNNER_TEMP/$DEPS_ASSET" "$RUNNER_TEMP/vcpkg" ;;
+            *) echo "Unsupported dependency archive: $DEPS_ASSET" >&2; exit 1 ;;
+          esac
+          find "$RUNNER_TEMP/payload" -name package-manifest.json -print -quit | grep .
+
+      - name: Apply reviewed native integration
+        run: python3 tools/apply_native_patches.py
+
+      - name: Verify source and payload preflight
+        env:
+          PAYLOAD_ROOT: ${{ runner.temp }}/payload
+        run: |
+          PAYLOAD_DIR="$(dirname "$(find "$PAYLOAD_ROOT" -name package-manifest.json -print -quit)")"
+          python3 tools/check_native_port.py --runtime "$PAYLOAD_DIR"
+          test -f "$PAYLOAD_DIR/offline-ai/offline_ai.js"
+          echo "PAYLOAD_DIR=$PAYLOAD_DIR" >> "$GITHUB_ENV"
+
+      - name: Generate Xcode project
+        env:
+          VCPKG_ROOT: ${{ runner.temp }}/vcpkg/vcpkg-20260914
+        run: |
+          test -d "$VCPKG_ROOT" || { echo "The pinned iPhoneOS dependency cache was not found in the release asset." >&2; exit 1; }
+          premake5 --os=ios --architecture=arm64 --vcpkg-root="$VCPKG_ROOT" --sound=miniaudio --no-joystick=true --ios-game-data="$PAYLOAD_DIR" xcode4
+
+      - name: Archive unsigned iPhoneOS app
+        working-directory: NativeClient/edopro
+        run: |
+          xcodebuild archive \
+            -project build/ygopro.xcodeproj \
+            -scheme ygopro \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH="$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive/Products/Applications/ygopro.app"
+          test -d "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/ipa/Payload" "$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa"
+
+      - name: Upload unsigned IPA and archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: YuGiOhNativeIOS-unsigned-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
+            ${{ runner.temp }}/YuGiOhNativeIOS.xcarchive
+          if-no-files-found: error

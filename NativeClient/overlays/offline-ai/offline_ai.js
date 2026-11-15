@@ -316,6 +316,8 @@
       case CARD.REBORN:case CARD.REINCARNATION:case CARD.PREMATURE:case CARD.CALL_HAUNTED:case CARD.FOOLISH:
       case CARD.TRADE_IN:case CARD.SILVER_CRY:case CARD.ROTA:case CARD.MELODY:case CARD.FOOLISH_GOODS:case CARD.ONE_FOR_ONE:
         return comboPlan(card);
+      case CARD.JUNK_SYNCHRON:
+        return {utility:bestGrave(isLevel2)&&ownExtra().some(c=>codeOf(c)===CARD.JUNK_WARRIOR)?3300:0,target:bestGrave(isLevel2)};
       case CARD.MST: {
         const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
         targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
