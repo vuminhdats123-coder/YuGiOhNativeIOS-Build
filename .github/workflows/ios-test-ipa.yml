@@ -1,6 +1,8 @@
 name: Native EDOPro unsigned test IPA
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       payload_release_tag:
@@ -32,14 +34,14 @@ jobs:
           submodules: recursive
 
       - name: Install build tools
-        run: brew install premake zstd python
+        run: brew install premake zstd python@3.14
 
       - name: Download verified game payload from the release asset
         env:
           GH_TOKEN: ${{ github.token }}
-          PAYLOAD_TAG: ${{ inputs.payload_release_tag }}
-          PAYLOAD_ASSET: ${{ inputs.payload_asset_name }}
-          DEPS_ASSET: ${{ inputs.dependencies_asset_name }}
+          PAYLOAD_TAG: ${{ inputs.payload_release_tag || 'ios-test-v12' }}
+          PAYLOAD_ASSET: ${{ inputs.payload_asset_name || 'edopro-game-v12.tar.zst' }}
+          DEPS_ASSET: ${{ inputs.dependencies_asset_name || 'vcpkg-20260914.tar.zst' }}
         run: |
           mkdir -p "$RUNNER_TEMP/payload"
           gh release download "$PAYLOAD_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$PAYLOAD_ASSET" --dir "$RUNNER_TEMP"
@@ -102,18 +104,23 @@ jobs:
 
       - name: Package unsigned IPA
         run: |
-          APP_PATH="$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive/Products/Applications/ygopro.app"
-          test -d "$APP_PATH"
-          mkdir -p "$RUNNER_TEMP/ipa/Payload"
-          cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
-          /usr/bin/python3 --version
-          /usr/bin/python3 -c 'from pathlib import Path; import os,zipfile; root=Path(os.environ["RUNNER_TEMP"])/"ipa"; out=Path(os.environ["RUNNER_TEMP"])/"YuGiOhNativeIOS-unsigned.ipa"; files=[p for p in (root/"Payload").rglob("*") if p.is_file()]; z=zipfile.ZipFile(out,"w",compression=zipfile.ZIP_STORED,allowZip64=True); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close(); print(f"Packaged {len(files)} files to {out} ({out.stat().st_size} bytes)",flush=True)'
-
+          set +e
+          APP_PATH="$(find "$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive" -type d -name '*.app' -print -quit)"
+          echo "app=$APP_PATH"
+          test -d "$APP_PATH"; echo "app_check=$?"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"; echo "mkdir=$?"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"; echo "copy=$?"
+          echo "PATH=$PATH"
+          command -v python3; echo "which_python=$?"
+          python3 --version; echo "python_version=$?"
+          python3 -c 'print("python_ok")'; echo "python_smoke=$?"
+          python3 -c 'from pathlib import Path; import os,zipfile; root=Path(os.environ["RUNNER_TEMP"])/"ipa"; out=Path(os.environ["RUNNER_TEMP"])/"YuGiOhNativeIOS-unsigned.ipa"; files=[p for p in (root/"Payload").rglob("*") if p.is_file()]; z=zipfile.ZipFile(out,"w",compression=zipfile.ZIP_STORED,allowZip64=True); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close(); print(f"Packaged {len(files)} files to {out} ({out.stat().st_size} bytes)",flush=True)'
+          status=$?
+          echo "package_status=$status"
+          exit $status
       - name: Upload unsigned IPA and archive
         uses: actions/upload-artifact@v4
         with:
           name: YuGiOhNativeIOS-unsigned-${{ github.run_number }}
-          path: |
-            ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
-            ${{ runner.temp }}/YuGiOhNativeIOS.xcarchive
+          path: ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
           if-no-files-found: error
