@@ -105,7 +105,7 @@ jobs:
       - name: Package unsigned IPA
         run: |
           set +e
-          APP_PATH="$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive/Products/Applications/ygopro.app"
+          APP_PATH="$(find "$RUNNER_TEMP/YuGiOhNativeIOS.xcarchive" -type d -name '*.app' -print -quit)"
           echo "app=$APP_PATH"
           test -d "$APP_PATH"; echo "app_check=$?"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"; echo "mkdir=$?"
