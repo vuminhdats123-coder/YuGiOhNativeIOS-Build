@@ -14,11 +14,24 @@ enum DuelAIChecks {
         let effects: [(Int, UInt32, Int)] = [
             (1, 55_144_522, 13), (2, 76_103_675, 13), (3, 84_257_639, 13), (4, 41_420_027, 14),
             (5, 83_764_718, 13), (6, 911_883, 13), (7, 12_580_477, 13), (8, 53_129_443, 13),
-            (9, 5_318_639, 13), (10, 44_095_762, 14)
+            (9, 5_318_639, 13), (10, 44_095_762, 14), (13, 94_192_409, 14), (14, 24_094_653, 13)
         ]
         for (id, password, kind) in effects {
             result[id] = DuelCardDefinition(id: id, name: "Effect \(id)", kindCode: kind,
                                            level: 0, atk: nil, def: nil, password: password)
+        }
+        let monsters: [(Int, String, Int, Int, Int, Int, UInt32)] = [
+            (11, "Kuriboh", 1, 1, 300, 200, 40_640_057),
+            (12, "Cyber Dragon", 1, 5, 2100, 1600, 70_095_154),
+            (150, "Flame Manipulator", 0, 3, 900, 1000, 34_460_851),
+            (151, "Masaki the Legendary Swordsman", 0, 4, 1100, 1100, 44_287_299),
+            (152, "Tune Warrior", 15, 3, 1600, 200, 74_093_656),
+            (200, "Flame Swordsman", 2, 5, 1800, 1600, 45_231_177),
+            (201, "Gaia Knight, the Force of Earth", 17, 6, 2600, 800, 97_204_936)
+        ]
+        for (id, name, kind, level, atk, def, password) in monsters {
+            result[id] = DuelCardDefinition(id: id, name: name, kindCode: kind,
+                                           level: level, atk: atk, def: def, password: password)
         }
         return result
     }()
@@ -44,7 +57,9 @@ enum DuelAIChecks {
         var steps = 0
         while game.hasResponseWindow && game.winner == nil {
             precondition(game.pendingSummonChoice == nil, "Choose a search target explicitly in this test")
-            try game.pass(player: game.decisionPlayer)
+            precondition(game.pendingFusionChoice == nil, "Choose Fusion materials explicitly in this test")
+            if game.pendingReplay != nil { try game.apply(action: .cancelAttack, player: game.decisionPlayer) }
+            else { try game.pass(player: game.decisionPlayer) }
             steps += 1
             precondition(steps < 160, "Unbounded response-window continuation")
         }
@@ -64,14 +79,17 @@ enum DuelAIChecks {
     static func hand(_ game: DuelState, player: Int, definition: Int) -> Int {
         game.players[player].hand.first { $0.definitionID == definition }!.id
     }
-    static func conserved(_ game: DuelState) {
+    static func conserved(_ game: DuelState, total: Int = 80) {
         var ids = game.chain.filter(\.sourceOnField).map { $0.card.id }
         if let summon = game.pendingSummon { ids.append(summon.monster.card.id) }
         for player in game.players {
-            ids += (player.deck + player.hand + player.graveyard).map(\.id)
+            ids += (player.deck + player.hand + player.graveyard + player.extraDeck).map(\.id)
             ids += player.field.map(\.id) + player.traps.map(\.id)
         }
-        precondition(ids.count == 80 && Set(ids).count == 80, "AI action lost or duplicated cards")
+        precondition(ids.count == total && Set(ids).count == total, "AI action lost or duplicated cards")
+        for (owner, player) in game.players.enumerated() {
+            precondition((player.deck + player.hand + player.graveyard + player.extraDeck).allSatisfy { $0.owner == owner })
+        }
     }
     static func controller(_ game: DuelState) -> Int {
         game.decisionPlayer
@@ -98,12 +116,13 @@ enum DuelAIChecks {
             conserved(game)
         }
 
-        // Different opponent hands, Deck order and set-monster identities produce the same AI attack.
+        // Opponent hand, Deck order, Extra Deck and set-monster identities cannot change the same public-board decision.
         do {
             var first = try DuelState(definitions: definitions,
-                decks: [deck([100, 101, 102, 103, 104]), deck([109])])
+                decks: [deck([100, 101, 102, 103, 104]), deck([109])], extraDecks: [[200], [200, 201]])
             var second = try DuelState(definitions: definitions,
-                decks: [deck([108, 107, 106, 105, 100], fillers: Array((110...129).reversed())), deck([109])])
+                decks: [deck([108, 107, 106, 105, 100], fillers: Array((110...129).reversed())), deck([109])],
+                extraDecks: [[201], [200, 201]])
             for index in 0..<2 {
                 var game = index == 0 ? first : second
                 try mainPhase(&game)
@@ -121,7 +140,7 @@ enum DuelAIChecks {
                                           targetID: first.players[0].field[0].id))
             try first.apply(action: action, player: 1)
             try second.apply(action: action, player: 1)
-            conserved(first); conserved(second)
+            conserved(first, total: 83); conserved(second, total: 83)
         }
 
         // Own future draw order must not affect strategy before the legal Dai search opens.
@@ -283,12 +302,151 @@ enum DuelAIChecks {
             conserved(game)
         }
 
+        // Inherent Cyber Dragon summon uses a public board condition and preserves the Normal Summon.
+        do {
+            var game = try state([109], [12])
+            try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: 109))
+            try finishTurn(&game); try mainPhase(&game)
+            let cyber = hand(game, player: 1, definition: 12)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            precondition(action == .specialSummonFromHand(cardID: cyber, position: .attack))
+            try game.apply(action: action, player: 1); try settle(&game)
+            precondition(game.players[1].field.contains { $0.id == cyber })
+            precondition(!game.normalSummonUsed)
+            conserved(game)
+        }
+
+        // Kuriboh is selected only during damage calculation when the opponent's attack would hurt the AI.
+        do {
+            var game = try state([109], [11])
+            try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: 109))
+            try finishTurn(&game); try finishTurn(&game); try mainPhase(&game); try advance(&game)
+            try game.attack(player: 0, attackerID: game.players[0].field[0].id)
+            var steps = 0
+            while game.damageStep?.stage != .calculation || game.decisionPlayer != 1 {
+                try game.pass(player: game.decisionPlayer)
+                steps += 1; precondition(steps < 40)
+            }
+            let kuriboh = hand(game, player: 1, definition: 11)
+            precondition(game.battleDamage(player: 1) > 0)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            precondition(action == .activateKuriboh(cardID: kuriboh))
+            try game.apply(action: action, player: 1)
+            conserved(game); try settle(&game)
+            precondition(game.players[1].lp == 8000)
+            precondition(game.players[1].graveyard.contains { $0.id == kuriboh })
+            conserved(game)
+        }
+        do {
+            var game = try state([109], [100, 11])
+            try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: 109))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.summon(player: 1, cardID: hand(game, player: 1, definition: 100))
+            try advance(&game)
+            try game.attack(player: 1, attackerID: game.players[1].field[0].id,
+                            targetID: game.players[0].field[0].id)
+            var steps = 0
+            while game.damageStep?.stage != .calculation || game.decisionPlayer != 1 {
+                try game.pass(player: game.decisionPlayer)
+                steps += 1; precondition(steps < 40)
+            }
+            precondition(game.battleDamage(player: 1) > 0)
+            precondition(DuelAI.chooseAction(state: game, player: 1) == .pass)
+            try settle(&game)
+            precondition(game.players[1].lp == 7100)
+            conserved(game)
+        }
+
+        // A changed defending lineup yields replay/cancel, never a fresh attack declaration.
+        for (attackerDefinition, otherTarget, initialTarget, shouldCancel) in [
+            (109, 101, 100, false), (100, 109, 101, true)
+        ] {
+            var game = try state([otherTarget, initialTarget], [attackerDefinition, 13])
+            try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: otherTarget))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.summon(player: 1, cardID: hand(game, player: 1, definition: attackerDefinition))
+            try settle(&game)
+            try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 13))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: initialTarget))
+            try finishTurn(&game); try mainPhase(&game); try advance(&game)
+            let target = game.players[0].field.first { $0.card.definitionID == initialTarget }!.id
+            let attacker = game.players[1].field[0].id
+            try game.attack(player: 1, attackerID: attacker, targetID: target)
+            try game.activateSpell(player: 1, cardID: game.players[1].traps[0].id,
+                                   targetID: target, targetPlayer: 0)
+            var steps = 0
+            while game.pendingReplay == nil {
+                try game.pass(player: game.decisionPlayer)
+                steps += 1; precondition(steps < 40)
+            }
+            precondition(game.players[1].field[0].attacked)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            if shouldCancel { precondition(action == .cancelAttack) }
+            else { precondition(action == .replayAttack(targetID: game.players[0].field[0].id)) }
+            try game.apply(action: action, player: 1); try settle(&game)
+            precondition(game.pendingReplay == nil)
+            conserved(game)
+        }
+
+        // Polymerization consumes exactly its selected own materials and its Extra Deck instance.
+        do {
+            var game = try DuelState(definitions: definitions,
+                decks: [deck(), deck([14, 150, 151])], extraDecks: [[200, 201], [200, 201]])
+            try finishTurn(&game); try mainPhase(&game)
+            let polymerization = hand(game, player: 1, definition: 14)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            precondition(action == .activateSpell(cardID: polymerization, targetID: nil,
+                                                 targetPlayer: nil, position: .attack))
+            try game.apply(action: action, player: 1)
+            var steps = 0
+            while game.pendingFusionChoice == nil {
+                try game.pass(player: game.decisionPlayer)
+                steps += 1; precondition(steps < 40)
+            }
+            let selection = DuelAI.chooseAction(state: game, player: 1)!
+            guard case .chooseFusion(let extraID, let materials, _) = selection else {
+                preconditionFailure("AI did not select Fusion materials during resolution")
+            }
+            precondition(materials.count == 2)
+            try game.apply(action: selection, player: 1); try settle(&game)
+            let fusion = game.players[1].field.first { $0.id == extraID }!
+            precondition(game.isProperlySummoned(fusion.card) && !game.normalSummonUsed)
+            conserved(game, total: 84)
+        }
+
+        // Synchro choice is obtained from the same material validator used by human actions.
+        do {
+            var game = try DuelState(definitions: definitions,
+                decks: [deck(), deck([152, 150])], extraDecks: [[200, 201], [200, 201]])
+            try finishTurn(&game); try mainPhase(&game)
+            try game.summon(player: 1, cardID: hand(game, player: 1, definition: 152))
+            try finishTurn(&game); try finishTurn(&game); try mainPhase(&game)
+            try game.summon(player: 1, cardID: hand(game, player: 1, definition: 150))
+            try settle(&game)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            guard case .synchroSummon(let extraID, let materials, _) = action else {
+                preconditionFailure("AI did not choose available level-six Synchro")
+            }
+            precondition(materials.count == 2)
+            try game.apply(action: action, player: 1); try settle(&game)
+            let synchro = game.players[1].field.first { $0.id == extraID }!
+            precondition(game.isProperlySummoned(synchro.card))
+            conserved(game, total: 84)
+        }
+
         // Multiple full matches: every decision uses production apply, makes legal progress, and conserves cards.
         // The UI has a separate 160-action continuation budget; this test also guards against strategy loops.
-        let pool = deck([1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 9, 10, 130, 131])
+        let pool = deck([1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14,
+                         150, 150, 151, 151, 152, 152, 130, 131])
         for seed in UInt64(1)...UInt64(12) {
             var game = try DuelState(definitions: definitions,
-                                    decks: [shuffled(pool, seed: seed), shuffled(pool, seed: seed + 100)])
+                                    decks: [shuffled(pool, seed: seed), shuffled(pool, seed: seed + 100)],
+                                    extraDecks: [[200, 201], [200, 201]])
             var actions = 0, sameControllerSteps = 0, previousController = -1
             while game.winner == nil && actions < 10_000 {
                 let player = controller(game)
@@ -299,7 +457,7 @@ enum DuelAIChecks {
                     preconditionFailure("AI stopped while it had legal priority")
                 }
                 try game.apply(action: action, player: player)
-                conserved(game)
+                conserved(game, total: 84)
                 actions += 1
             }
             precondition(game.winner != nil && actions < 10_000, "AI match did not terminate")

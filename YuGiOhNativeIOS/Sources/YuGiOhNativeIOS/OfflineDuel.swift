@@ -13,6 +13,7 @@ final class OfflineDuelEngine: ObservableObject {
     @Published private(set) var aiPaused = false
     private var definitions: [Int: DuelCardDefinition] = [:]
     private var decks: [[Int]] = []
+    private var extraDecks: [[Int]] = []
     private var aiTask: Task<Void, Never>?
     private var aiRunID = UUID()
 
@@ -31,8 +32,8 @@ final class OfflineDuelEngine: ObservableObject {
             let rows: [Meta] = try Self.read("card-index")
             let names: [String: String] = try Self.read("card-id-names", directory: "GeneratedData")
             let practice: [Deck] = try Self.read("offline-practice-decks", directory: "GeneratedData")
-            guard practice.count == 2, practice.allSatisfy({ $0.extra.isEmpty && $0.side.isEmpty }) else {
-                throw DuelState.DuelError.invalid("Dữ liệu cần đúng hai bộ bài luyện tập không dùng Extra/Side Deck.")
+            guard practice.count == 2, practice.allSatisfy({ $0.extra.count <= 15 && $0.side.isEmpty }) else {
+                throw DuelState.DuelError.invalid("Cần hai bộ bài luyện tập, tối đa 15 lá Extra mỗi bộ và Side trống.")
             }
             for row in rows {
                 let id = Int(row.propFirst & 0x3FFF)
@@ -44,6 +45,7 @@ final class OfflineDuelEngine: ObservableObject {
                     level: row.level, atk: row.atk, def: row.def, password: row.password)
             }
             decks = practice.map(\.main)
+            extraDecks = practice.map(\.extra)
             deckNames = practice.map(\.file)
         } catch { setupError = error.localizedDescription }
     }
@@ -59,7 +61,7 @@ final class OfflineDuelEngine: ObservableObject {
         guard setupError == nil else { return }
         stopAI()
         do {
-            state = try DuelState(definitions: definitions, decks: decks, shuffle: true)
+            state = try DuelState(definitions: definitions, decks: decks, extraDecks: extraDecks, shuffle: true)
             actionError = nil
             aiPaused = false
             resumeAI()
@@ -147,9 +149,9 @@ struct OfflineDuelView: View {
                 Picker("Đối thủ", selection: $game.opponent) {
                     ForEach(OfflineDuelEngine.Opponent.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }.disabled(game.state != nil)
-                Text("Quái Normal và 10 lá hiệu ứng. Có hồi sinh, gọi quái từ Deck, MST và Mirror Force; mỗi lần triệu hồi, khai báo tấn công hoặc đổi phase đều có bước phản hồi.")
+                Text("Có AI, Damage Step, chọn lại mục tiêu, Kuriboh, Cyber Dragon và hai lá Extra Deck: Flame Swordsman/Fusion, Gaia Knight/Synchro.")
                     .font(.footnote)
-                Text("Chưa hỗ trợ effect quái, triệu hồi từ Extra Deck hay toàn bộ các bước của Damage Step.")
+                Text("Chỉ dùng các lá đã triển khai trong bộ luyện tập. Chưa hỗ trợ mọi effect, trigger Flip, Xyz, Pendulum hoặc Link.")
                     .font(.footnote)
                 if let error = game.setupError {
                     Label(error, systemImage: "exclamationmark.triangle")
@@ -178,7 +180,10 @@ struct OfflineDuelView: View {
                                link.effect == .destroySpellTrap {
                                 Text("Mục tiêu: \(spellTrapName(state, owner: owner, id: targetID))").font(.caption)
                             }
-                            if !link.sourceOnField { Text("Lá nguồn đã rời sân").font(.caption) }
+                            if !link.sourceOnField {
+                                Text(link.sourceIsSpellTrap ? "Lá nguồn đã rời sân" : "Hiệu ứng quái • đã trả chi phí")
+                                    .font(.caption)
+                            }
                         }
                     }
                 }
@@ -206,8 +211,9 @@ struct OfflineDuelView: View {
         Section("Lượt \(state.turn) • Người \(state.activePlayer + 1) • \(state.phase.rawValue)") {
             ForEach(0..<2, id: \.self) { player in
                 let zone = state.players[player]
-                Text("Người \(player + 1): \(zone.lp) LP · Bộ bài \(zone.deck.count) · Tay \(zone.hand.count) · Mộ \(zone.graveyard.count)")
+                Text("Người \(player + 1): \(zone.lp) LP · Bộ bài \(zone.deck.count) · Tay \(zone.hand.count) · Extra \(zone.extraDeck.count) · Mộ \(zone.graveyard.count)")
             }
+            if let damage = state.damageStep { Text("Damage Step: \(damage.stage.rawValue)").font(.headline) }
             if let winner = state.winner {
                 Text("Người \(winner + 1) thắng").font(.headline)
                 Text(state.finishReason ?? "Trận kết thúc.")
@@ -228,6 +234,35 @@ struct OfflineDuelView: View {
             Section {
                 Text("Chuyển máy cho Người \(controller + 1) trước khi xem bài trên tay.")
                 Button("Tôi là Người \(controller + 1) — hiện bài") { visiblePlayer = controller }
+            }
+        } else if let replay = state.pendingReplay {
+            Section("Chọn lại mục tiêu tấn công") {
+                Text("Đội hình đối phương đã đổi. Đây không phải một lần khai báo tấn công mới.").font(.footnote)
+                if replay.canAttackDirectly {
+                    Button("Đánh trực tiếp") { act { try $0.replayAttack(player: controller, targetID: nil) } }
+                }
+                ForEach(state.players[1 - controller].field.filter { replay.targetIDs.contains($0.id) }) { monster in
+                    Button(monsterName(monster, owner: 1 - controller)) {
+                        act { try $0.replayAttack(player: controller, targetID: monster.id) }
+                    }
+                }
+                Button("Dừng lần tấn công này") { act { try $0.cancelAttack(player: controller) } }
+            }
+        } else if let choice = state.pendingFusionChoice {
+            Section("Polymerization • chọn nguyên liệu Fusion") {
+                Text("Nguyên liệu được chọn khi hiệu ứng giải quyết, từ tay hoặc sân của bạn.").font(.footnote)
+                ForEach(choice.candidates, id: \.extraCard.id) { option in
+                    ForEach(Array(option.materialPairs.enumerated()), id: \.offset) { entry in
+                        Menu("\(game.name(option.extraCard)) ← \(materialNames(entry.element, state: state, player: controller))") {
+                            Button("Triệu hồi thế công") {
+                                act { try $0.chooseFusion(player: controller, extraCardID: option.extraCard.id, materialIDs: entry.element, position: .attack) }
+                            }
+                            Button("Triệu hồi thế thủ") {
+                                act { try $0.chooseFusion(player: controller, extraCardID: option.extraCard.id, materialIDs: entry.element, position: .defense) }
+                            }
+                        }
+                    }
+                }
             }
         } else if let choice = state.pendingSummonChoice {
             Section("Unexpected Dai • chọn quái để triệu hồi") {
@@ -254,6 +289,9 @@ struct OfflineDuelView: View {
                 ForEach(state.players[controller].traps) { trap in
                     fastCardControls(trap.card, state: state, player: controller)
                 }
+                ForEach(state.players[controller].hand.filter { state.definition(of: $0).effect == .kuriboh }) { card in
+                    fastCardControls(card, state: state, player: controller)
+                }
                 if controller == state.activePlayer {
                     ForEach(state.players[controller].hand.filter { state.definition(of: $0).effect == .destroySpellTrap }) { card in
                         fastCardControls(card, state: state, player: controller)
@@ -276,6 +314,7 @@ struct OfflineDuelView: View {
                     handRow(card, state: state, player: controller)
                 }
             }
+            extraDeckControls(state, player: controller)
         }
     }
 
@@ -285,26 +324,29 @@ struct OfflineDuelView: View {
         let isMain = state.phase == .main1 || state.phase == .main2
         VStack(alignment: .leading, spacing: 8) {
             Text(definition.name).font(.headline)
-            if definition.kindCode == 0 {
+            if definition.normalSummonable {
                 Text("Cấp \(definition.level) • ATK \(definition.atk ?? 0) / DEF \(definition.def ?? 0)").font(.caption)
                 HStack {
                     Button("Triệu hồi") { act { try $0.summon(player: player, cardID: card.id, tributes: Array(tributes)) } }
                     Button("Úp phòng thủ") { act { try $0.summon(player: player, cardID: card.id, tributes: Array(tributes), set: true) } }
                 }.disabled(!isMain || state.normalSummonUsed)
-            } else if definition.effect == .judgment || definition.effect == .mirrorForce || definition.effect == .destroySpellTrap {
+                if definition.effect == .cyberDragon {
+                    specialFromHand(card, state: state, player: player)
+                }
+            } else if definition.effect == .judgment || definition.effect == .mirrorForce || definition.effect == .destroySpellTrap || definition.effect == .returnMonster {
                 Button("Úp Phép/Bẫy") { act { try $0.setTrap(player: player, cardID: card.id) } }.disabled(!isMain)
                 if definition.effect == .destroySpellTrap { fastCardControls(card, state: state, player: player) }
             } else if definition.effect == .revive {
                 Menu("Monster Reborn • chọn mục tiêu") {
                     ForEach(0..<2, id: \.self) { owner in
-                        ForEach(state.players[owner].graveyard.filter { state.definition(of: $0).kindCode == 0 }) { target in
+                        ForEach(state.players[owner].graveyard.filter { state.definition(of: $0).isMonster }) { target in
                             Menu("\(game.name(target)) • Mộ Người \(owner + 1)") {
                                 Button("Triệu hồi thế công") {
                                     act { try $0.activateSpell(player: player, cardID: card.id, targetID: target.id, targetPlayer: owner, position: .attack) }
-                                }
+                                }.disabled(!legal(.activateSpell(cardID: card.id, targetID: target.id, targetPlayer: owner, position: .attack), state: state, player: player))
                                 Button("Triệu hồi thế thủ") {
                                     act { try $0.activateSpell(player: player, cardID: card.id, targetID: target.id, targetPlayer: owner, position: .defense) }
-                                }
+                                }.disabled(!legal(.activateSpell(cardID: card.id, targetID: target.id, targetPlayer: owner, position: .defense), state: state, player: player))
                             }
                         }
                     }
@@ -347,7 +389,8 @@ struct OfflineDuelView: View {
             }
             ForEach(Array(state.players[player].traps.enumerated()), id: \.element.id) { index, trap in
                 Text(visiblePlayer == player ? "Phép/Bẫy: \(game.name(trap.card))" : "Phép/Bẫy úp \(index + 1)")
-                if canControl && state.definition(of: trap.card).effect == .destroySpellTrap {
+                if canControl, let effect = state.definition(of: trap.card).effect,
+                   effect == .destroySpellTrap || effect == .returnMonster {
                     fastCardControls(trap.card, state: state, player: player)
                 }
             }
@@ -377,6 +420,54 @@ struct OfflineDuelView: View {
         monster.faceDown && visiblePlayer != owner ? "Quái úp #\(monster.id)" : game.name(monster.card)
     }
 
+    private func materialNames(_ ids: [Int], state: DuelState, player: Int) -> String {
+        let cards = state.players[player].hand + state.players[player].field.map(\.card)
+        return ids.map { id in
+            cards.first(where: { $0.id == id }).map(game.name) ?? "Thẻ #\(id)"
+        }.joined(separator: " + ")
+    }
+
+    @ViewBuilder
+    private func specialFromHand(_ card: DuelState.CardInstance, state: DuelState, player: Int) -> some View {
+        let attack = DuelAction.specialSummonFromHand(cardID: card.id, position: .attack)
+        let defense = DuelAction.specialSummonFromHand(cardID: card.id, position: .defense)
+        HStack {
+            Button("Đặc biệt • thế công") { act { try $0.apply(action: attack, player: player) } }
+                .disabled(!legal(attack, state: state, player: player))
+            Button("Đặc biệt • thế thủ") { act { try $0.apply(action: defense, player: player) } }
+                .disabled(!legal(defense, state: state, player: player))
+        }
+    }
+
+    @ViewBuilder
+    private func extraDeckControls(_ state: DuelState, player: Int) -> some View {
+        Section("Extra Deck của bạn") {
+            ForEach(state.players[player].extraDeck) { card in
+                if state.definition(of: card).kindCode == 17 {
+                    let sets = state.synchroMaterialSets(player: player, extraCardID: card.id)
+                    Text(game.name(card)).font(.headline)
+                    if sets.isEmpty { Text("Cần 1 Tuner và ít nhất 1 quái không phải Tuner, tổng cấp độ 6.").font(.caption) }
+                    ForEach(Array(sets.enumerated()), id: \.offset) { entry in
+                        Menu(materialNames(entry.element, state: state, player: player)) {
+                            synchroButton(card, materials: entry.element, position: .attack, state: state, player: player)
+                            synchroButton(card, materials: entry.element, position: .defense, state: state, player: player)
+                        }
+                    }
+                } else {
+                    Text("\(game.name(card)) • dùng Polymerization và đúng nguyên liệu").font(.subheadline)
+                }
+            }
+        }
+    }
+
+    private func synchroButton(_ card: DuelState.CardInstance, materials: [Int], position: DuelState.Position,
+                               state: DuelState, player: Int) -> some View {
+        let action = DuelAction.synchroSummon(extraCardID: card.id, materialIDs: materials, position: position)
+        return Button(position == .attack ? "Synchro thế công" : "Synchro thế thủ") {
+            act { try $0.apply(action: action, player: player) }
+        }.disabled(!legal(action, state: state, player: player))
+    }
+
     @ViewBuilder
     private func fastCardControls(_ card: DuelState.CardInstance, state: DuelState, player: Int) -> some View {
         let effect = state.definition(of: card).effect
@@ -398,6 +489,20 @@ struct OfflineDuelView: View {
                     }
                 }
             }
+        } else if effect == .returnMonster {
+            Menu("Compulsory Evacuation Device • chọn quái") {
+                ForEach(0..<2, id: \.self) { owner in
+                    ForEach(state.players[owner].field) { target in
+                        let action = DuelAction.activateSpell(cardID: card.id, targetID: target.id, targetPlayer: owner, position: .attack)
+                        Button(monsterName(target, owner: owner)) { act { try $0.apply(action: action, player: player) } }
+                            .disabled(!legal(action, state: state, player: player))
+                    }
+                }
+            }
+        } else if effect == .kuriboh {
+            let action = DuelAction.activateKuriboh(cardID: card.id)
+            Button("Kuriboh • bỏ từ tay để chặn sát thương") { act { try $0.apply(action: action, player: player) } }
+                .disabled(!legal(action, state: state, player: player))
         }
     }
 

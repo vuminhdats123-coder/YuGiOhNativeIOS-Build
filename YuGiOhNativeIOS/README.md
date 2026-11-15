@@ -8,6 +8,10 @@ Lõi `DuelState.swift` hỗ trợ một tập luật luyện tập với AI ho�
 AI chọn hành động qua cùng API luật, không nhận danh tính bài trên tay/bài úp của đối phương.
 Các cửa sổ phản hồi khi triệu hồi, tấn công và chuyển phase được xử lý trước khi
 áp dụng kết quả; MST/Mirror Force/Solemn Judgment dùng đúng loại cửa sổ được hỗ trợ.
+Damage Step có năm bước riêng và có chọn lại mục tiêu tấn công. Bộ luyện tập
+thêm Kuriboh, Cyber Dragon, Tune Warrior cùng Flame Swordsman (Fusion) và
+Gaia Knight (Synchro) trong Extra Deck. Đây vẫn là tập luật giới hạn, chưa phải
+toàn bộ engine hoặc toàn bộ effect của bản Android.
 Chi tiết phạm vi và giới hạn ở [docs/OFFLINE_DUEL.md](docs/OFFLINE_DUEL.md).
 Các deck YDC gốc vẫn dùng để tra cứu; không mặc định chơi được mọi effect trong đó.
 

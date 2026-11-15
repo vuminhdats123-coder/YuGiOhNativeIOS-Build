@@ -27,6 +27,15 @@ enum DuelStateChecks {
             result[id] = DuelCardDefinition(id: id, name: name, kindCode: kind,
                                            level: 0, atk: nil, def: nil, password: password)
         }
+        result[11] = DuelCardDefinition(id: 11, name: "Kuriboh", kindCode: 1, level: 1, atk: 300, def: 200, password: 40_640_057)
+        result[12] = DuelCardDefinition(id: 12, name: "Cyber Dragon", kindCode: 1, level: 5, atk: 2100, def: 1600, password: 70_095_154)
+        result[13] = DuelCardDefinition(id: 13, name: "Compulsory Evacuation Device", kindCode: 14, level: 0, atk: nil, def: nil, password: 94_192_409)
+        result[14] = DuelCardDefinition(id: 14, name: "Polymerization", kindCode: 13, level: 0, atk: nil, def: nil, password: 24_094_653)
+        result[15] = DuelCardDefinition(id: 15, name: "Flame Swordsman", kindCode: 2, level: 5, atk: 1800, def: 1600, password: 45_231_177)
+        result[16] = DuelCardDefinition(id: 16, name: "Gaia Knight", kindCode: 17, level: 6, atk: 2600, def: 800, password: 97_204_936)
+        result[17] = DuelCardDefinition(id: 17, name: "Tune Warrior", kindCode: 15, level: 3, atk: 1600, def: 200, password: 74_093_656)
+        result[18] = DuelCardDefinition(id: 18, name: "Flame Manipulator", kindCode: 0, level: 3, atk: 900, def: 1000, password: 34_460_851)
+        result[19] = DuelCardDefinition(id: 19, name: "Masaki", kindCode: 0, level: 4, atk: 1100, def: 1100, password: 44_287_299)
         return result
     }()
 
@@ -38,18 +47,18 @@ enum DuelStateChecks {
         precondition(result.count == size)
         return result
     }
-    static func game(_ first: [Int] = [], _ second: [Int] = []) throws -> DuelState {
-        try DuelState(definitions: definitions, decks: [deck(first), deck(second)])
+    static func game(_ first: [Int] = [], _ second: [Int] = [], extras: [[Int]] = [[], []]) throws -> DuelState {
+        try DuelState(definitions: definitions, decks: [deck(first), deck(second)], extraDecks: extras)
     }
     static func handID(_ state: DuelState, _ player: Int, _ definition: Int) -> Int {
         state.players[player].hand.first { $0.definitionID == definition }!.id
     }
     static func settle(_ state: inout DuelState) throws {
         var passes = 0
-        while state.hasResponseWindow && state.chain.isEmpty && state.winner == nil && state.pendingSummonChoice == nil {
+        while state.hasResponseWindow && state.chain.isEmpty && state.winner == nil && state.pendingSummonChoice == nil && state.pendingFusionChoice == nil && state.pendingReplay == nil {
             try state.pass(player: state.decisionPlayer)
             passes += 1
-            precondition(passes <= 12, "Response window did not settle")
+            precondition(passes <= 64, "Response window did not settle")
         }
     }
     static func advance(_ state: inout DuelState, player: Int) throws {
@@ -99,17 +108,27 @@ enum DuelStateChecks {
         precondition(before.priorityPlayer == state.priorityPlayer && before.log == state.log)
         precondition(before.isResolving == state.isResolving && before.pendingSummonChoice == state.pendingSummonChoice)
         precondition(before.pendingAttack == state.pendingAttack && before.pendingSummon == state.pendingSummon)
+        precondition(before.damageStep == state.damageStep && before.pendingReplay == state.pendingReplay && before.pendingFusionChoice == state.pendingFusionChoice)
         precondition(before.hasResponseWindow == state.hasResponseWindow && before.responseLabel == state.responseLabel)
     }
     static func conserved(_ state: DuelState, total: Int = 80) {
         var ids = state.chain.filter(\.sourceOnField).map { $0.card.id }
         if let pending = state.pendingSummon { ids.append(pending.monster.card.id) }
         for (owner, player) in state.players.enumerated() {
-            ids += (player.deck + player.hand + player.graveyard).map(\.id)
+            ids += (player.deck + player.hand + player.graveyard + player.extraDeck).map(\.id)
             ids += player.field.map(\.id) + player.traps.map(\.id)
-            precondition((player.deck + player.hand + player.graveyard).allSatisfy { $0.owner == owner }, "Wrong graveyard/hand/deck owner")
+            precondition((player.deck + player.hand + player.graveyard + player.extraDeck).allSatisfy { $0.owner == owner }, "Wrong graveyard/hand/deck owner")
         }
         precondition(ids.count == total && Set(ids).count == total, "Lost or duplicated physical cards")
+    }
+
+    static func damageStage(_ state: inout DuelState, _ stage: DuelState.DamageStage) throws {
+        var passes = 0
+        while state.damageStep?.stage != stage {
+            precondition(state.chain.isEmpty && state.pendingReplay == nil && state.winner == nil)
+            try state.pass(player: state.decisionPlayer)
+            passes += 1; precondition(passes <= 32)
+        }
     }
 
     static func main() throws {
@@ -673,6 +692,177 @@ enum DuelStateChecks {
             try state.pass(player: 1); try settle(&state)
             precondition(state.players[0].lp == 6000 && state.players[1].lp == 4000)
             precondition(state.players[1].field.count == 1); conserved(state)
+        }
+        // Damage Step reveals the defender before calculation, applies LP once, and delays destruction until End.
+        do {
+            var state = try game([100], [101])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 100))
+            try finishTurn(&state); try mainPhase(&state)
+            try summoned(&state, player: 1, cardID: handID(state, 1, 101)); try advance(&state, player: 1)
+            let target = state.players[0].field[0].id
+            try state.attack(player: 1, attackerID: state.players[1].field[0].id, targetID: target)
+            try damageStage(&state, .calculation)
+            precondition(state.players[0].lp == 8000 && state.battleDamage(player: 0) == 1000)
+            try state.pass(player: state.decisionPlayer); try state.pass(player: state.decisionPlayer)
+            precondition(state.damageStep?.stage == .afterCalculation && state.damageStep?.applied == true)
+            precondition(state.players[0].lp == 7000 && state.players[0].field.count == 1)
+            try damageStage(&state, .end)
+            precondition(state.players[0].field.count == 1 && state.players[0].lp == 7000)
+            try settle(&state)
+            precondition(state.players[0].field.isEmpty && state.players[0].lp == 7000)
+            conserved(state)
+        }
+
+        // Kuriboh is a defending hand effect: cost is paid before resolution, Judgment cannot negate it.
+        do {
+            var state = try game([100, 11], [101, 4])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 100))
+            try finishTurn(&state); try mainPhase(&state)
+            try trapSet(&state, player: 1, cardID: handID(state, 1, 4))
+            try summoned(&state, player: 1, cardID: handID(state, 1, 101))
+            try finishTurn(&state); try finishTurn(&state); try mainPhase(&state); try advance(&state, player: 1)
+            try state.attack(player: 1, attackerID: state.players[1].field[0].id, targetID: state.players[0].field[0].id)
+            reject(&state) { try $0.activateKuriboh(player: 0, cardID: handID($0, 0, 11)) }
+            try damageStage(&state, .calculation); try state.pass(player: 1)
+            let kuriboh = handID(state, 0, 11)
+            try state.apply(action: .activateKuriboh(cardID: kuriboh), player: 0)
+            precondition(!state.chain[0].sourceIsSpellTrap && !state.chain[0].sourceOnField)
+            precondition(state.players[0].graveyard.contains { $0.id == kuriboh })
+            reject(&state) { try $0.activateCounter(player: 1, trapID: $0.players[1].traps[0].id) }
+            conserved(state)
+            try state.pass(player: 1); try state.pass(player: 0)
+            precondition(state.damageStep?.stage == .calculation && state.battleDamage(player: 0) == 0)
+            try settle(&state)
+            precondition(state.players[0].lp == 8000 && state.players[0].field.isEmpty)
+            precondition(state.players[0].graveyard.filter { $0.id == kuriboh }.count == 1)
+            conserved(state)
+        }
+        do {
+            var state = try game([102, 13, 10], [101, 11, 9])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 102), set: true)
+            try trapSet(&state, player: 0, cardID: handID(state, 0, 13))
+            try trapSet(&state, player: 0, cardID: handID(state, 0, 10))
+            try finishTurn(&state); try mainPhase(&state)
+            try summoned(&state, player: 1, cardID: handID(state, 1, 101)); try advance(&state, player: 1)
+            let target = state.players[0].field[0].id
+            try state.attack(player: 1, attackerID: state.players[1].field[0].id, targetID: target)
+            try damageStage(&state, .start)
+            precondition(state.players[0].field[0].faceDown)
+            try damageStage(&state, .beforeCalculation)
+            precondition(!state.players[0].field[0].faceDown)
+            reject(&state) { try $0.activateSpell(player: 1, cardID: handID($0, 1, 9), targetID: $0.players[0].traps[0].id, targetPlayer: 0) }
+            try damageStage(&state, .calculation)
+            precondition(state.battleDamage(player: 1) == 500)
+            reject(&state) { try $0.activateKuriboh(player: 1, cardID: handID($0, 1, 11)) }
+            try state.pass(player: 1)
+            for trap in state.players[0].traps {
+                reject(&state) { try $0.activateSpell(player: 0, cardID: trap.id, targetID: target, targetPlayer: 0) }
+            }
+            try settle(&state)
+            precondition(state.players[1].lp == 7500 && state.players[0].field.count == 1)
+            conserved(state)
+        }
+
+        // CED returning a defender opens a replay, not a new attack declaration; the attacker may choose direct or cancel.
+        for cancel in [false, true] {
+            var state = try game([100, 13, 10], [101])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 100))
+            try trapSet(&state, player: 0, cardID: handID(state, 0, 13)); try trapSet(&state, player: 0, cardID: handID(state, 0, 10))
+            try finishTurn(&state); try mainPhase(&state)
+            try summoned(&state, player: 1, cardID: handID(state, 1, 101)); try advance(&state, player: 1)
+            let attacker = state.players[1].field[0].id, target = state.players[0].field[0].id
+            try state.attack(player: 1, attackerID: attacker, targetID: target); try state.pass(player: 1)
+            let device = state.players[0].traps.first { state.definition(of: $0.card).effect == .returnMonster }!.id
+            try state.activateSpell(player: 0, cardID: device, targetID: target, targetPlayer: 0)
+            try resolve(&state)
+            precondition(state.pendingReplay?.canAttackDirectly == true && state.players[0].hand.contains { $0.id == target })
+            reject(&state) { try $0.pass(player: 1) }
+            if cancel {
+                try state.cancelAttack(player: 1); try settle(&state)
+                precondition(state.players[0].lp == 8000 && state.players[1].field[0].attacked)
+            } else {
+                reject(&state) { try $0.replayAttack(player: 0, targetID: nil) }
+                try state.replayAttack(player: 1, targetID: nil)
+                precondition(state.pendingAttack?.declarationOpen == false)
+                try state.pass(player: 1)
+                reject(&state) { try $0.activateSpell(player: 0, cardID: $0.players[0].traps[0].id) }
+                try settle(&state); precondition(state.players[0].lp == 6000)
+            }
+            conserved(state)
+        }
+
+        // Cyber Dragon's inherent summon is negatable; both successful and negated procedures preserve Normal Summon.
+        for negate in [false, true] {
+            var state = try game([100, 4], [12])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 100))
+            try trapSet(&state, player: 0, cardID: handID(state, 0, 4))
+            try finishTurn(&state); try mainPhase(&state)
+            let cyber = handID(state, 1, 12)
+            try state.specialSummonFromHand(player: 1, cardID: cyber, position: .attack)
+            precondition(state.pendingSummon?.monster.id == cyber && !state.normalSummonUsed)
+            if negate {
+                try state.activateCounter(player: 0, trapID: state.players[0].traps[0].id); try resolve(&state)
+                precondition(state.players[1].field.isEmpty && state.players[1].graveyard.contains { $0.id == cyber })
+            } else { try settle(&state); precondition(state.players[1].field[0].id == cyber) }
+            precondition(!state.normalSummonUsed); conserved(state)
+        }
+
+        // Extra deck cards cannot enter Main; at most 15 Extra and three copies across the two decks.
+        for (main, extra) in [(deck([15]), []), (deck(), [100]), (deck(), [15, 15, 15, 15])] {
+            do { _ = try DuelState(definitions: definitions, decks: [main, deck()], extraDecks: [extra, []]); preconditionFailure("Invalid Extra accepted") }
+            catch is DuelState.DuelError { }
+        }
+
+        // Polymerization chooses exact materials at resolution, can use a set own monster, and grants revival eligibility.
+        do {
+            var state = try game([14, 18, 19, 8, 5], [], extras: [[15], []])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 18), set: true)
+            let first = state.players[0].field[0].id, second = handID(state, 0, 19)
+            let fusion = state.players[0].extraDeck[0]
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 14))
+            precondition(state.pendingFusionChoice == nil && state.players[0].field.count == 1)
+            try state.pass(player: 1); try state.pass(player: 0)
+            precondition(state.pendingFusionChoice?.player == 0 && state.isResolving)
+            reject(&state) { try $0.chooseFusion(player: 1, extraCardID: fusion.id, materialIDs: [first, second]) }
+            reject(&state) { try $0.chooseFusion(player: 0, extraCardID: fusion.id, materialIDs: [first, first]) }
+            try state.chooseFusion(player: 0, extraCardID: fusion.id, materialIDs: [first, second], position: .defense)
+            try settle(&state)
+            precondition(state.players[0].field[0].card == fusion && state.isProperlySummoned(fusion))
+            precondition(state.players[0].extraDeck.isEmpty && state.players[0].graveyard.count == 3)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 8)); try resolve(&state)
+            precondition(state.canRevive(fusion))
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 5), targetID: fusion.id, targetPlayer: 0); try resolve(&state)
+            precondition(state.players[0].field[0].card == fusion && state.isProperlySummoned(fusion))
+            conserved(state, total: 81)
+        }
+
+        // Synchro uses face-up Tuner+non-Tuner levels; negated procedures never become revivable.
+        for negate in [false, true] {
+            var state = try game([17, 18, 5], [4, 13], extras: [[16], []])
+            try mainPhase(&state); try summoned(&state, player: 0, cardID: handID(state, 0, 17))
+            try finishTurn(&state); try mainPhase(&state)
+            try trapSet(&state, player: 1, cardID: handID(state, 1, 4)); try trapSet(&state, player: 1, cardID: handID(state, 1, 13))
+            try finishTurn(&state); try mainPhase(&state)
+            try summoned(&state, player: 0, cardID: handID(state, 0, 18))
+            let extra = state.players[0].extraDeck[0], materials = state.players[0].field.map(\.id)
+            reject(&state) { try $0.synchroSummon(player: 0, extraCardID: extra.id, materialIDs: [materials[0]]) }
+            try state.synchroSummon(player: 0, extraCardID: extra.id, materialIDs: materials)
+            precondition(state.players[0].field.isEmpty && state.players[0].graveyard.count == 2)
+            precondition(!state.isProperlySummoned(extra))
+            if negate {
+                let trap = state.players[1].traps.first { state.definition(of: $0.card).effect == .judgment }!.id
+                try state.activateCounter(player: 1, trapID: trap); try resolve(&state)
+                precondition(!state.canRevive(extra) && state.players[0].graveyard.contains(extra))
+                reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: extra.id, targetPlayer: 0) }
+            } else {
+                try settle(&state); precondition(state.isProperlySummoned(extra))
+                try state.nextPhase(player: 0)
+                let trap = state.players[1].traps.first { state.definition(of: $0.card).effect == .returnMonster }!.id
+                try state.activateSpell(player: 1, cardID: trap, targetID: extra.id, targetPlayer: 0); try resolve(&state)
+                precondition(state.players[0].extraDeck.contains(extra) && !state.players[0].hand.contains(extra))
+                precondition(!state.isProperlySummoned(extra))
+            }
+            conserved(state, total: 81)
         }
         print("DuelState: all behavioral checks passed")
     }

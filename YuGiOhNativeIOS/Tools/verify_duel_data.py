@@ -22,8 +22,21 @@ EFFECTS = {
     4342: (53129443, 13, "Dark Hole"),
     4909: (5318639, 13, "Mystical Space Typhoon"),
     4887: (44095762, 14, "Mirror Force"),
+    4064: (40640057, 1, "Kuriboh"),
+    6390: (70095154, 1, "Cyber Dragon"),
+    5914: (94192409, 14, "Compulsory Evacuation Device"),
+    4837: (24094653, 13, "Polymerization"),
 }
 EFFECT_ICONS = {kid: 1 if kid == 4861 else 5 if kid == 4909 else 0 for kid in EFFECTS}
+EXTRA_MONSTERS = {
+    4021: (45231177, 2, "Flame Swordsman"),
+    7697: (97204936, 17, "Gaia Knight, the Force of Earth"),
+}
+MATERIALS_AND_TUNER = {
+    4148: (34460851, 0, "Flame Manipulator"),
+    4299: (44287299, 0, "Masaki the Legendary Swordsman"),
+    7684: (74093656, 15, "Tune Warrior"),
+}
 NAME_ONLY = {
     10855: "Number 94: Crystalzero",
     11766: "Number S39: Utopia the Lightning",
@@ -74,14 +87,18 @@ def encode_ydc(deck):
     return data
 
 
-def supported(row):
+def supported(row, *, extra=False):
     kid = row["propFirst"] & 0x3FFF
+    known_stats = (1 <= row["level"] <= 12 and type(row["atk"]) is int and row["atk"] >= 0
+                   and type(row["def"]) is int and row["def"] >= 0)
+    if extra:
+        return (kid in EXTRA_MONSTERS and known_stats
+                and (row["password"], row["kindCode"]) == EXTRA_MONSTERS[kid][:2])
     if kid in EFFECTS:
         password, kind, _ = EFFECTS[kid]
         return (row["password"] == password and row["kindCode"] == kind
-                and row["spellTrapIcon"] == EFFECT_ICONS[kid])
-    return (row["kindCode"] == 0 and 1 <= row["level"] <= 8
-            and type(row["atk"]) is int and type(row["def"]) is int)
+                and row["spellTrapIcon"] == EFFECT_ICONS[kid] and (kind != 1 or known_stats))
+    return row["kindCode"] in (0, 15) and known_stats
 
 
 def self_check():
@@ -177,6 +194,13 @@ def validate(obb):
             require(row["password"] == password and row["kindCode"] == kind and names[str(kid)] == name
                     and row["spellTrapIcon"] == EFFECT_ICONS[kid],
                     f"Effect identity mismatch for {kid}")
+        for kid, (password, kind, name) in (EXTRA_MONSTERS | MATERIALS_AND_TUNER).items():
+            row = by_konami[kid]
+            require(row["password"] == password and row["kindCode"] == kind and names[str(kid)] == name,
+                    f"Summoning identity mismatch for {kid}")
+        require(by_konami[4148]["level"] == 3 and by_konami[4299]["level"] == 4
+                and by_konami[7684]["level"] == 3 and by_konami[7697]["level"] == 6,
+                "Fixture material/Tuner/Synchro levels differ from expected source values")
 
         require(type(decks) is list and len(decks) == 799, "Expected 799 source decks")
         source_ydc = {Path(info.filename).name: info.filename for info in archive.infolist()
@@ -196,23 +220,36 @@ def validate(obb):
     for deck in practice:
         require(set(deck) == {"file", "main", "extra", "side"}, "Invalid practice deck schema")
         require(type(deck["file"]) is str and deck["file"], "Practice deck needs a name")
-        require(type(deck["main"]) is list and len(deck["main"]) == 40 and deck["extra"] == deck["side"] == [],
-                "Practice deck must contain 40 Main cards and empty Extra/Side")
+        require(type(deck["main"]) is list and len(deck["main"]) == 40
+                and type(deck["extra"]) is list and deck["side"] == [],
+                "Practice deck must contain 40 Main cards and empty Side")
+        require(sorted(deck["extra"]) == sorted(EXTRA_MONSTERS),
+                "Practice Extra Deck must contain one Flame Swordsman and one Gaia Knight")
         copies = Counter(deck["main"])
-        require(max(copies.values()) <= 3, "Practice deck exceeds three copies")
+        combined_copies = Counter(deck["main"] + deck["extra"])
+        require(max(combined_copies.values()) <= 3, "Practice deck exceeds three copies across Main/Extra")
         for kid in deck["main"]:
             uint(kid, 16, "practice card")
             require(kid in by_konami and supported(by_konami[kid]), f"Unsupported practice card {kid}")
-        require(set(EFFECTS) <= set(copies), "Each practice deck must include all ten supported effects")
+        for kid in deck["extra"]:
+            uint(kid, 16, "Extra Deck card")
+            require(kid in by_konami and supported(by_konami[kid], extra=True), f"Unsupported Extra card {kid}")
+        require(set(EFFECTS) <= set(copies), "Each practice deck must include all fourteen scripted cards")
+        require(all(copies[kid] == 3 for kid in MATERIALS_AND_TUNER),
+                "Each practice deck needs three copies of both Fusion materials and Tune Warrior")
+        require(copies[4064] >= 2 and copies[6390] >= 2, "Practice needs at least two Kuriboh and Cyber Dragon")
         normal_count = sum(copies[kid] for kid in copies if by_konami[kid]["kindCode"] == 0)
-        require(normal_count >= 24, "Each practice deck needs at least 24 Normal Monsters")
         require(any(by_konami[kid]["kindCode"] == 0 and 5 <= by_konami[kid]["level"] <= 6 for kid in copies)
                 and any(by_konami[kid]["kindCode"] == 0 and 7 <= by_konami[kid]["level"] <= 8 for kid in copies),
                 "Each practice deck needs one- and two-Tribute Normal Monsters")
         practice_summary.append({"name": deck["file"], "cards": 40, "uniqueCards": len(copies),
-                                 "maxCopies": max(copies.values()), "normalMonsters": normal_count,
+                                 "extraCards": len(deck["extra"]),
+                                 "maxCopiesAcrossMainExtra": max(combined_copies.values()), "normalMonsters": normal_count,
+                                 "normalTuners": sum(copies[kid] for kid in copies if by_konami[kid]["kindCode"] == 15),
+                                 "effectMonsters": sum(copies[kid] for kid in copies if by_konami[kid]["kindCode"] == 1),
                                  "contents": [{"konamiID": kid, "name": names[str(kid)], "copies": copies[kid]}
-                                              for kid in copies]})
+                                              for kid in copies],
+                                 "extraContents": [{"konamiID": kid, "name": names[str(kid)]} for kid in deck["extra"]]})
     require(practice[0]["file"] != practice[1]["file"] and practice[0]["main"] != practice[1]["main"],
             "Practice decks must be distinct")
     core_source = (PROJECT / "Sources/YuGiOhNativeIOS/DuelState.swift").read_text(encoding="utf-8-sig")
@@ -221,7 +258,16 @@ def validate(obb):
     registry = {(int(kind), int(password.replace("_", ""))) for kind, password in registry_matches}
     expected_registry = {(kind, password) for password, kind, _ in EFFECTS.values()}
     require(len(registry_matches) == len(EFFECTS) and registry == expected_registry,
-            "Swift effect registry differs from the ten OBB-verified kind/password identities")
+            "Swift effect registry differs from the fourteen OBB-verified kind/password identities")
+    extra_property = re.search(r"var\s+isExtraDeckMonster:\s*Bool\s*\{(.*?)\n\s*var\s+", core_source, re.S)
+    require(extra_property is not None, "Cannot locate the Swift Extra Deck identity property")
+    extra_cases = re.findall(r"case\s+([^:]+):\s*return\s+true", extra_property.group(1))
+    extra_registry_matches = [pair for case in extra_cases for pair in
+                              re.findall(r"\(\s*(\d+)\s*,\s*([\d_]+)\s*\)", case)]
+    extra_registry = {(int(kind), int(password.replace("_", ""))) for kind, password in extra_registry_matches}
+    require(len(extra_registry_matches) == len(EXTRA_MONSTERS)
+            and extra_registry == {(kind, password) for password, kind, _ in EXTRA_MONSTERS.values()},
+            "Swift Extra Deck whitelist differs from the two OBB-verified non-effect Fusion/Synchro identities")
     with obb.open("rb") as source:
         source_hash = hashlib.file_digest(source, "sha256").hexdigest()
     return {
@@ -238,13 +284,19 @@ def validate(obb):
         "nameOnlyNotPlayable": [{"konamiID": kid, "name": name, "nativeDefinitionAvailable": False}
                                 for kid, name in NAME_ONLY.items()],
         "supportedEffectIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
+                                       "kindCode": kind,
                                        "spellTrapIcon": EFFECT_ICONS[kid],
                                        "sourceDescription": text_by_index[by_konami[kid]["sourceIndex"]]["description"]}
-                                      for kid, (password, _, name) in EFFECTS.items()],
+                                      for kid, (password, kind, name) in EFFECTS.items()],
+        "summoningIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
+                                  "kindCode": kind, "level": by_konami[kid]["level"],
+                                  "sourceDescription": text_by_index[by_konami[kid]["sourceIndex"]]["description"]}
+                                 for kid, (password, kind, name) in (EXTRA_MONSTERS | MATERIALS_AND_TUNER).items()],
         "practiceDecks": practice_summary,
         "sourceEffectRegistryIdentityCheck": {
             "matchesOBBWhitelist": True,
             "entries": len(registry_matches),
+            "extraDeckEntries": len(extra_registry_matches),
             "scope": "Static source/data wiring only; effect behavior and Swift compilation not executed",
             "sourceSHA256": hashlib.sha256(core_source.encode("utf-8")).hexdigest(),
         },

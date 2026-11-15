@@ -12,6 +12,7 @@ struct DuelCardDefinition: Identifiable, Hashable {
     enum Effect: String {
         case drawTwo, damage200, heal1000, judgment
         case revive, recruitNormal, destroyOpponents, destroyAll, destroySpellTrap, mirrorForce
+        case kuriboh, cyberDragon, returnMonster, fusion
     }
 
     var effect: Effect? {
@@ -26,16 +27,29 @@ struct DuelCardDefinition: Identifiable, Hashable {
         case (13, 53_129_443): return .destroyAll
         case (13, 5_318_639): return .destroySpellTrap
         case (14, 44_095_762): return .mirrorForce
+        case (1, 40_640_057): return .kuriboh
+        case (1, 70_095_154): return .cyberDragon
+        case (14, 94_192_409): return .returnMonster
+        case (13, 24_094_653): return .fusion
         default: return nil
         }
     }
 
     var supported: Bool {
-        if kindCode == 0 {
+        if isMonster {
             return (1...12).contains(level) && (atk ?? -1) >= 0 && (def ?? -1) >= 0
         }
         return effect != nil
     }
+    var isExtraDeckMonster: Bool {
+        switch (kindCode, password) {
+        case (2, 45_231_177), (17, 97_204_936): return true
+        default: return false
+        }
+    }
+    var isTuner: Bool { kindCode == 15 }
+    var isMonster: Bool { kindCode == 0 || isTuner || isExtraDeckMonster || effect == .kuriboh || effect == .cyberDragon }
+    var normalSummonable: Bool { supported && isMonster && !isExtraDeckMonster }
 }
 
 enum DuelAction: Equatable {
@@ -49,6 +63,12 @@ enum DuelAction: Equatable {
     case counter(trapID: Int)
     case pass
     case discard(cardIDs: [Int])
+    case specialSummonFromHand(cardID: Int, position: DuelState.Position)
+    case synchroSummon(extraCardID: Int, materialIDs: [Int], position: DuelState.Position)
+    case chooseFusion(extraCardID: Int, materialIDs: [Int], position: DuelState.Position)
+    case replayAttack(targetID: Int?)
+    case cancelAttack
+    case activateKuriboh(cardID: Int)
 }
 
 /// A local two-player training ruleset, independent of SwiftUI and the Android binary.
@@ -90,6 +110,7 @@ struct DuelState {
         var field: [Monster] = []
         var traps: [SetTrap] = []
         var graveyard: [CardInstance] = []
+        var extraDeck: [CardInstance] = []
     }
     struct ChainLink: Identifiable, Equatable {
         let id: Int
@@ -102,7 +123,8 @@ struct DuelState {
         let summonPosition: Position
         let negatesSummon: Bool
         var sourceOnField = true
-        var speed: Int { effect == .judgment ? 3 : [.destroySpellTrap, .mirrorForce].contains(effect) ? 2 : 1 }
+        var sourceIsSpellTrap = true
+        var speed: Int { effect == .judgment ? 3 : [.destroySpellTrap, .mirrorForce, .returnMonster, .kuriboh].contains(effect) ? 2 : 1 }
     }
     struct PendingSummonChoice: Equatable {
         let player: Int
@@ -112,6 +134,7 @@ struct DuelState {
         let player: Int
         let monster: Monster
         let isFlip: Bool
+        var extraProcedure = false
     }
     struct PendingAttack: Equatable {
         let player: Int
@@ -120,9 +143,32 @@ struct DuelState {
         let defendingIDs: [Int]
         var declarationOpen = true
     }
+    struct PendingReplay: Equatable {
+        let player: Int
+        let attackerID: Int
+        let targetIDs: [Int]
+        let canAttackDirectly: Bool
+    }
+    enum DamageStage: String { case start, beforeCalculation, calculation, afterCalculation, end }
+    struct DamageStep: Equatable {
+        let attack: PendingAttack
+        var stage: DamageStage = .start
+        var applied = false
+        var preventedPlayers: Set<Int> = []
+        var destroyedIDs: [Int] = []
+    }
+    struct FusionOption: Equatable {
+        let extraCard: CardInstance
+        let materialPairs: [[Int]]
+    }
+    struct PendingFusionChoice: Equatable {
+        let player: Int
+        let candidates: [FusionOption]
+    }
 
     let definitions: [Int: DuelCardDefinition]
     private let initialDecks: [[Int]]
+    private let initialExtraDecks: [[Int]]
     private let initialShuffleSeed: UInt64
     private struct ShuffleGenerator: RandomNumberGenerator {
         var state: UInt64
@@ -146,12 +192,18 @@ struct DuelState {
     private(set) var pendingSummonChoice: PendingSummonChoice?
     private(set) var pendingSummon: PendingSummon?
     private(set) var pendingAttack: PendingAttack?
+    private(set) var pendingReplay: PendingReplay?
+    private(set) var damageStep: DamageStep?
+    private(set) var pendingFusionChoice: PendingFusionChoice?
+    private var properlySummonedExtra: Set<Int> = []
     private var pendingPhaseAdvance = false
     private var fastWindow: String?
     private var summonNegated = false
-    var hasResponseWindow: Bool { !chain.isEmpty || pendingSummon != nil || pendingAttack != nil || pendingPhaseAdvance || fastWindow != nil }
-    var decisionPlayer: Int { pendingSummonChoice?.player ?? (hasResponseWindow ? priorityPlayer : activePlayer) }
+    var hasResponseWindow: Bool { !chain.isEmpty || pendingSummon != nil || pendingAttack != nil || pendingReplay != nil || damageStep != nil || pendingPhaseAdvance || fastWindow != nil }
+    var decisionPlayer: Int { pendingFusionChoice?.player ?? pendingSummonChoice?.player ?? pendingReplay?.player ?? (hasResponseWindow ? priorityPlayer : activePlayer) }
     var responseLabel: String {
+        if let damageStep { return "Damage Step: \(damageStep.stage.rawValue)" }
+        if pendingReplay != nil { return "Chọn lại mục tiêu hoặc hủy tấn công" }
         if pendingSummon != nil { return "Cửa sổ vô hiệu hóa triệu hồi" }
         if let attack = pendingAttack { return attack.declarationOpen ? "Phản hồi tuyên bố tấn công" : "Phản hồi sau chain tấn công" }
         if pendingPhaseAdvance { return "Phản hồi trước khi chuyển phase" }
@@ -162,17 +214,18 @@ struct DuelState {
     private var resolutionCursor = -1
     private var negatedLinkIDs: Set<Int> = []
 
-    init(definitions: [Int: DuelCardDefinition], decks: [[Int]], shuffle: Bool = false, shuffleSeed: UInt64? = nil) throws {
-        guard decks.count == 2 else { throw DuelError.invalid("Cần hai bộ bài.") }
+    init(definitions: [Int: DuelCardDefinition], decks: [[Int]], extraDecks: [[Int]] = [[], []], shuffle: Bool = false, shuffleSeed: UInt64? = nil) throws {
+        guard decks.count == 2, extraDecks.count == 2 else { throw DuelError.invalid("Cần hai bộ bài.") }
         for (key, definition) in definitions where key != definition.id {
             throw DuelError.invalid("ID định nghĩa thẻ không khớp: \(key).")
         }
-        for deck in decks {
+        for (player, deck) in decks.enumerated() {
             guard (40...60).contains(deck.count) else {
                 throw DuelError.invalid("Main Deck cần 40–60 lá.")
             }
             var counts: [Int: Int] = [:]
-            for id in deck {
+            guard extraDecks[player].count <= 15 else { throw DuelError.invalid("Extra Deck tối đa 15 lá.") }
+            for id in deck + extraDecks[player] {
                 guard let card = definitions[id], card.supported else {
                     throw DuelError.invalid("Chưa hỗ trợ đầy đủ lá ID \(id); không thể dùng trong trận tập.")
                 }
@@ -181,9 +234,14 @@ struct DuelState {
                     throw DuelError.invalid("Một bộ bài chỉ được tối đa 3 bản của ID \(id).")
                 }
             }
+            guard deck.allSatisfy({ !definitions[$0]!.isExtraDeckMonster }),
+                  extraDecks[player].allSatisfy({ definitions[$0]!.isExtraDeckMonster }) else {
+                throw DuelError.invalid("Fusion/Synchro phải ở Extra Deck; các lá khác ở Main Deck.")
+            }
         }
         self.definitions = definitions
         initialDecks = decks
+        initialExtraDecks = extraDecks
         initialShuffleSeed = shuffleSeed ?? (shuffle ? UInt64.random(in: 1...UInt64.max) : 1)
         restart(shuffle: shuffle)
     }
@@ -195,6 +253,7 @@ struct DuelState {
         consecutivePasses = 0; nextLinkID = 1; log = []
         isResolving = false; pendingSummonChoice = nil; resolutionCursor = -1; negatedLinkIDs = []
         pendingSummon = nil; pendingAttack = nil; pendingPhaseAdvance = false; fastWindow = nil; summonNegated = false
+        pendingReplay = nil; damageStep = nil; pendingFusionChoice = nil; properlySummonedExtra = []
         shuffleGenerator = ShuffleGenerator(state: initialShuffleSeed)
         var instanceID = 1
         for player in 0..<2 {
@@ -204,12 +263,21 @@ struct DuelState {
                 defer { instanceID += 1 }
                 return CardInstance(id: instanceID, definitionID: definitionID, owner: player)
             }
+            players[player].extraDeck = initialExtraDecks[player].map { definitionID in
+                defer { instanceID += 1 }
+                return CardInstance(id: instanceID, definitionID: definitionID, owner: player)
+            }
             drawCards(5, player: player)
         }
         log.append("Bắt đầu trận tập. Người 1 đi trước, không rút và không tấn công ở lượt đầu.")
     }
 
     func definition(of card: CardInstance) -> DuelCardDefinition { definitions[card.definitionID]! }
+    func isProperlySummoned(_ card: CardInstance) -> Bool { properlySummonedExtra.contains(card.id) }
+    func canRevive(_ card: CardInstance) -> Bool {
+        let data = definition(of: card)
+        return data.isMonster && (!data.isExtraDeckMonster || isProperlySummoned(card))
+    }
 
     mutating func apply(action: DuelAction, player: Int) throws {
         switch action {
@@ -226,6 +294,12 @@ struct DuelState {
         case .counter(let trapID): try activateCounter(player: player, trapID: trapID)
         case .pass: try pass(player: player)
         case .discard(let cardIDs): try discard(player: player, cardIDs: cardIDs)
+        case .specialSummonFromHand(let cardID, let position): try specialSummonFromHand(player: player, cardID: cardID, position: position)
+        case .synchroSummon(let cardID, let materials, let position): try synchroSummon(player: player, extraCardID: cardID, materialIDs: materials, position: position)
+        case .chooseFusion(let cardID, let materials, let position): try chooseFusion(player: player, extraCardID: cardID, materialIDs: materials, position: position)
+        case .replayAttack(let targetID): try replayAttack(player: player, targetID: targetID)
+        case .cancelAttack: try cancelAttack(player: player)
+        case .activateKuriboh(let cardID): try activateKuriboh(player: player, cardID: cardID)
         }
     }
 
@@ -279,7 +353,7 @@ struct DuelState {
         }
         let card = players[player].hand[handIndex]
         let data = definition(of: card)
-        guard data.kindCode == 0 else { throw DuelError.invalid("Trận tập chỉ triệu hồi quái Normal không hiệu ứng.") }
+        guard data.normalSummonable else { throw DuelError.invalid("Lá này không được triệu hồi thường trong bộ luật hiện tại.") }
         let cost = data.level >= 7 ? 2 : data.level >= 5 ? 1 : 0
         guard tributes.count == cost, Set(tributes).count == tributes.count,
               tributes.allSatisfy({ id in players[player].field.contains(where: { $0.id == id }) }) else {
@@ -327,6 +401,88 @@ struct DuelState {
         log.append("Đổi tư thế \(definition(of: monster.card).name).")
     }
 
+    mutating func specialSummonFromHand(player: Int, cardID: Int, position: Position = .attack) throws {
+        try requireMain(player)
+        guard players[player].field.isEmpty, !players[1 - player].field.isEmpty,
+              let index = players[player].hand.firstIndex(where: { $0.id == cardID }),
+              definition(of: players[player].hand[index]).effect == .cyberDragon else {
+            throw DuelError.invalid("Cyber Dragon cần sân mình trống và đối phương đang có quái.")
+        }
+        let card = players[player].hand.remove(at: index)
+        pendingSummon = PendingSummon(player: player, monster: Monster(card: card, position: position, faceDown: false, summonedTurn: turn), isFlip: false)
+        summonNegated = false; consecutivePasses = 0; priorityPlayer = 1 - player
+        log.append("Chuẩn bị triệu hồi đặc biệt Cyber Dragon.")
+    }
+
+    func synchroMaterialSets(player: Int, extraCardID: Int) -> [[Int]] {
+        guard (0..<2).contains(player), let extra = players[player].extraDeck.first(where: { $0.id == extraCardID }),
+              definition(of: extra).password == 97_204_936 else { return [] }
+        let monsters = players[player].field.filter { !$0.faceDown }
+        guard monsters.count >= 2 else { return [] }
+        var results: [[Int]] = []
+        for mask in 1..<(1 << monsters.count) {
+            let material = monsters.enumerated().filter { mask & (1 << $0.offset) != 0 }.map(\.element)
+            if material.count >= 2,
+               material.filter({ definition(of: $0.card).isTuner }).count == 1,
+               material.reduce(0, { $0 + definition(of: $1.card).level }) == definition(of: extra).level {
+                results.append(material.map(\.id))
+            }
+        }
+        return results
+    }
+
+    mutating func synchroSummon(player: Int, extraCardID: Int, materialIDs: [Int], position: Position = .attack) throws {
+        try requireMain(player)
+        guard Set(materialIDs).count == materialIDs.count,
+              synchroMaterialSets(player: player, extraCardID: extraCardID).contains(where: { Set($0) == Set(materialIDs) }),
+              let index = players[player].extraDeck.firstIndex(where: { $0.id == extraCardID }) else {
+            throw DuelError.invalid("Gaia Knight cần đúng 1 Tuner và ít nhất 1 non-Tuner ngửa, tổng cấp độ 6.")
+        }
+        for id in materialIDs { destroy(player: player, instanceID: id) }
+        let card = players[player].extraDeck.remove(at: index)
+        properlySummonedExtra.remove(card.id)
+        pendingSummon = PendingSummon(player: player, monster: Monster(card: card, position: position, faceDown: false, summonedTurn: turn), isFlip: false, extraProcedure: true)
+        summonNegated = false; consecutivePasses = 0; priorityPlayer = 1 - player
+        log.append("Nguyên liệu đã vào Mộ, chuẩn bị Synchro Summon Gaia Knight.")
+    }
+
+    func fusionOptions(player: Int) -> [FusionOption] {
+        guard (0..<2).contains(player) else { return [] }
+        let materials = players[player].hand + players[player].field.map(\.card)
+        let first = materials.filter { definition(of: $0).password == 34_460_851 }
+        let second = materials.filter { definition(of: $0).password == 44_287_299 }
+        let fieldIDs = Set(players[player].field.map(\.id))
+        let pairs = first.flatMap { a in second.compactMap { b -> [Int]? in
+            let ids = [a.id, b.id]
+            let freed = ids.filter { fieldIDs.contains($0) }.count
+            return players[player].field.count - freed < 5 ? ids : nil
+        } }
+        guard !pairs.isEmpty else { return [] }
+        return players[player].extraDeck.filter { definition(of: $0).password == 45_231_177 }
+            .map { FusionOption(extraCard: $0, materialPairs: pairs) }
+    }
+
+    mutating func chooseFusion(player: Int, extraCardID: Int, materialIDs: [Int], position: Position = .attack) throws {
+        try requireLivePlayer(player)
+        guard isResolving, pendingFusionChoice?.player == player, materialIDs.count == 2,
+              Set(materialIDs).count == 2,
+              fusionOptions(player: player).contains(where: { $0.extraCard.id == extraCardID && $0.materialPairs.contains(where: { Set($0) == Set(materialIDs) }) }),
+              let extraIndex = players[player].extraDeck.firstIndex(where: { $0.id == extraCardID }) else {
+            throw DuelError.invalid("Chọn Flame Swordsman và đúng Flame Manipulator + Masaki từ tay/sân mình.")
+        }
+        for id in materialIDs {
+            if let index = players[player].hand.firstIndex(where: { $0.id == id }) {
+                let card = players[player].hand.remove(at: index)
+                sendToGraveyard(card)
+            } else { destroy(player: player, instanceID: id) }
+        }
+        let card = players[player].extraDeck.remove(at: extraIndex)
+        properlySummonedExtra.insert(card.id)
+        specialSummon(card, player: player, position: position)
+        pendingFusionChoice = nil
+        continueResolution()
+    }
+
     mutating func attack(player: Int, attackerID: Int, targetID: Int? = nil) throws {
         try requireAction(player)
         guard phase == .battle, turn > 1 else { throw DuelError.invalid("Chỉ tấn công trong Battle Phase, từ lượt 2.") }
@@ -352,45 +508,122 @@ struct DuelState {
     }
 
     private mutating func resolveAttack(_ declaration: PendingAttack) {
-        // shortcut: no separate Damage Step effects yet; add those windows before supporting reactive monster effects.
         let player = declaration.player, opponent = 1 - player
         guard let attacker = players[player].field.first(where: { $0.id == declaration.attackerID }),
-              attacker.position == .attack, !attacker.faceDown,
-              declaration.defendingIDs == players[opponent].field.map(\.id) else {
-            // shortcut: cancel if the defending lineup changed; implement replay selection with later reactive monster effects.
-            log.append("Tấn công dừng vì quái tấn công/mục tiêu hoặc đội hình đã thay đổi.")
+              attacker.position == .attack, !attacker.faceDown else {
+            log.append("Tấn công dừng vì quái tấn công không còn hợp lệ.")
+            openFastWindow("Phản hồi sau khi tấn công dừng")
             return
         }
-        let targetIndex = declaration.targetID.flatMap { id in players[opponent].field.firstIndex(where: { $0.id == id }) }
-        let attack = definition(of: attacker.card).atk!
-        guard let targetIndex else {
-            players[opponent].lp = max(0, players[opponent].lp - attack)
-            log.append("Đánh trực tiếp: \(attack) sát thương.")
-            checkLifePoints()
+        if declaration.defendingIDs != players[opponent].field.map(\.id) {
+            pendingReplay = PendingReplay(player: player, attackerID: declaration.attackerID,
+                                          targetIDs: players[opponent].field.map(\.id),
+                                          canAttackDirectly: players[opponent].field.isEmpty)
+            fastWindow = nil
             return
         }
-        let defender = players[opponent].field[targetIndex]
-        players[opponent].field[targetIndex].faceDown = false
-        let defense = definition(of: defender.card)
+        damageStep = DamageStep(attack: declaration)
+        fastWindow = nil; consecutivePasses = 0; priorityPlayer = activePlayer
+        log.append("Bắt đầu Damage Step.")
+    }
+
+    mutating func replayAttack(player: Int, targetID: Int?) throws {
+        try requireLivePlayer(player)
+        guard !isResolving, chain.isEmpty, let replay = pendingReplay, replay.player == player,
+              let attacker = players[player].field.first(where: { $0.id == replay.attackerID }),
+              attacker.position == .attack, !attacker.faceDown else {
+            throw DuelError.invalid("Không có replay hợp lệ cho người chơi này.")
+        }
+        let defenders = players[1 - player].field.map(\.id)
+        guard (defenders.isEmpty && targetID == nil) || (targetID.map { defenders.contains($0) } ?? false) else {
+            throw DuelError.invalid("Chọn mục tiêu hiện tại, hoặc đánh trực tiếp nếu sân đối phương trống.")
+        }
+        pendingReplay = nil
+        pendingAttack = PendingAttack(player: player, attackerID: attacker.id, targetID: targetID,
+                                      defendingIDs: defenders, declarationOpen: false)
+        consecutivePasses = 0; priorityPlayer = player
+        log.append("Replay: chọn lại mục tiêu; không phải tuyên bố tấn công mới.")
+    }
+
+    mutating func cancelAttack(player: Int) throws {
+        try requireLivePlayer(player)
+        guard !isResolving, pendingReplay?.player == player else {
+            throw DuelError.invalid("Chỉ hủy khi đang chọn replay.")
+        }
+        pendingReplay = nil
+        openFastWindow("Phản hồi sau khi hủy replay")
+    }
+
+    private func battleOutcome(_ attack: PendingAttack) -> (damage: [Int], destroyed: [Int]) {
+        var damage = [0, 0], destroyed: [Int] = []
+        let player = attack.player, opponent = 1 - player
+        guard let attacker = players[player].field.first(where: { $0.id == attack.attackerID }) else { return (damage, destroyed) }
+        let power = definition(of: attacker.card).atk!
+        guard let targetID = attack.targetID else { damage[opponent] = power; return (damage, destroyed) }
+        guard let defender = players[opponent].field.first(where: { $0.id == targetID }) else { return (damage, destroyed) }
+        let data = definition(of: defender.card)
+        let difference = power - (defender.position == .attack ? data.atk! : data.def!)
         if defender.position == .attack {
-            let difference = attack - defense.atk!
-            if difference > 0 {
-                destroy(player: opponent, instanceID: defender.id)
-                players[opponent].lp = max(0, players[opponent].lp - difference)
-            } else if difference < 0 {
-                destroy(player: player, instanceID: attacker.id)
-                players[player].lp = max(0, players[player].lp + difference)
-            } else if attack > 0 {
-                destroy(player: player, instanceID: attacker.id)
-                destroy(player: opponent, instanceID: defender.id)
-            }
+            if difference > 0 { damage[opponent] = difference; destroyed = [defender.id] }
+            else if difference < 0 { damage[player] = -difference; destroyed = [attacker.id] }
+            else if power > 0 { destroyed = [attacker.id, defender.id] }
         } else {
-            let difference = attack - defense.def!
-            if difference > 0 { destroy(player: opponent, instanceID: defender.id) }
-            if difference < 0 { players[player].lp = max(0, players[player].lp + difference) }
+            if difference > 0 { destroyed = [defender.id] }
+            else if difference < 0 { damage[player] = -difference }
         }
-        log.append("\(definition(of: attacker.card).name) đấu với \(defense.name).")
-        checkLifePoints()
+        return (damage, destroyed)
+    }
+
+    func battleDamage(player: Int) -> Int {
+        guard (0..<2).contains(player), let step = damageStep, !step.applied,
+              !step.preventedPlayers.contains(player) else { return 0 }
+        return battleOutcome(step.attack).damage[player]
+    }
+
+    mutating func activateKuriboh(player: Int, cardID: Int) throws {
+        try requireLivePlayer(player)
+        guard !isResolving, decisionPlayer == player, let step = damageStep,
+              step.stage == .calculation, !step.applied, step.attack.player != player,
+              battleDamage(player: player) > 0, (chain.last?.speed ?? 0) <= 2,
+              let index = players[player].hand.firstIndex(where: { $0.id == cardID }),
+              definition(of: players[player].hand[index]).effect == .kuriboh else {
+            throw DuelError.invalid("Kuriboh chỉ bỏ từ tay trong damage calculation khi quái đối phương tấn công gây sát thương cho mình.")
+        }
+        let card = players[player].hand.remove(at: index)
+        sendToGraveyard(card)
+        addLink(player: player, card: card, effect: .kuriboh, target: nil, sourceOnField: false, sourceIsSpellTrap: false)
+    }
+
+    private mutating func advanceDamageStep() {
+        guard var step = damageStep else { return }
+        switch step.stage {
+        case .start:
+            if let target = step.attack.targetID,
+               let index = players[1 - step.attack.player].field.firstIndex(where: { $0.id == target }) {
+                players[1 - step.attack.player].field[index].faceDown = false
+            }
+            step.stage = .beforeCalculation
+        case .beforeCalculation: step.stage = .calculation
+        case .calculation:
+            guard !step.applied else { return }
+            let outcome = battleOutcome(step.attack)
+            for player in 0..<2 where !step.preventedPlayers.contains(player) {
+                players[player].lp = max(0, players[player].lp - outcome.damage[player])
+            }
+            step.applied = true; step.destroyedIDs = outcome.destroyed; step.stage = .afterCalculation
+            checkLifePoints()
+        case .afterCalculation: step.stage = .end
+        case .end:
+            for player in 0..<2 {
+                for id in step.destroyedIDs { destroy(player: player, instanceID: id) }
+            }
+            damageStep = nil
+            openFastWindow("Phản hồi sau Damage Step")
+            return
+        }
+        damageStep = step
+        consecutivePasses = 0; priorityPlayer = activePlayer
+        log.append("Damage Step: \(step.stage.rawValue).")
     }
 
     mutating func activateSpell(player: Int, cardID: Int, targetID: Int? = nil,
@@ -401,11 +634,12 @@ struct DuelState {
         guard let card = handIndex.map({ players[player].hand[$0] }) ?? setIndex.map({ players[player].traps[$0].card }) else {
             throw DuelError.invalid("Lá Phép/Bẫy không ở trên tay hoặc sân của người chơi.")
         }
-        guard let effect = definition(of: card).effect, effect != .judgment else {
+        guard [13, 14].contains(definition(of: card).kindCode),
+              let effect = definition(of: card).effect, effect != .judgment else {
             throw DuelError.invalid("Lá này không có hiệu ứng Phép được hỗ trợ.")
         }
-        if [.destroySpellTrap, .mirrorForce].contains(effect) {
-            guard !isResolving, pendingSummon == nil, decisionPlayer == player,
+        if [.destroySpellTrap, .mirrorForce, .returnMonster].contains(effect) {
+            guard !isResolving, pendingSummon == nil, damageStep == nil, pendingReplay == nil, decisionPlayer == player,
                   (chain.last?.speed ?? 0) <= 2 else {
                 throw DuelError.invalid("Không được dùng hiệu ứng Speed 2 ở cửa sổ này hoặc sau Counter Trap.")
             }
@@ -440,8 +674,8 @@ struct DuelState {
         case .revive:
             guard players[player].field.count < 5, let targetID, let targetPlayer,
                   let target = players[targetPlayer].graveyard.first(where: { $0.id == targetID }),
-                  definition(of: target).kindCode == 0 else {
-                throw DuelError.invalid("Chọn quái Normal trong một trong hai Mộ; cần một ô quái trống.")
+                  canRevive(target) else {
+                throw DuelError.invalid("Chọn quái hợp lệ trong Mộ; Extra phải từng triệu hồi đúng cách, sân cần ô trống.")
             }
         case .recruitNormal:
             guard players[player].field.isEmpty, !recruitCandidates(player: player).isEmpty else {
@@ -466,9 +700,18 @@ struct DuelState {
                   players[1 - player].field.contains(where: { $0.position == .attack && !$0.faceDown }) else {
                 throw DuelError.invalid("Mirror Force chỉ phản hồi tuyên bố tấn công của đối phương.")
             }
+        case .returnMonster:
+            guard setIndex != nil, let targetPlayer, let targetID,
+                  players[targetPlayer].field.contains(where: { $0.id == targetID }) else {
+                throw DuelError.invalid("CED cần úp từ lượt trước và chọn một quái trên sân.")
+            }
+        case .fusion:
+            guard !fusionOptions(player: player).isEmpty else {
+                throw DuelError.invalid("Polymerization cần Flame Swordsman trong Extra và đủ hai nguyên liệu hợp lệ.")
+            }
         default: break
         }
-        if effect != .revive && effect != .destroySpellTrap, targetID != nil || targetPlayer != nil {
+        if ![.revive, .destroySpellTrap, .returnMonster].contains(effect), targetID != nil || targetPlayer != nil {
             throw DuelError.invalid("Hiệu ứng này không chọn mục tiêu.")
         }
         if let handIndex { players[player].hand.remove(at: handIndex) }
@@ -482,8 +725,8 @@ struct DuelState {
         guard spellTrapCount(player: player) < 5 else { throw DuelError.invalid("Đã đủ 5 ô Phép/Bẫy.") }
         guard let index = players[player].hand.firstIndex(where: { $0.id == cardID }),
               let effect = definition(of: players[player].hand[index]).effect,
-              [.judgment, .destroySpellTrap, .mirrorForce].contains(effect) else {
-            throw DuelError.invalid("Chỉ hỗ trợ úp Judgment, MST và Mirror Force.")
+              [.judgment, .destroySpellTrap, .mirrorForce, .returnMonster].contains(effect) else {
+            throw DuelError.invalid("Chỉ hỗ trợ úp Judgment, MST, Mirror Force và CED.")
         }
         let card = players[player].hand.remove(at: index)
         players[player].traps.append(SetTrap(card: card, setTurn: turn))
@@ -493,7 +736,8 @@ struct DuelState {
 
     mutating func activateCounter(player: Int, trapID: Int) throws {
         try requireLivePlayer(player)
-        guard !isResolving, player == decisionPlayer, !chain.isEmpty || pendingSummon != nil else {
+        guard !isResolving, damageStep == nil, pendingReplay == nil, player == decisionPlayer,
+              chain.last?.sourceIsSpellTrap == true || (chain.isEmpty && pendingSummon != nil) else {
             throw DuelError.invalid("Judgment chỉ phản hồi kích hoạt Phép/Bẫy hoặc triệu hồi thường/lật.")
         }
         guard let index = players[player].traps.firstIndex(where: { $0.id == trapID }),
@@ -510,7 +754,7 @@ struct DuelState {
 
     mutating func pass(player: Int) throws {
         try requireLivePlayer(player)
-        guard !isResolving, hasResponseWindow, priorityPlayer == player else {
+        guard !isResolving, pendingReplay == nil, hasResponseWindow, priorityPlayer == player else {
             throw DuelError.invalid("Chưa tới quyền phản hồi chain của người này.")
         }
         consecutivePasses += 1
@@ -556,10 +800,10 @@ struct DuelState {
     }
     private mutating func addLink(player: Int, card: CardInstance, effect: DuelCardDefinition.Effect, target: Int?,
                                   targetCardID: Int? = nil, targetOwner: Int? = nil, position: Position = .attack,
-                                  negatesSummon: Bool = false) {
+                                  negatesSummon: Bool = false, sourceOnField: Bool = true, sourceIsSpellTrap: Bool = true) {
         chain.append(ChainLink(id: nextLinkID, player: player, card: card, effect: effect, negatesLinkID: target,
                                targetCardID: targetCardID, targetOwner: targetOwner, summonPosition: position,
-                               negatesSummon: negatesSummon))
+                               negatesSummon: negatesSummon, sourceOnField: sourceOnField, sourceIsSpellTrap: sourceIsSpellTrap))
         nextLinkID += 1; consecutivePasses = 0; priorityPlayer = 1 - player
         log.append("Chain \(chain.count): Người \(player + 1) kích hoạt \(definition(of: card).name).")
     }
@@ -588,6 +832,7 @@ struct DuelState {
             case .revive:
                 if let owner = link.targetOwner, let id = link.targetCardID,
                    let index = players[owner].graveyard.firstIndex(where: { $0.id == id }),
+                   canRevive(players[owner].graveyard[index]),
                    players[link.player].field.count < 5 {
                     let card = players[owner].graveyard.remove(at: index)
                     specialSummon(card, player: link.player, position: link.summonPosition)
@@ -615,13 +860,34 @@ struct DuelState {
                 for monster in players[opponent].field where monster.position == .attack && !monster.faceDown {
                     destroy(player: opponent, instanceID: monster.id)
                 }
+            case .returnMonster:
+                if let player = link.targetOwner, let id = link.targetCardID,
+                   let index = players[player].field.firstIndex(where: { $0.id == id }) {
+                    let card = players[player].field.remove(at: index).card
+                    if definition(of: card).isExtraDeckMonster {
+                        properlySummonedExtra.remove(card.id)
+                        players[card.owner].extraDeck.append(card)
+                    } else { players[card.owner].hand.append(card) }
+                }
+            case .fusion:
+                let candidates = fusionOptions(player: link.player)
+                if !candidates.isEmpty {
+                    pendingFusionChoice = PendingFusionChoice(player: link.player, candidates: candidates)
+                    log.append("Chọn Fusion Monster và nguyên liệu khi Polymerization giải quyết.")
+                    return
+                }
+                log.append("Polymerization không còn đủ nguyên liệu hoặc ô sân hợp lệ.")
+            case .kuriboh:
+                damageStep?.preventedPlayers.insert(link.player)
+            case .cyberDragon: break // Inherent summon procedure, never an activated chain effect.
             }
             log.append("Giải quyết: \(definition(of: link.card).name).")
         }
         // Cards remain in the chain until cleanup; a negated activation never refunds its card or cost.
         for link in chain where link.sourceOnField { sendToGraveyard(link.card) }
         chain = []; consecutivePasses = 0; priorityPlayer = activePlayer
-        isResolving = false; resolutionCursor = -1; negatedLinkIDs = []; pendingSummonChoice = nil
+        isResolving = false; resolutionCursor = -1; negatedLinkIDs = []; pendingSummonChoice = nil; pendingFusionChoice = nil
+        if damageStep != nil { return }
         if pendingSummon != nil { finishSummon() }
         if winner != nil {
             pendingAttack = nil; pendingPhaseAdvance = false; fastWindow = nil
@@ -685,6 +951,7 @@ struct DuelState {
             log.append("Triệu hồi bị vô hiệu hóa: \(definition(of: summon.monster.card).name).")
         } else {
             players[summon.player].field.append(summon.monster)
+            if summon.extraProcedure { properlySummonedExtra.insert(summon.monster.id) }
             log.append("Triệu hồi thành công: \(definition(of: summon.monster.card).name).")
         }
         summonNegated = false
@@ -692,11 +959,11 @@ struct DuelState {
     }
     private mutating func finishWindow() {
         consecutivePasses = 0; priorityPlayer = activePlayer
+        if damageStep != nil { advanceDamageStep(); return }
         if pendingSummon != nil { finishSummon(); return }
         if let declaration = pendingAttack {
             pendingAttack = nil; fastWindow = nil
             resolveAttack(declaration)
-            if winner == nil { openFastWindow("Phản hồi sau chiến đấu") }
             return
         }
         if pendingPhaseAdvance {
@@ -713,7 +980,7 @@ struct DuelState {
     private func recruitCandidates(player: Int) -> [CardInstance] {
         players[player].deck.filter { card in
             let data = definition(of: card)
-            return data.kindCode == 0 && data.level <= 4
+            return (data.kindCode == 0 || data.kindCode == 15) && data.level <= 4
         }
     }
     private mutating func checkLifePoints() {
