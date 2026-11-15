@@ -1,0 +1,9 @@
+{
+  "file": "CARD_Pack.bin",
+  "encoding": "u16",
+  "bytes": 12900,
+  "records": 6450,
+  "nonZeroRecords": 0,
+  "status": "empty",
+  "note": "All entries are zero in the supplied OBB; no pack assignment is available."
+}
