@@ -37,6 +37,16 @@ ICON_NAMES = (
 )
 
 
+def canonical_inventory_name(value: str) -> str:
+    """Normalize Windows legacy-decoded UTF-8 language names for comparison."""
+    for source, target in {
+        "Espa\ufffdol": "Espa\u00f1ol", "Fran\ufffdais": "Fran\u00e7ais", "Portugu\ufffds": "Portugu\u00eas",
+        "Espa\u00c3\u00b1ol": "Espa\u00f1ol", "Fran\u00c3\u00a7ais": "Fran\u00e7ais", "Portugu\u00c3\u00aas": "Portugu\u00eas",
+    }.items():
+        value = value.replace(source, target)
+    return value
+
+
 def safe_relative(value: str) -> Path:
     if not isinstance(value, str) or "\\" in value or ":" in value or "\x00" in value:
         raise ValueError("Invalid manifest path")
@@ -62,7 +72,7 @@ def inventory(root: Path) -> set[str]:
         for name in names:
             path = Path(directory) / name
             regular(path)
-            result.add(path.relative_to(root).as_posix())
+            result.add(canonical_inventory_name(path.relative_to(root).as_posix()))
     return result
 
 
