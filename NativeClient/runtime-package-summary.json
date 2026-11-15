@@ -11,6 +11,50 @@
   "passcodePictures": 7484,
   "sourceMP3s": 134,
   "mappedMusicFiles": 15,
+  "originalUITextures": [
+    {
+      "source": "assets/card_rear.png",
+      "output": "textures/cover.png",
+      "dimensions": [
+        153,
+        214
+      ],
+      "alphaRange": [
+        255,
+        255
+      ],
+      "sha256": "7579693f3f3378794fff5f01915c989089d59b02bcaf4300452d2f56f0d923a2",
+      "replacedBaseSHA256": "67479d49ab1abe3b9e0669634db4493aaeaf5e3b22b4ceba5725ec3c9469ca3e"
+    },
+    {
+      "source": "assets/card_rear.png",
+      "output": "textures/cover2.png",
+      "dimensions": [
+        153,
+        214
+      ],
+      "alphaRange": [
+        255,
+        255
+      ],
+      "sha256": "7579693f3f3378794fff5f01915c989089d59b02bcaf4300452d2f56f0d923a2",
+      "replacedBaseSHA256": "4aeab387b87507eb79e98d2a6a78b6d37dbfe79804405dbe8b30dfc666ad31f3"
+    },
+    {
+      "source": "assets/cir_bg.png",
+      "output": "textures/bg_menu.png",
+      "dimensions": [
+        2048,
+        1536
+      ],
+      "alphaRange": [
+        255,
+        255
+      ],
+      "sha256": "5c2f826954da961fd3618edf7da5f08a13d72b13bfe20728d8cb2d7192f37743",
+      "replacedBaseSHA256": "751a3eb70ec08331da0626d6d719cab05c15e4a256d0da937d9071cd8ea7df82"
+    }
+  ],
   "pictureFormat": "art-only from OBB",
   "nativeCardFaceRenderingRequired": true,
   "missingMappedPictures": [
@@ -26,10 +70,10 @@
     "Native offline AI bridge not runtime verified",
     "Current database/errata may differ from original OBB effects; consult mapping audit"
   ],
-  "packagePath": "outputs/edopro-game-v3",
-  "manifestSHA256": "76921ccbc6e245b647e4c8d0f18bc5aac44dfeb7658169c6beca95e51af49a20",
-  "payloadFiles": 46058,
-  "payloadBytes": 420252958,
+  "packagePath": "outputs/edopro-game-v4",
+  "manifestSHA256": "9317821c2617d5a4d0007f97447e124f69aee675846733547a711dc00c2c8451",
+  "payloadFiles": 46059,
+  "payloadBytes": 420383108,
   "vietnameseTexts": 7484,
   "metadataModified": false,
   "runtimeVerified": false,

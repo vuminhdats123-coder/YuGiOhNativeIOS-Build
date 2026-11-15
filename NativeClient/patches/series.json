@@ -4,13 +4,15 @@
     {"file": "patches/0001-bundled-game.patch", "targets": ["gframe/iOS/porting_ios.mm"]},
     {"file": "patches/0002-ios-project.patch", "targets": ["gframe/premake5.lua", "gframe/ios-Info.plist"]},
     {"file": "patches/0003-offline-ai.patch", "targets": ["gframe/single_mode.cpp", "gframe/single_mode.h", "gframe/game.cpp", "gframe/game.h", "gframe/menu_handler.cpp", "gframe/duelclient.cpp"]},
-    {"file": "patches/card-face-renderer.patch", "targets": ["gframe/image_manager.cpp", "gframe/image_manager.h"]}
+    {"file": "patches/card-face-renderer.patch", "targets": ["gframe/image_manager.cpp", "gframe/image_manager.h"]},
+    {"file": "patches/0004-touch-menu.patch", "targets": ["gframe/event_handler.cpp"]}
   ],
   "overlays": [
     {"source": "overlays/ios-config/native_config.lua", "target": "gframe/iOS/native_config.lua"},
     {"source": "overlays/ios-config/copy_bundle_resources.py", "target": "gframe/iOS/copy_bundle_resources.py"},
     {"source": "overlays/offline-ai/OfflineAI.h", "target": "gframe/OfflineAI.h"},
     {"source": "overlays/offline-ai/DuelResponseMailbox.h", "target": "gframe/DuelResponseMailbox.h"},
+    {"source": "overlays/ui-layout/touch_menu_layout.h", "target": "gframe/touch_menu_layout.h"},
     {"source": "overlays/offline-ai/OfflineAI.mm", "target": "gframe/iOS/OfflineAI.mm"},
     {"source": "overlays/card-renderer/card_face.h", "target": "gframe/iOS/card_face.h"},
     {"source": "overlays/card-renderer/card_face_layout.h", "target": "gframe/iOS/card_face_layout.h"},

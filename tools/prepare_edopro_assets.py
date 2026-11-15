@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import hashlib
+from io import BytesIO
 import json
 import logging
 import re
@@ -22,11 +23,38 @@ TEXTURES = ("cover", "unknown", "act", "attack", "chain", "negated", "number", "
 TEXTURES += tuple(f"{prefix}{suffix}" for prefix in ("field", "field-transparent", "fieldSP", "field-transparentSP")
                   for suffix in ("", "2", "3", "4"))
 EXTRA_TYPES = 0x40 | 0x2000 | 0x800000 | 0x4000000
+# Reviewed visible artwork only; similarly named background PNGs in this OBB are transparent placeholders.
+UI_TEXTURES = {
+    "assets/card_rear.png": ("textures/cover.png", "textures/cover2.png"),
+    "assets/cir_bg.png": ("textures/bg_menu.png",),
+}
 
 
 def digest(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def ui_png_info(data: bytes, name: str) -> dict:
+    try:
+        from PIL import Image
+    except ImportError as error:
+        raise RuntimeError("Pillow is required to validate the mapped OBB UI PNGs") from error
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError(f"Invalid UI PNG: {name}")
+    try:
+        with Image.open(BytesIO(data)) as picture:
+            if picture.format != "PNG" or not all(0 < size <= 4096 for size in picture.size):
+                raise ValueError(f"Invalid UI PNG dimensions: {name}")
+            dimensions = list(picture.size)
+            picture.verify()
+        with Image.open(BytesIO(data)) as picture:
+            alpha = picture.convert("RGBA").getchannel("A").getextrema()
+    except (OSError, SyntaxError) as error:
+        raise ValueError(f"Invalid UI PNG: {name}") from error
+    if alpha[1] == 0:
+        raise ValueError(f"Fully transparent UI PNG cannot replace a visible texture: {name}")
+    return {"dimensions": dimensions, "alphaRange": list(alpha)}
 
 
 def safe_relative(name: str) -> Path:
@@ -279,9 +307,22 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
         system_path.write_text(system.rstrip() + "\nnoClientUpdates = 1\n", encoding="utf-8")
 
         logging.info("Converting OBB decks, art and audio without modifying the archive")
-        deck_report, image_report, audio_report, codes_written = [], [], [], set()
+        deck_report, image_report, audio_report, ui_report, codes_written = [], [], [], [], set()
         with zipfile.ZipFile(obb) as source:
             entries = archive_entries(source)
+            for name, destinations in UI_TEXTURES.items():
+                if name not in entries:
+                    continue
+                data = source.read(name)
+                details = ui_png_info(data, name)
+                for relative in destinations:
+                    target = stage / relative
+                    previous_hash = digest(target) if target.is_file() else None
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+                    ui_report.append({"source": name, "output": relative, **details,
+                                      "sha256": hashlib.sha256(data).hexdigest(),
+                                      "replacedBaseSHA256": previous_hash})
             prop = source.read("assets/CARD_Prop.bin")
             passwords = source.read("assets/CARD_Pass.bin")
             if len(prop) % 8 or len(passwords) != len(prop) // 2:
@@ -366,7 +407,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                 raise ValueError("Missing offline AI decision module")
             copy_file(offline_ai, stage / "offline-ai/offline_ai.js")
         for filename, data in (("decks.json", deck_report), ("images.json", image_report),
-                               ("audio.json", audio_report),
+                               ("audio.json", audio_report), ("ui-textures.json", ui_report),
                                ("reviewed-mappings.json", overrides), ("mapping-audit.json", audit),
                                ("script-resolution.json", script_resolution)):
             (stage / "reports" / filename).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -381,6 +422,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                    "unresolvedDecks": sum(bool(row["unresolved"]) for row in deck_report),
                    "sourceJPGs": len(image_report), "passcodePictures": len(codes_written),
                    "sourceMP3s": len(audio_report), "mappedMusicFiles": sum(row["usedAsMusic"] for row in audio_report),
+                   "originalUITextures": ui_report,
                    "pictureFormat": "art-only from OBB", "nativeCardFaceRenderingRequired": True,
                    "missingMappedPictures": sorted(set(mapping.values()) - codes_written),
                    "optionalLocale": locale_report,

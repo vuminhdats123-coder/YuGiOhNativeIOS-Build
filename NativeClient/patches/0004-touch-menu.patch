@@ -1,0 +1,48 @@
+diff --git a/gframe/event_handler.cpp b/gframe/event_handler.cpp
+index 9c38c24..96e97f5 100644
+--- a/gframe/event_handler.cpp
++++ b/gframe/event_handler.cpp
+@@ -39,6 +39,9 @@
+ #include "joystick_wrapper.h"
+ #include "porting.h"
+ #include "config.h"
++#if EDOPRO_IOS
++#include "touch_menu_layout.h"
++#endif
+ #include "fmt.h"
+ 
+ namespace {
+@@ -2698,7 +2701,33 @@ void ClientField::ShowMenu(int flag, int x, int y) {
+ 	irr::core::vector2di mouse = mainGame->Resize(x, y);
+ 	x = mouse.X;
+ 	y = mouse.Y;
++#if EDOPRO_IOS
++	irr::gui::IGUIButton* buttons[] = {mainGame->btnActivate, mainGame->btnSummon, mainGame->btnSPSummon,
++		mainGame->btnMSet, mainGame->btnSSet, mainGame->btnRepos, mainGame->btnAttack,
++		mainGame->btnShowList, mainGame->btnOperation, mainGame->btnReset};
++	int rows = 0;
++	for(auto* button : buttons) if(button->isVisible()) ++rows;
++	const auto* parent = mainGame->wCmdMenu->getParent();
++	const auto origin = parent->getAbsolutePosition().UpperLeftCorner;
++	// shortcut: clipping bounds are not UIKit safe-area insets; use native insets when device layout is calibrated.
++	const auto viewport = parent->getAbsoluteClippingRect();
++	const auto layout = FitTouchMenu(viewport.getWidth(), viewport.getHeight(),
++		x - viewport.UpperLeftCorner.X, y - viewport.UpperLeftCorner.Y,
++		mainGame->Scale(156), mainGame->Scale(42), mainGame->Scale(6), rows);
++	if(!layout.valid) { mainGame->wCmdMenu->setVisible(false); return; }
++	const int left = viewport.UpperLeftCorner.X - origin.X + layout.x;
++	const int top = viewport.UpperLeftCorner.Y - origin.Y + layout.y;
++	mainGame->wCmdMenu->setRelativePosition(irr::core::recti(left, top, left + layout.width, top + layout.height));
++	int row = 0;
++	for(auto* button : buttons) {
++		if(!button->isVisible()) continue;
++		const int rowTop = layout.padding + row++ * layout.rowHeight;
++		button->setRelativePosition(irr::core::recti(layout.padding, rowTop,
++			layout.width - layout.padding, rowTop + std::max(1, layout.rowHeight - 1)));
++	}
++#else
+ 	mainGame->wCmdMenu->setRelativePosition(irr::core::recti(x - mainGame->Scale(20), y - mainGame->Scale(20) - height, x + mainGame->Scale(80), y - mainGame->Scale(20)));
++#endif
+ }
+ void ClientField::UpdateChainButtons(irr::gui::IGUIElement* caller) {
+ 	if(!caller) {

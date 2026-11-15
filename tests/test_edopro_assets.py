@@ -1,5 +1,6 @@
 import importlib.util
 from contextlib import closing
+from io import BytesIO
 import json
 from pathlib import Path
 import sqlite3
@@ -7,6 +8,7 @@ import struct
 import tempfile
 import unittest
 import zipfile
+from PIL import Image
 
 SPEC = importlib.util.spec_from_file_location("prepare_edopro_assets", Path(__file__).parents[1] / "tools/prepare_edopro_assets.py")
 builder = importlib.util.module_from_spec(SPEC)
@@ -140,6 +142,52 @@ class AssetTests(unittest.TestCase):
             builder.prepare(self.obb, self.cdb, self.scripts, self.base, self.audit_path,
                             self.root / "missing-ai", offline_ai=self.root / "missing.js")
         self.assertFalse((self.root / "missing-ai").exists())
+
+    @staticmethod
+    def png(color):
+        output = BytesIO()
+        Image.new("RGBA", (3, 2), color).save(output, format="PNG")
+        return output.getvalue()
+
+    def test_only_reviewed_ui_images_replace_client_aliases(self):
+        card_back = self.png((130, 60, 20, 255))
+        menu = self.png((20, 20, 130, 255))
+        empty = self.png((255, 255, 255, 0))
+        (self.base / "textures/cover2.png").write_bytes(b"old opponent back")
+        (self.base / "textures/bg_menu.png").write_bytes(b"old menu")
+        with zipfile.ZipFile(self.obb, "a") as archive:
+            archive.writestr("assets/card_rear.png", card_back)
+            archive.writestr("assets/cir_bg.png", menu)
+            for name in ("mainMenuBg.png", "gs_background.png", "gamescreen_bg.png", "unreviewed.png"):
+                archive.writestr("assets/" + name, empty)
+        before = builder.digest(self.obb)
+        self.audit["sources"]["OBB"]["sha256"] = before; self.save_audit()
+        report = self.prepare()
+        game = self.root / "game"
+        for name in ("cover.png", "cover2.png"):
+            self.assertEqual((game / "textures" / name).read_bytes(), card_back)
+        self.assertEqual((game / "textures/bg_menu.png").read_bytes(), menu)
+        self.assertEqual((game / "textures/bg.png").read_bytes(), b"fixture png")
+        rows = report["originalUITextures"]
+        self.assertEqual({row["output"] for row in rows}, {"textures/cover.png", "textures/cover2.png", "textures/bg_menu.png"})
+        self.assertTrue(all(row["dimensions"] == [3, 2] and row["alphaRange"] == [255, 255] for row in rows))
+        self.assertTrue(all(row["replacedBaseSHA256"] for row in rows))
+        for row in rows:
+            self.assertEqual(row["sha256"], builder.digest(game / row["output"]))
+        self.assertEqual(json.loads((game / "reports/ui-textures.json").read_text()), rows)
+        self.assertEqual(builder.digest(self.obb), before)
+
+    def test_invalid_or_transparent_reviewed_ui_png_is_rejected(self):
+        original = self.obb.read_bytes()
+        for index, data in enumerate((b"not a PNG", self.png((255, 255, 255, 0)))):
+            with self.subTest(index=index):
+                self.obb.write_bytes(original)
+                with zipfile.ZipFile(self.obb, "a") as archive:
+                    archive.writestr("assets/card_rear.png", data)
+                self.audit["sources"]["OBB"]["sha256"] = builder.digest(self.obb); self.save_audit()
+                with self.assertRaisesRegex(ValueError, "Invalid UI PNG|transparent UI PNG"):
+                    self.prepare(f"invalid-ui-{index}")
+                self.assertFalse((self.root / f"invalid-ui-{index}").exists())
 
     def test_hash_mismatch_fails_before_output(self):
         self.audit["sources"]["OBB"]["sha256"] = "0" * 64; self.save_audit()

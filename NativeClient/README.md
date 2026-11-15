@@ -28,14 +28,17 @@ làm migration trước khi phát hành bản nâng cấp cho người dùng.
 
 `tools/prepare_edopro_assets.py` nhận OBB, CDB, CardScripts ZIP, Distribution và
 báo cáo `ocg-coverage.json`; xuất thư mục dữ liệu mới với `package-manifest.json`.
-Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v3`: 46.058 file,
-420.252.958 byte chưa tính manifest, gồm mô-đun AI đã kiểm thử. Xem [runtime-package-summary.json](runtime-package-summary.json)
+Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v4`: 46.059 file,
+420.383.108 byte chưa tính manifest, gồm mô-đun AI đã kiểm thử và ba texture UI gốc.
+Xem [runtime-package-summary.json](runtime-package-summary.json)
 để đối chiếu checksum và số lượng. Gói hiện nằm trên máy này, không được đưa vào Git.
 
-Tạo lại từ source và các archive đã pin (chọn thư mục output mới nếu đã tồn tại):
+Tạo lại bằng Python 3.11+ từ source và các archive đã pin (chọn thư mục output mới
+nếu đã tồn tại). Pillow chỉ dùng để kiểm tra PNG UI trong công cụ đóng gói:
 
 ```powershell
-python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v3
+python -m pip install -r tools/requirements-assets.txt
+python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v4
 ```
 
 799 deck đã đổi ID đầy đủ. 651 deck đạt kiểm tra kích thước, vị trí Main/Extra và
@@ -45,9 +48,16 @@ trong `reports/decks.json`. Đây chưa phải kiểm tra banlist hay chứng mi
 đã đặt vào thư mục BGM. Locale tùy chọn có 7.484 mô tả tiếng Việt, chỉ bảng `texts`.
 
 Xcode đã có bước copy toàn bộ thư mục thành `Bundle/game`, kiểm tra từng SHA256
-và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload trong một thư mục
-fixture: 46.058 file và 17 icon được chép đúng. Fixture chỉ có tài nguyên, không
-có executable và không phải một ứng dụng cài được.
+và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload v3 trong một thư mục
+fixture: 46.058 file và 17 icon được chép đúng. v4 chỉ đổi `cover.png`, `cover2.png`,
+`bg_menu.png` và thêm báo cáo UI; từng file thay đổi đã được đối chiếu byte/hash.
+Chưa chạy lại bản copy toàn bộ v4. Fixture chỉ có tài nguyên, không có executable
+và không phải một ứng dụng cài được.
+
+Tham chiếu video, các asset đã đối chiếu và phần UI còn thiếu được ghi tại
+[DUEL_GENERATION_UI_REFERENCE.md](../docs/DUEL_GENERATION_UI_REFERENCE.md).
+Menu iOS có vùng bấm lớn hơn và được giữ trong viewport; chưa kiểm chứng safe area
+hoặc kích thước vật lý trên iPhone.
 
 Ảnh OBB là artwork hình vuông, không phải mặt lá bài đầy đủ. Compositor iOS mới
 dùng CoreGraphics/CoreText để vẽ khung, tên, thuộc tính, Level/Rank, type, mô tả,

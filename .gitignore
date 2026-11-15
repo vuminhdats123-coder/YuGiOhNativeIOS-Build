@@ -5,6 +5,7 @@ build/
 DerivedData/
 __pycache__/
 /outputs/
+/.playwright-mcp/
 /NativeClient/runtime/
 /NativeClient/staging/
 /card-images.zip

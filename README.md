@@ -49,6 +49,12 @@ có phương án hiển thị khi thiếu tranh. Kiểm tra bằng engine Window
 từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOST_VALIDATION.md).
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
+Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong
+[DUEL_GENERATION_UI_REFERENCE.md](docs/DUEL_GENERATION_UI_REFERENCE.md).
+Payload v4 giữ mặt sau thẻ/nền menu gốc; menu hành động iOS có vùng bấm lớn hơn
+và được giới hạn trong viewport. Bố cục LP/chân dung chưa được chuyển hoàn toàn
+sang dạng trong video.
+
 Recipe Xcode, dependency iPhoneOS đã kiểm tra và bước copy toàn bộ `Bundle/game`
 nằm trong [NativeClient/iOS/README.md](NativeClient/iOS/README.md). Project sinh
 trên Windows chỉ phục vụ kiểm tra cấu trúc; phải sinh lại trên runner macOS với

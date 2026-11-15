@@ -17,7 +17,9 @@
     "nativeAIAdapter": true,
     "cardFaceCompositor": true,
     "directoryPreservingBundleResources": true,
-    "pinnedIPhoneOSDependencies": true
+    "pinnedIPhoneOSDependencies": true,
+    "originalCardBackAndMenuTexture": true,
+    "clampedIOSTouchActionMenu": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -28,13 +30,15 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 67,
-    "pythonTestsPassed": 66,
+    "pythonTestsRun": 69,
+    "pythonTestsPassed": 68,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
     "windowsCoreCardInitialization": true,
-    "responseMailboxNativeTestsExecuted": false
+    "responseMailboxNativeTestsExecuted": false,
+    "touchMenuNativeTestsExecuted": false,
+    "uiReferenceObserved": true
   },
   "limitations": [
     "Generic bounded AI, not a competitive deck-specific bot",

@@ -1,8 +1,8 @@
 {
   "scope": "Real Windows OCG matches/card initialization plus source/configuration, JS and resource-copy evidence; no iOS executable",
   "python": {
-    "run": 67,
-    "passed": 66,
+    "run": 69,
+    "passed": 68,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
@@ -70,7 +70,7 @@
       "lua.xcodeproj": "7d627a301f8487a02d2325b4d114c2c6037d4effd378764d3df6bf3105ba3004",
       "ocgcore.xcodeproj": "1a0241720145bcca6c331324498b71a391dac38f1b2ab1285b1941866ff1383c",
       "ocgcoreshared.xcodeproj": "846c3028b35a329f9126d731357edc77d02fa3fa055190be40133dd4a5d103ad",
-      "ygopro.xcodeproj": "3a395cce48edd5671268565d24e34b2d9920ca13fc765e1fb02828463bad0356"
+      "ygopro.xcodeproj": "6288ba4ed595573f164afe3fd8c80b7b8cb34a03043a4b158db846ef01e3fb35"
     }
   },
   "dependencies": {
@@ -84,7 +84,8 @@
     "icons": 17,
     "manifestSHA256": "76921ccbc6e245b647e4c8d0f18bc5aac44dfeb7658169c6beca95e51af49a20",
     "allCopiedFileHashesVerified": true,
-    "fixtureContainsNativeExecutable": false
+    "fixtureContainsNativeExecutable": false,
+    "packagePath": "outputs/edopro-game-v3"
   },
   "nativeCompilerExecuted": false,
   "nativeMatchExecuted": true,
@@ -105,5 +106,78 @@
     "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b"
   },
   "nativeIOSMatchExecuted": false,
-  "responseMailboxNativeTestsExecuted": false
+  "responseMailboxNativeTestsExecuted": false,
+  "uiReference": {
+    "url": "https://www.youtube.com/watch?v=a1tYUTDbrcY",
+    "observedSectionsSeconds": [
+      390,
+      420,
+      480,
+      540
+    ],
+    "fullVideoWatched": false,
+    "nativeScreenshotCaptured": false,
+    "notes": "docs/DUEL_GENERATION_UI_REFERENCE.md"
+  },
+  "uiPackageValidation": {
+    "packagePath": "outputs/edopro-game-v4",
+    "manifestSHA256": "9317821c2617d5a4d0007f97447e124f69aee675846733547a711dc00c2c8451",
+    "files": 46059,
+    "bytes": 420383108,
+    "originalTextures": [
+      {
+        "source": "assets/card_rear.png",
+        "output": "textures/cover.png",
+        "dimensions": [
+          153,
+          214
+        ],
+        "alphaRange": [
+          255,
+          255
+        ],
+        "sha256": "7579693f3f3378794fff5f01915c989089d59b02bcaf4300452d2f56f0d923a2",
+        "replacedBaseSHA256": "67479d49ab1abe3b9e0669634db4493aaeaf5e3b22b4ceba5725ec3c9469ca3e"
+      },
+      {
+        "source": "assets/card_rear.png",
+        "output": "textures/cover2.png",
+        "dimensions": [
+          153,
+          214
+        ],
+        "alphaRange": [
+          255,
+          255
+        ],
+        "sha256": "7579693f3f3378794fff5f01915c989089d59b02bcaf4300452d2f56f0d923a2",
+        "replacedBaseSHA256": "4aeab387b87507eb79e98d2a6a78b6d37dbfe79804405dbe8b30dfc666ad31f3"
+      },
+      {
+        "source": "assets/cir_bg.png",
+        "output": "textures/bg_menu.png",
+        "dimensions": [
+          2048,
+          1536
+        ],
+        "alphaRange": [
+          255,
+          255
+        ],
+        "sha256": "5c2f826954da961fd3618edf7da5f08a13d72b13bfe20728d8cb2d7192f37743",
+        "replacedBaseSHA256": "751a3eb70ec08331da0626d6d719cab05c15e4a256d0da937d9071cd8ea7df82"
+      }
+    ],
+    "changedFromV3": [
+      "reports/ui-textures.json",
+      "textures/bg_menu.png",
+      "textures/cover.png",
+      "textures/cover2.png"
+    ],
+    "removedFromV3": [],
+    "otherResourceEntriesUnchanged": true,
+    "newOrChangedFileHashesVerified": true,
+    "fullV4ResourceCopyRepeated": false
+  },
+  "touchMenuNativeTestsExecuted": false
 }
