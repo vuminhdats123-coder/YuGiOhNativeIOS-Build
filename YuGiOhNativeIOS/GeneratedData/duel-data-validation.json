@@ -23,12 +23,71 @@
       "nativeDefinitionAvailable": false
     }
   ],
+  "supportedEffectIdentities": [
+    {
+      "konamiID": 4844,
+      "name": "Pot of Greed",
+      "password": "55144522",
+      "sourceDescription": "Draw 2 cards."
+    },
+    {
+      "konamiID": 4349,
+      "name": "Sparks",
+      "password": "76103675",
+      "sourceDescription": "Inflict 200 points of damage to your opponent's Life Points."
+    },
+    {
+      "konamiID": 4348,
+      "name": "Dian Keto the Cure Master",
+      "password": "84257639",
+      "sourceDescription": "Increase your Life Points by 1000 points."
+    },
+    {
+      "konamiID": 4861,
+      "name": "Solemn Judgment",
+      "password": "41420027",
+      "sourceDescription": "When a monster would be Summoned, OR a Spell/Trap Card is activated: Pay half your Life Points; negate the Summon or activation, and if you do, destroy that card."
+    },
+    {
+      "konamiID": 4842,
+      "name": "Monster Reborn",
+      "password": "83764718",
+      "sourceDescription": "Target 1 monster in either player's Graveyard; Special Summon it."
+    },
+    {
+      "konamiID": 11740,
+      "name": "Unexpected Dai",
+      "password": "00911883",
+      "sourceDescription": "If you control no monsters: Special Summon 1 Level 4 or lower Normal Monster from the Deck."
+    },
+    {
+      "konamiID": 4343,
+      "name": "Raigeki",
+      "password": "12580477",
+      "sourceDescription": "Destroy all monsters your opponent controls."
+    },
+    {
+      "konamiID": 4342,
+      "name": "Dark Hole",
+      "password": "53129443",
+      "sourceDescription": "Destroy all monsters on the field."
+    }
+  ],
+  "deferredEffectIdentities": [
+    {
+      "konamiID": 4909,
+      "name": "Mystical Space Typhoon",
+      "password": "05318639",
+      "reason": "Quick-Play timing and destruction of active chain sources are not supported"
+    }
+  ],
   "practiceDecks": [
     {
       "name": "Practice A - Dragons and Stone",
       "cards": 40,
-      "uniqueCards": 17,
+      "uniqueCards": 21,
       "maxCopies": 3,
+      "normalMonsters": 26,
       "contents": [
         {
           "konamiID": 4008,
@@ -48,37 +107,37 @@
         {
           "konamiID": 4012,
           "name": "Feral Imp",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4013,
           "name": "Winged Dragon, Guardian of the Fortress #1",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4016,
           "name": "Blackland Fire Dragon",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4032,
           "name": "Battle Ox",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4033,
           "name": "Beaver Warrior",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4038,
           "name": "Two-Headed King Rex",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4080,
           "name": "Giant Soldier of Stone",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4045,
@@ -103,7 +162,7 @@
         {
           "konamiID": 4349,
           "name": "Sparks",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4348,
@@ -114,14 +173,35 @@
           "konamiID": 4861,
           "name": "Solemn Judgment",
           "copies": 2
+        },
+        {
+          "konamiID": 4842,
+          "name": "Monster Reborn",
+          "copies": 2
+        },
+        {
+          "konamiID": 11740,
+          "name": "Unexpected Dai",
+          "copies": 2
+        },
+        {
+          "konamiID": 4343,
+          "name": "Raigeki",
+          "copies": 2
+        },
+        {
+          "konamiID": 4342,
+          "name": "Dark Hole",
+          "copies": 2
         }
       ]
     },
     {
       "name": "Practice B - Warriors and Magic",
       "cards": 40,
-      "uniqueCards": 17,
+      "uniqueCards": 21,
       "maxCopies": 3,
+      "normalMonsters": 26,
       "contents": [
         {
           "konamiID": 4011,
@@ -141,37 +221,37 @@
         {
           "konamiID": 4031,
           "name": "Horn Imp",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4037,
           "name": "Koumori Dragon",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4040,
           "name": "Saggi the Dark Clown",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4047,
           "name": "Celtic Guardian",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4050,
           "name": "Rogue Doll",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4057,
           "name": "Armored Lizard",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4084,
           "name": "Axe Raider",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4020,
@@ -196,7 +276,7 @@
         {
           "konamiID": 4349,
           "name": "Sparks",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4348,
@@ -206,6 +286,26 @@
         {
           "konamiID": 4861,
           "name": "Solemn Judgment",
+          "copies": 2
+        },
+        {
+          "konamiID": 4842,
+          "name": "Monster Reborn",
+          "copies": 2
+        },
+        {
+          "konamiID": 11740,
+          "name": "Unexpected Dai",
+          "copies": 2
+        },
+        {
+          "konamiID": 4343,
+          "name": "Raigeki",
+          "copies": 2
+        },
+        {
+          "konamiID": 4342,
+          "name": "Dark Hole",
           "copies": 2
         }
       ]

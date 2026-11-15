@@ -15,7 +15,12 @@ EFFECTS = {
     4349: (76103675, 13, "Sparks"),
     4348: (84257639, 13, "Dian Keto the Cure Master"),
     4861: (41420027, 14, "Solemn Judgment"),
+    4842: (83764718, 13, "Monster Reborn"),
+    11740: (911883, 13, "Unexpected Dai"),
+    4343: (12580477, 13, "Raigeki"),
+    4342: (53129443, 13, "Dark Hole"),
 }
+DEFERRED = {4909: (5318639, 13, "Mystical Space Typhoon")}
 NAME_ONLY = {
     10855: "Number 94: Crystalzero",
     11766: "Number S39: Utopia the Lightning",
@@ -163,7 +168,7 @@ def validate(obb):
         for kid in NAME_ONLY:
             require(struct.unpack_from("<H", int_ids, (kid - 3900) * 2)[0] == 0,
                     f"Fallback {kid} now has native data; reassess support")
-        for kid, (password, kind, name) in EFFECTS.items():
+        for kid, (password, kind, name) in (EFFECTS | DEFERRED).items():
             row = by_konami[kid]
             require(row["password"] == password and row["kindCode"] == kind and names[str(kid)] == name,
                     f"Effect identity mismatch for {kid}")
@@ -193,9 +198,14 @@ def validate(obb):
         for kid in deck["main"]:
             uint(kid, 16, "practice card")
             require(kid in by_konami and supported(by_konami[kid]), f"Unsupported practice card {kid}")
-        require(set(EFFECTS) <= set(copies), "Each practice deck must exercise all four basic effects")
+        require(set(EFFECTS) <= set(copies), "Each practice deck must include all eight supported effects")
+        normal_count = sum(copies[kid] for kid in copies if by_konami[kid]["kindCode"] == 0)
+        require(normal_count >= 24, "Each practice deck needs at least 24 Normal Monsters")
+        require(any(by_konami[kid]["kindCode"] == 0 and 5 <= by_konami[kid]["level"] <= 6 for kid in copies)
+                and any(by_konami[kid]["kindCode"] == 0 and 7 <= by_konami[kid]["level"] <= 8 for kid in copies),
+                "Each practice deck needs one- and two-Tribute Normal Monsters")
         practice_summary.append({"name": deck["file"], "cards": 40, "uniqueCards": len(copies),
-                                 "maxCopies": max(copies.values()),
+                                 "maxCopies": max(copies.values()), "normalMonsters": normal_count,
                                  "contents": [{"konamiID": kid, "name": names[str(kid)], "copies": copies[kid]}
                                               for kid in copies]})
     require(practice[0]["file"] != practice[1]["file"] and practice[0]["main"] != practice[1]["main"],
@@ -215,6 +225,12 @@ def validate(obb):
         "sourceBackedDeckIDs": len(used & set(by_konami)),
         "nameOnlyNotPlayable": [{"konamiID": kid, "name": name, "nativeDefinitionAvailable": False}
                                 for kid, name in NAME_ONLY.items()],
+        "supportedEffectIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
+                                       "sourceDescription": text_by_index[by_konami[kid]["sourceIndex"]]["description"]}
+                                      for kid, (password, _, name) in EFFECTS.items()],
+        "deferredEffectIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
+                                      "reason": "Quick-Play timing and destruction of active chain sources are not supported"}
+                                     for kid, (password, _, name) in DEFERRED.items()],
         "practiceDecks": practice_summary,
         "engineBehaviorTestsExecuted": False,
         "iosBuildExecuted": False,

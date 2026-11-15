@@ -6,10 +6,11 @@ thử nghiệm. Chưa chạy Xcode, simulator, IPA hoặc GitHub Actions sau tha
 
 ## Chế độ luyện tập
 
-- Hai người chơi luân phiên trên cùng thiết bị; chưa có AI.
+- Chơi với AI heuristic cục bộ hoặc hai người luân phiên trên cùng thiết bị.
 - Hai bộ bài riêng, mỗi bộ đúng 40 lá Main, tối đa 3 bản sao mỗi lá.
 - Extra và Side trống. Không áp dụng banlist thi đấu trong bộ luyện tập.
-- Các quái vật là Normal Monster có ATK/DEF xác định; có lá cần 1 và 2 vật tế.
+- Mỗi bộ có 26 Normal Monster có ATK/DEF xác định; có lá cần 1 và 2 vật tế.
+  14 lá còn lại là tám loại Phép/Bẫy đã cho phép ở bảng bên dưới.
 - Mọi ID và thông số trong bộ luyện tập được lấy từ OBB đã cung cấp.
 - Bộ bài nguồn từ 799 file YDC dùng cho tra cứu. Không mặc nhiên coi mọi bộ bài
   nguồn là chơi được bằng engine này.
@@ -24,17 +25,40 @@ effect bằng cách tìm từ khóa trong mô tả thẻ.
 | 4349 | Sparks | 76103675 | Gây 200 sát thương khi chain giải quyết |
 | 4348 | Dian Keto the Cure Master | 84257639 | Hồi 1000 LP khi chain giải quyết |
 | 4861 | Solemn Judgment | 41420027 | Phản hồi activation được hỗ trợ, trả nửa LP; không bao gồm phủ nhận triệu hồi |
+| 4842 | Monster Reborn | 83764718 | Chọn một Normal Monster trong Mộ của một trong hai người và Special Summon về sân người kích hoạt |
+| 11740 | Unexpected Dai | 00911883 | Khi không điều khiển quái: chọn Normal Monster cấp 4 trở xuống trong Deck khi giải quyết để Special Summon |
+| 4343 | Raigeki | 12580477 | Phá hủy toàn bộ quái trên sân đối phương |
+| 4342 | Dark Hole | 53129443 | Phá hủy toàn bộ quái trên cả hai sân |
 
-Trong OBB, tên và password của cả bốn lá khớp nhau. Mô tả Solemn Judgment có
+Trong OBB, tên và password của cả tám lá khớp nhau. Mô tả Solemn Judgment có
 phạm vi rộng hơn phần đang hỗ trợ (bao gồm phủ nhận triệu hồi); không coi việc
 đọc được mô tả là đã thực thi đầy đủ effect.
 
+Monster Reborn có mục tiêu chọn lúc kích hoạt; mục tiêu phải còn ở Mộ khi giải
+quyết. Unexpected Dai không có từ "target" trong mô tả: chỉ chọn lá từ Deck ở
+bước giải quyết, không đưa lựa chọn này lên chain như một mục tiêu. Việc triệu
+hồi bằng effect không tiêu tốn lượt Normal Summon. Bộ luyện tập chỉ chứa Normal
+Monster nên không xử lý điều kiện hồi sinh của các loại Extra Deck Monster.
+
+Mystical Space Typhoon (`4909`, password `05318639`, icon Quick-Play `5`) đã xác
+định được trong OBB nhưng **chưa được cho phép trong engine hoặc bộ luyện tập**.
+Effect này phá hủy Spell/Trap chứ không negate. Cần xử lý cả thời điểm Quick-Play
+và nguồn chain bị phá hủy trước khi hỗ trợ đúng.
+
+Mô tả bốn lá mới đã được đối chiếu thêm với database chính thức Konami:
+[Monster Reborn](https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=4842&request_locale=en),
+[Unexpected Dai](https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=11740&request_locale=en),
+[Raigeki](https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=4343&request_locale=en),
+[Dark Hole](https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=4342&request_locale=en).
+
 ## Những phần chưa hỗ trợ
 
-- Effect Monster, các kiểu Special Summon, Fusion/Ritual/Synchro/Xyz/Pendulum/Link.
+- Effect Monster, các kiểu Special Summon ngoài Monster Reborn/Unexpected Dai,
+  Fusion/Ritual/Synchro/Xyz/Pendulum/Link.
 - Battle response windows, replay, damage-step trigger và các effect không nằm
   trong whitelist trên.
-- AI, chơi mạng, chiến dịch, shop, saved game và toàn bộ luật gốc của Konami.
+- Quick-Play (bao gồm Mystical Space Typhoon), chơi mạng, chiến dịch, shop,
+  saved game và toàn bộ luật gốc của Konami.
 
 Không cho phép lá chưa hỗ trợ âm thầm hoạt động như Normal Monster, và không
 dùng nút gây sát thương/rút bài miễn phí thay cho việc kích hoạt lá trên tay.
@@ -57,8 +81,21 @@ giữa hai người. Hai lần bỏ qua liên tiếp giải quyết chain từ c
 được đổi phase, triệu hồi hoặc đánh khi chain chưa kết thúc. Solemn Judgment
 phải được úp từ lượt trước và trả nửa LP ngay khi kích hoạt, kể cả nếu bị negate.
 
-Màn hình yêu cầu chuyển máy trước khi hiện tay bài của người kế tiếp. Đây là
-chế độ hai người thao tác chung thiết bị, không phải đối thủ AI tự đánh.
+Trong chế độ hai người, màn hình yêu cầu chuyển máy trước khi hiện tay bài của
+người kế tiếp. Chế độ AI tự chọn thao tác trong phạm vi core cho phép.
+
+## AI hiện tại
+
+AI là bộ heuristic xác định, không phải CPU engine gốc. Nó chỉ sử dụng tay bài
+của chính nó, sân công khai và Mộ để lựa chọn thao tác; không đọc tay bài, thứ tự
+Deck hoặc định nghĩa lá úp của đối phương. Với Unexpected Dai, nó chỉ xem tập
+các lá đủ điều kiện khi hiệu ứng cho phép tìm Deck, không dự đoán lần rút sau.
+
+AI ưu tiên thao tác hợp lệ, các effect đã hỗ trợ, triệu hồi, chọn mục tiêu và
+chiến đấu theo thông số hiện có. Nó cũng có thể bỏ qua chain, chọn lá cho effect
+triệu hồi và bỏ bài cuối lượt. Đây là đối thủ luyện tập cơ bản, chưa phải chiến
+thuật tối ưu hay bằng chứng mọi ván đều xử lý đúng; cần chạy các self-check và
+thử trên thiết bị sau khi được phép.
 
 Luật cơ bản được đối chiếu với [rulebook Konami](https://img.yugioh-card.com/en/downloads/rulebook/SD_RuleBook_EN_10.pdf).
 Việc đối chiếu tài liệu không thay thế kiểm thử engine.
@@ -85,7 +122,8 @@ Các kiểm tra gồm:
 - Dựng lại toàn bộ 799 YDC từ JSON, so sánh từng byte với tệp trong OBB.
 - Đối chiếu tên cho từng Konami ID; không nhầm Konami ID với internal index.
 - Kiểm tra hai bộ luyện tập đúng schema, đủ 40 lá, tối đa 3 bản sao, không có
-  Extra/Side và chỉ có Normal Monster/effect đã cho phép.
+  Extra/Side, ít nhất 24 Normal Monster và chỉ có tám effect đã cho phép;
+  đối chiếu cả password lẫn tên của mỗi effect với OBB.
 
 Hai ID `10855` (Number 94: Crystalzero) và `11766` (Number S39: Utopia the
 Lightning) chỉ có tên bổ sung trong bảng tra cứu. OBB không có Prop cho chúng,
@@ -104,3 +142,7 @@ hiến tế, chiến đấu, các lệnh không hợp lệ, chi phí/negate/chai
 bỏ bài, deck-out và việc không mất/nhân đôi lá bài. Các self-check này **chưa
 được thực thi**: máy hiện không có Swift và chưa được phép build app. Không
 đưa file `@main` của self-check vào app target.
+
+Các kiểm tra cho Special Summon, phá hủy quái và AI được bổ sung trong source
+self-check; chúng cũng **chưa được thực thi**. Báo cáo Python chỉ xác nhận dữ
+liệu tương ứng, không báo pass thay cho những kiểm tra Swift chưa chạy.

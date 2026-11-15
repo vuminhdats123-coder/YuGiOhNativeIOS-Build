@@ -92,10 +92,13 @@ def main():
               'bundledImagesMatchSourceCRC': len(jpgs), 'fixedPlistsParsed': len(fixed),
               'bundlePathsChecked': True, 'displayNameCoverage': 5215, 'sourceCardCoverage': 5213,
               'missingSourceDefinitions': [10855, 11766], 'manualBuildOnly': True,
-              'engineBehaviorTests': 'authored; not executed', 'swiftCompiled': False, 'iosBuildExecuted': False,
+              'engineBehaviorTests': 'authored; not executed', 'aiBehaviorTests': 'authored; not executed',
+              'supportedEffectDefinitions': len(data['supportedEffectIdentities']),
+              'swiftCompiled': False, 'iosBuildExecuted': False,
               'portComplete': False,
               'remaining': ['Run Swift behavioral self-checks when authorized', 'Validate UI on simulator/device when authorized',
-                            'Effect monsters and special summoning', 'Summon/battle response windows', 'AI/campaign/online services']}
+                            'Effect monsters and Extra Deck special summoning', 'Summon/battle response windows',
+                            'Quick-Play timing and additional card effects', 'Campaign/online services']}
     (GENERATED / 'port-readiness.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

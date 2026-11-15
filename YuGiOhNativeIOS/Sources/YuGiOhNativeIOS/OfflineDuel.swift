@@ -3,12 +3,18 @@ import SwiftUI
 
 @MainActor
 final class OfflineDuelEngine: ObservableObject {
+    enum Opponent: String, CaseIterable { case computer = "Đấu với AI", local = "Hai người cùng máy" }
     @Published private(set) var state: DuelState?
     @Published private(set) var setupError: String?
     @Published var actionError: String?
     @Published private(set) var deckNames: [String] = []
+    @Published var opponent: Opponent = .computer
+    @Published private(set) var aiThinking = false
+    @Published private(set) var aiPaused = false
     private var definitions: [Int: DuelCardDefinition] = [:]
     private var decks: [[Int]] = []
+    private var aiTask: Task<Void, Never>?
+    private var aiRunID = UUID()
 
     private struct Deck: Decodable { let file: String; let main: [Int]; let extra: [Int]; let side: [Int] }
     private struct Meta: Decodable {
@@ -51,23 +57,80 @@ final class OfflineDuelEngine: ObservableObject {
 
     func start() {
         guard setupError == nil else { return }
+        stopAI()
         do {
             state = try DuelState(definitions: definitions, decks: decks, shuffle: true)
             actionError = nil
+            aiPaused = false
+            resumeAI()
         } catch { actionError = error.localizedDescription }
     }
 
     func perform(_ action: (inout DuelState) throws -> Void) {
         guard var next = state else { return }
+        guard opponent != .computer || controller(next) == 0 else {
+            actionError = "Đang tới lượt xử lý của AI."
+            return
+        }
         do {
             try action(&next)
             state = next
             actionError = nil
+            resumeAI()
         } catch { actionError = error.localizedDescription }
     }
 
     func name(_ card: DuelState.CardInstance) -> String {
         definitions[card.definitionID]?.name ?? "Thẻ \(card.definitionID)"
+    }
+
+    func controller(_ state: DuelState) -> Int {
+        state.pendingSummonChoice?.player ?? (state.chain.isEmpty ? state.activePlayer : state.priorityPlayer)
+    }
+
+    func stopAI() {
+        aiRunID = UUID()
+        aiTask?.cancel()
+        aiTask = nil
+        aiThinking = false
+    }
+
+    func resumeAI() {
+        guard opponent == .computer, !aiThinking,
+              let state, state.winner == nil, controller(state) == 1 else { return }
+        aiPaused = false
+        aiThinking = true
+        let token = aiRunID
+        aiTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                if self.aiRunID == token { self.aiThinking = false; self.aiTask = nil }
+            }
+            // Bound each run so a policy bug cannot lock the UI in an endless turn.
+            for _ in 0..<160 {
+                do { try await Task.sleep(nanoseconds: 150_000_000) } catch { return }
+                guard !Task.isCancelled, self.aiRunID == token,
+                      var current = self.state, current.winner == nil, self.controller(current) == 1 else { return }
+                guard let action = DuelAI.chooseAction(state: current, player: 1) else {
+                    self.actionError = "AI chưa chọn được hành động hợp lệ. Trận đã tạm dừng."
+                    self.aiPaused = true
+                    return
+                }
+                do {
+                    try current.apply(action: action, player: 1)
+                    self.state = current
+                    self.actionError = nil
+                } catch {
+                    self.actionError = "AI đã dừng: \(error.localizedDescription)"
+                    self.aiPaused = true
+                    return
+                }
+            }
+            if let current = self.state, current.winner == nil, self.controller(current) == 1 {
+                self.aiPaused = true
+                self.actionError = "AI đã đạt giới hạn thao tác của một đợt. Bạn có thể cho AI tiếp tục."
+            }
+        }
     }
 }
 
@@ -80,8 +143,11 @@ struct OfflineDuelView: View {
 
     var body: some View {
         List {
-            Section("Đấu tập • hai người trên cùng máy") {
-                Text("Quái Normal và 4 lá hiệu ứng: Pot of Greed, Sparks, Dian Keto, Solemn Judgment. Chưa hỗ trợ AI, effect quái, triệu hồi đặc biệt hay phản hồi khi tấn công.")
+            Section("Đấu tập offline") {
+                Picker("Đối thủ", selection: $game.opponent) {
+                    ForEach(OfflineDuelEngine.Opponent.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }.disabled(game.state != nil)
+                Text("Quái Normal và 8 lá hiệu ứng. Có hồi sinh bằng Monster Reborn, gọi quái từ Deck bằng Unexpected Dai, Raigeki và Dark Hole. Chưa hỗ trợ effect quái, triệu hồi từ Extra Deck hay phản hồi khi tấn công.")
                     .font(.footnote)
                 Text("Solemn Judgment hiện chỉ phủ nhận kích hoạt Phép/Bẫy, chưa phủ nhận triệu hồi.")
                     .font(.footnote)
@@ -104,6 +170,10 @@ struct OfflineDuelView: View {
                     Section("Chain • giải quyết từ liên kết cuối") {
                         ForEach(state.chain) { link in
                             Text("Người \(link.player + 1): \(game.name(link.card))")
+                            if let targetID = link.targetCardID, let owner = link.targetOwner,
+                               let target = state.players[owner].graveyard.first(where: { $0.id == targetID }) {
+                                Text("Mục tiêu: \(game.name(target)) • Mộ Người \(owner + 1)").font(.caption)
+                            }
                         }
                     }
                 }
@@ -118,6 +188,8 @@ struct OfflineDuelView: View {
             }
         }
         .navigationTitle("Đấu tập offline")
+        .onAppear { if game.opponent == .computer { visiblePlayer = 0 }; game.resumeAI() }
+        .onDisappear { game.stopAI() }
         .confirmationDialog("Bắt đầu lại và xóa tiến trình trận này?", isPresented: $confirmRestart) {
             Button("Bắt đầu trận mới", role: .destructive) { game.start(); clearPrivateState() }
             Button("Hủy", role: .cancel) { }
@@ -140,11 +212,27 @@ struct OfflineDuelView: View {
 
     @ViewBuilder
     private func controls(_ state: DuelState) -> some View {
-        let controller = state.chain.isEmpty ? state.activePlayer : state.priorityPlayer
-        if visiblePlayer != controller {
+        let controller = game.controller(state)
+        if game.opponent == .computer && controller == 1 {
+            Section("AI đang xử lý") {
+                if game.aiThinking { ProgressView("Đối thủ đang chọn hành động…") }
+                if game.aiPaused { Button("Cho AI tiếp tục") { game.resumeAI() } }
+                Text("AI sẽ dừng khi đến quyền phản hồi hoặc chọn bài của bạn.").font(.footnote)
+            }
+        } else if visiblePlayer != controller {
             Section {
                 Text("Chuyển máy cho Người \(controller + 1) trước khi xem bài trên tay.")
                 Button("Tôi là Người \(controller + 1) — hiện bài") { visiblePlayer = controller }
+            }
+        } else if let choice = state.pendingSummonChoice {
+            Section("Unexpected Dai • chọn quái để triệu hồi") {
+                Text("Chọn khi hiệu ứng giải quyết; bộ bài sẽ được xáo lại sau đó.").font(.footnote)
+                ForEach(choice.candidates) { card in
+                    Menu(game.name(card)) {
+                        Button("Thế tấn công") { act { try $0.chooseSpecialSummon(player: controller, cardID: card.id, position: .attack) } }
+                        Button("Thế phòng thủ") { act { try $0.chooseSpecialSummon(player: controller, cardID: card.id, position: .defense) } }
+                    }
+                }
             }
         } else if !state.chain.isEmpty {
             Section("Người \(controller + 1) phản hồi") {
@@ -189,6 +277,21 @@ struct OfflineDuelView: View {
                 }.disabled(!isMain || state.normalSummonUsed)
             } else if definition.effect == .judgment {
                 Button("Úp Bẫy") { act { try $0.setTrap(player: player, cardID: card.id) } }.disabled(!isMain)
+            } else if definition.effect == .revive {
+                Menu("Monster Reborn • chọn mục tiêu") {
+                    ForEach(0..<2, id: \.self) { owner in
+                        ForEach(state.players[owner].graveyard.filter { state.definition(of: $0).kindCode == 0 }) { target in
+                            Menu("\(game.name(target)) • Mộ Người \(owner + 1)") {
+                                Button("Triệu hồi thế công") {
+                                    act { try $0.activateSpell(player: player, cardID: card.id, targetID: target.id, targetPlayer: owner, position: .attack) }
+                                }
+                                Button("Triệu hồi thế thủ") {
+                                    act { try $0.activateSpell(player: player, cardID: card.id, targetID: target.id, targetPlayer: owner, position: .defense) }
+                                }
+                            }
+                        }
+                    }
+                }.disabled(!isMain || state.players[player].field.count >= 5)
             } else {
                 Button("Kích hoạt Phép") { act { try $0.activateSpell(player: player, cardID: card.id) } }.disabled(!isMain)
             }
@@ -228,6 +331,9 @@ struct OfflineDuelView: View {
             ForEach(Array(state.players[player].traps.enumerated()), id: \.element.id) { index, trap in
                 Text(visiblePlayer == player ? "Bẫy: \(game.name(trap.card))" : "Bẫy úp \(index + 1)")
             }
+            DisclosureGroup("Mộ (\(state.players[player].graveyard.count))") {
+                ForEach(state.players[player].graveyard) { card in Text(game.name(card)) }
+            }
         }
     }
 
@@ -256,10 +362,11 @@ struct OfflineDuelView: View {
         guard game.actionError == nil else { return }
         tributes = []; discards = []
         if let state = game.state {
-            let controller = state.chain.isEmpty ? state.activePlayer : state.priorityPlayer
-            if visiblePlayer != controller || state.winner != nil { visiblePlayer = nil }
+            let controller = game.controller(state)
+            if game.opponent == .computer { visiblePlayer = 0 }
+            else if visiblePlayer != controller || state.winner != nil { visiblePlayer = nil }
         }
     }
 
-    private func clearPrivateState() { visiblePlayer = nil; tributes = []; discards = [] }
+    private func clearPrivateState() { visiblePlayer = game.opponent == .computer ? 0 : nil; tributes = []; discards = [] }
 }

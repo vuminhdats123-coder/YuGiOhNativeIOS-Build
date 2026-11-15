@@ -4,7 +4,8 @@ Project native SwiftUI nội bộ, dùng dữ liệu tên và mô tả thẻ đ�
 
 ## Duel offline và kiểm tra
 
-Lõi `DuelState.swift` hỗ trợ một tập luật luyện tập cho hai người trên cùng máy.
+Lõi `DuelState.swift` hỗ trợ một tập luật luyện tập với AI hoặc hai người trên cùng máy.
+AI chọn hành động qua cùng API luật, không nhận danh tính bài trên tay/bài úp của đối phương.
 Chi tiết phạm vi và giới hạn ở [docs/OFFLINE_DUEL.md](docs/OFFLINE_DUEL.md).
 Các deck YDC gốc vẫn dùng để tra cứu; không mặc định chơi được mọi effect trong đó.
 
@@ -15,7 +16,8 @@ python YuGiOhNativeIOS/Tools/verify_duel_data.py
 python YuGiOhNativeIOS/Tools/port_readiness.py
 ```
 
-Self-check hành vi Swift ở `Tests/duel_state_checks.swift` đã được viết nhưng chưa chạy.
+Self-check hành vi Swift ở `Tests/duel_state_checks.swift` và `Tests/duel_ai_checks.swift`
+đã được viết nhưng chưa chạy.
 Không đánh đồng các kiểm tra dữ liệu Python với kết quả chạy engine.
 
 ## Build hiện đang hoãn

@@ -18,7 +18,9 @@ enum DuelStateChecks {
         normal(104, 5, 2400, 1500); normal(105, 7, 3000, 2500); normal(106, 4, 8000, 0)
         let spells: [(Int, String, Int, UInt32)] = [
             (1, "Pot of Greed", 13, 55_144_522), (2, "Sparks", 13, 76_103_675),
-            (3, "Dian Keto the Cure Master", 13, 84_257_639), (4, "Solemn Judgment", 14, 41_420_027)
+            (3, "Dian Keto the Cure Master", 13, 84_257_639), (4, "Solemn Judgment", 14, 41_420_027),
+            (5, "Monster Reborn", 13, 83_764_718), (6, "Unexpected Dai", 13, 911_883),
+            (7, "Raigeki", 13, 12_580_477), (8, "Dark Hole", 13, 53_129_443)
         ]
         for (id, name, kind, password) in spells {
             result[id] = DuelCardDefinition(id: id, name: name, kindCode: kind,
@@ -70,17 +72,28 @@ enum DuelStateChecks {
         precondition(before.activePlayer == state.activePlayer && before.turn == state.turn)
         precondition(before.phase == state.phase && before.winner == state.winner)
         precondition(before.priorityPlayer == state.priorityPlayer && before.log == state.log)
+        precondition(before.isResolving == state.isResolving && before.pendingSummonChoice == state.pendingSummonChoice)
     }
     static func conserved(_ state: DuelState, total: Int = 80) {
         var ids = state.chain.map { $0.card.id }
-        for player in state.players {
+        for (owner, player) in state.players.enumerated() {
             ids += (player.deck + player.hand + player.graveyard).map(\.id)
             ids += player.field.map(\.id) + player.traps.map(\.id)
+            precondition((player.deck + player.hand + player.graveyard).allSatisfy { $0.owner == owner }, "Wrong graveyard/hand/deck owner")
         }
         precondition(ids.count == total && Set(ids).count == total, "Lost or duplicated physical cards")
     }
 
     static func main() throws {
+        // Runtime shuffling can be replayed with the same seed, including after restart.
+        do {
+            var first = try DuelState(definitions: definitions, decks: [deck([6]), deck()], shuffle: true, shuffleSeed: 42)
+            let second = try DuelState(definitions: definitions, decks: [deck([6]), deck()], shuffle: true, shuffleSeed: 42)
+            precondition(first.players == second.players)
+            first.restart(shuffle: true)
+            precondition(first.players == second.players)
+            conserved(first)
+        }
         // Strict subset and deck size limits: no ignored or silently broken card effects.
         do {
             var invalid = definitions
@@ -314,6 +327,149 @@ enum DuelStateChecks {
             try state.attack(player: 1, attackerID: state.players[1].field[0].id)
             precondition(state.winner == 1 && state.players[0].lp == 0)
             reject(&state) { try $0.nextPhase(player: 1) }
+            conserved(state)
+        }
+
+        // Reborn respects the original owner after tribute/destruction and does not consume Normal Summon.
+        do {
+            var state = try game([101, 5, 5, 8, 104], [100])
+            try mainPhase(&state); try state.summon(player: 0, cardID: handID(state, 0, 101))
+            try finishTurn(&state); try mainPhase(&state)
+            try state.summon(player: 1, cardID: handID(state, 1, 100)); try state.nextPhase(player: 1)
+            let opponentCard = state.players[1].field[0].card
+            try state.attack(player: 1, attackerID: opponentCard.id, targetID: state.players[0].field[0].id)
+            try finishTurn(&state); try mainPhase(&state)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: opponentCard.id, targetPlayer: 0) }
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: opponentCard.id, targetPlayer: 2) }
+            try state.apply(action: .activateSpell(cardID: handID(state, 0, 5), targetID: opponentCard.id, targetPlayer: 1, position: .defense), player: 0)
+            precondition(state.players[1].graveyard.contains(opponentCard) && state.players[0].field.count == 1)
+            try resolve(&state)
+            precondition(state.players[0].field.last!.card == opponentCard && state.players[0].field.last!.position == .defense)
+            precondition(!state.normalSummonUsed && state.players[1].graveyard.isEmpty)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: opponentCard.id, targetPlayer: 1) }
+            try state.apply(action: .summon(cardID: handID(state, 0, 104), tributes: [opponentCard.id], set: false), player: 0)
+            precondition(state.players[1].graveyard.contains(opponentCard) && state.normalSummonUsed)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 5), targetID: opponentCard.id, targetPlayer: 1)
+            try resolve(&state)
+            precondition(state.normalSummonUsed && state.players[0].field.count == 3)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 8)); try resolve(&state)
+            precondition(state.players.allSatisfy { $0.field.isEmpty })
+            precondition(state.players[1].graveyard == [opponentCard])
+            conserved(state)
+        }
+
+        // Reborn targets only a Normal monster already in a graveyard; negation leaves it there.
+        do {
+            var state = try game([100, 5, 2], [101, 4])
+            try mainPhase(&state)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5)) }
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 2)); try resolve(&state)
+            let spellInGrave = state.players[0].graveyard[0].id
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: spellInGrave, targetPlayer: 0) }
+            try state.summon(player: 0, cardID: handID(state, 0, 100))
+            try finishTurn(&state); try mainPhase(&state)
+            try state.setTrap(player: 1, cardID: handID(state, 1, 4))
+            try state.summon(player: 1, cardID: handID(state, 1, 101)); try state.nextPhase(player: 1)
+            let target = state.players[0].field[0].card
+            try state.attack(player: 1, attackerID: state.players[1].field[0].id, targetID: target.id)
+            try finishTurn(&state); try mainPhase(&state)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 5), targetID: target.id, targetPlayer: 0)
+            try state.activateCounter(player: 1, trapID: state.players[1].traps[0].id); try resolve(&state)
+            precondition(state.players[0].field.isEmpty && state.players[0].graveyard.contains(target))
+            conserved(state)
+        }
+        do {
+            var state = try game([100, 101, 102, 104, 5])
+            try mainPhase(&state); try state.summon(player: 0, cardID: handID(state, 0, 100))
+            let target = state.players[0].field[0].id
+            try finishTurn(&state); try finishTurn(&state); try mainPhase(&state)
+            try state.summon(player: 0, cardID: handID(state, 0, 101))
+            try finishTurn(&state); try finishTurn(&state); try mainPhase(&state)
+            try state.summon(player: 0, cardID: handID(state, 0, 104), tributes: [target])
+            for _ in 0..<3 {
+                try finishTurn(&state); try finishTurn(&state); try mainPhase(&state)
+                let normal = state.players[0].hand.first { state.definition(of: $0).kindCode == 0 && state.definition(of: $0).level <= 4 }!
+                try state.summon(player: 0, cardID: normal.id)
+            }
+            precondition(state.players[0].field.count == 5)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 5), targetID: target, targetPlayer: 0) }
+            conserved(state)
+        }
+
+        // Dai has no target at activation: selection happens only after both players pass.
+        do {
+            var state = try game([6, 6, 100])
+            try mainPhase(&state)
+            let dai = handID(state, 0, 6)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: dai, targetID: $0.players[0].deck[0].id, targetPlayer: 0) }
+            try state.apply(action: .activateSpell(cardID: dai, targetID: nil, targetPlayer: nil, position: .attack), player: 0)
+            precondition(state.pendingSummonChoice == nil && !state.isResolving)
+            try state.pass(player: 1); try state.pass(player: 0)
+            precondition(state.isResolving && !state.chain.isEmpty && state.pendingSummonChoice?.player == 0)
+            let choice = state.pendingSummonChoice!
+            precondition(choice.candidates.allSatisfy { state.definition(of: $0).kindCode == 0 && state.definition(of: $0).level <= 4 })
+            let selected = choice.candidates[0]
+            reject(&state) { try $0.pass(player: 0) }
+            reject(&state) { try $0.nextPhase(player: 0) }
+            reject(&state) { try $0.chooseSpecialSummon(player: 1, cardID: selected.id) }
+            reject(&state) { try $0.chooseSpecialSummon(player: 0, cardID: handID($0, 0, 100)) }
+            let deckBefore = Set(state.players[0].deck.map(\.id))
+            try state.apply(action: .chooseSpecialSummon(cardID: selected.id, position: .defense), player: 0)
+            precondition(!state.isResolving && state.pendingSummonChoice == nil && state.chain.isEmpty)
+            precondition(!state.normalSummonUsed && state.players[0].field[0].position == .defense && !state.players[0].field[0].faceDown)
+            precondition(Set(state.players[0].deck.map(\.id)) == deckBefore.subtracting([selected.id]))
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 6)) }
+            try state.summon(player: 0, cardID: handID(state, 0, 100))
+            precondition(state.normalSummonUsed && state.players[0].field.count == 2)
+            conserved(state)
+        }
+
+        // A negated Dai never asks for a summon and does not touch the deck; restart cancels a pending choice.
+        do {
+            var state = try game([4], [6])
+            try mainPhase(&state); try state.setTrap(player: 0, cardID: handID(state, 0, 4))
+            try finishTurn(&state); try mainPhase(&state)
+            let deckBefore = state.players[1].deck
+            try state.activateSpell(player: 1, cardID: handID(state, 1, 6))
+            try state.activateCounter(player: 0, trapID: state.players[0].traps[0].id); try resolve(&state)
+            precondition(state.pendingSummonChoice == nil && state.players[1].deck == deckBefore && state.players[1].field.isEmpty)
+            state = try game([6]); try mainPhase(&state)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 6)); try state.pass(player: 1); try state.pass(player: 0)
+            precondition(state.isResolving)
+            state.restart()
+            precondition(!state.isResolving && state.pendingSummonChoice == nil && state.chain.isEmpty && state.players[0].deck.count == 35)
+            conserved(state)
+        }
+        do {
+            var highOnly = definitions
+            for id in 100...129 {
+                highOnly[id] = DuelCardDefinition(id: id, name: "High Normal \(id)", kindCode: 0,
+                                                 level: 5, atk: 2000, def: 1000, password: nil)
+            }
+            var state = try DuelState(definitions: highOnly, decks: [deck([6]), deck()])
+            try mainPhase(&state)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 6)) }
+            conserved(state)
+        }
+
+        // Mass destruction includes face-down monsters, never causes battle damage, and costs a real spell.
+        do {
+            var state = try game([101, 7, 8], [100])
+            try mainPhase(&state)
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 7)) }
+            reject(&state) { try $0.activateSpell(player: 0, cardID: handID($0, 0, 8)) }
+            try state.summon(player: 0, cardID: handID(state, 0, 101))
+            try finishTurn(&state); try mainPhase(&state)
+            try state.summon(player: 1, cardID: handID(state, 1, 100), set: true)
+            let defender = state.players[1].field[0].card
+            try finishTurn(&state); try mainPhase(&state)
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 7))
+            precondition(state.players[1].field.count == 1)
+            try resolve(&state)
+            precondition(state.players[1].field.isEmpty && state.players[1].graveyard.contains(defender))
+            precondition(state.players[0].field.count == 1 && state.players.allSatisfy { $0.lp == 8000 })
+            try state.activateSpell(player: 0, cardID: handID(state, 0, 8)); try resolve(&state)
+            precondition(state.players.allSatisfy { $0.field.isEmpty && $0.lp == 8000 })
             conserved(state)
         }
         print("DuelState: all behavioral checks passed")
