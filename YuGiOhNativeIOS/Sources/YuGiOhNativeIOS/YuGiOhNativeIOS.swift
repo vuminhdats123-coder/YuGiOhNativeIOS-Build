@@ -72,13 +72,7 @@ public struct ContentView: View {
     public var body: some View {
         NavigationStack {
             List(store.filtered) { card in
-                NavigationLink(value: card) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(card.name).font(.headline)
-                        Text("\(card.type) | \(card.attribute)").font(.caption).foregroundStyle(.secondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
+                NavigationLink(value: card) { CardRow(card: card) }
             }
             .navigationTitle("Card Catalog")
             .searchable(text: $store.query, prompt: "Search cards")
@@ -90,28 +84,39 @@ public struct ContentView: View {
                     .pickerStyle(.menu)
                 }
             }
-            .navigationDestination(for: Card.self) { card in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if let imageName = card.imageName, let image = CardImageStore.image(named: imageName) {
-                            Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 320).clipShape(RoundedRectangle(cornerRadius: 16))
-                        } else {
-                            RoundedRectangle(cornerRadius: 16).fill(.orange.gradient).frame(height: 220)
-                                .overlay(Text(card.name).font(.title2.bold()).multilineTextAlignment(.center).padding())
-                        }
-                        Text(card.name).font(.title.bold())
-                        Label(card.type, systemImage: "rectangle.stack")
-                        Label(card.attribute, systemImage: "circle.lefthalf.filled")
-                        Text(card.description).font(.body)
-                        if let intID = card.intID { Text("IntID: \(intID) ï¿½ Prop: \(card.prop ?? 0) ï¿½ Genre: \(card.genre ?? 0)").font(.caption).foregroundStyle(.secondary) }
-                            if let prop = card.prop { Text(CardPropDecoder.labels(prop).joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }
-                    }.padding()
-                }.navigationTitle("Card Detail")
-            }
+            .navigationDestination(for: Card.self) { CardDetailView(card: $0) }
         }
     }
 }
 
+private struct CardRow: View {
+    let card: Card
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(card.name).font(.headline)
+            Text("\(card.kind ?? card.type) | \(card.attributeName ?? card.attribute)").font(.caption).foregroundStyle(.secondary)
+        }.accessibilityElement(children: .combine)
+    }
+}
 
-
-
+private struct CardDetailView: View {
+    let card: Card
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let imageName = card.imageName, let image = CardImageStore.image(named: imageName) {
+                    Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 320).clipShape(RoundedRectangle(cornerRadius: 16))
+                } else {
+                    RoundedRectangle(cornerRadius: 16).fill(.orange.gradient).frame(height: 220).overlay(Text(card.name).font(.title2.bold()).multilineTextAlignment(.center).padding())
+                }
+                Text(card.name).font(.title.bold())
+                Label(card.kind ?? card.type, systemImage: "rectangle.stack")
+                Label(card.attributeName ?? card.attribute, systemImage: "circle.lefthalf.filled")
+                if let race = card.race { Text("Race: \(race)") }
+                if let level = card.level { Text("Level: \(level) | ATK: \(card.atk.map(String.init) ?? "?") | DEF: \(card.def.map(String.init) ?? "?")") }
+                Text(card.description).font(.body)
+                if !card.genres.isEmpty { Text(card.genres.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }
+            }.padding()
+        }.navigationTitle("Card Detail")
+    }
+}
