@@ -20,7 +20,7 @@
   FFFFFFFFFFFFFFFFFFFFFFFF = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA;};
   131313131313131313131313 = {isa = PBXBuildFile; fileRef = BBBBBBBBBBBBBBBBBBBBBBBB;};
   CDCDCDCDCDCDCDCDCDCDCDCD = {isa = PBXBuildFile; fileRef = CDCDCDCDCDCDCDCDCDCDCDCD;};
-  ACACACACACACACACACACACAC = {isa = PBXBuildFile; fileRef = ABABABABABABABABABABABAB;}; fileRef = ABABABABABABABABABABABAB;};
+  ACACACACACACACACACACACAC = {isa = PBXBuildFile; fileRef = ABABABABABABABABABABABAB;};
   555555555555555555555555 = {isa = PBXNativeTarget; buildConfigurationList = 343434343434343434343434; buildPhases = (DDDDDDDDDDDDDDDDDDDDDDDD,121212121212121212121212); buildRules = (); dependencies = (); name = YuGiOhNativeIOS; productName = YuGiOhNativeIOS; productReference = CCCCCCCCCCCCCCCCCCCCCCCC; productType = "com.apple.product-type.application";};
   222222222222222222222222 = {isa = XCConfigurationList; buildConfigurations = (151515151515151515151515,161616161616161616161616); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
   343434343434343434343434 = {isa = XCConfigurationList; buildConfigurations = (171717171717171717171717,181818181818181818181818); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
@@ -31,6 +31,7 @@
  };
  rootObject = 111111111111111111111111;
 }
+
 
 
 
