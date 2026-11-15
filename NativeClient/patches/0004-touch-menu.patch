@@ -1,5 +1,5 @@
 diff --git a/gframe/event_handler.cpp b/gframe/event_handler.cpp
-index 9c38c24..4b7ad14 100644
+index 9c38c24..2b05033 100644
 --- a/gframe/event_handler.cpp
 +++ b/gframe/event_handler.cpp
 @@ -21,6 +21,7 @@
@@ -95,7 +95,7 @@ index 9c38c24..4b7ad14 100644
  			case BUTTON_HAND1:
  			case BUTTON_HAND2:
  			case BUTTON_HAND3: {
-@@ -188,7 +248,11 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -188,13 +248,21 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  				UpdateChainButtons(event.GUIEvent.Caller);
  				break;
  			}
@@ -108,7 +108,18 @@ index 9c38c24..4b7ad14 100644
  				CancelOrFinish();
  				break;
  			}
-@@ -622,6 +686,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+ 			case BUTTON_RESTART_SINGLE: {
+-				if(mainGame->dInfo.isSingleMode)
++				if(mainGame->dInfo.isSingleMode) {
++#if EDOPRO_IOS
++					mainGame->CloseDuelControls();
++#endif
+ 					SingleMode::Restart();
++				}
+ 				break;
+ 			}
+ 			case BUTTON_MSG_OK: {
+@@ -622,6 +690,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			case BUTTON_CARD_2:
  			case BUTTON_CARD_3:
  			case BUTTON_CARD_4: {
@@ -118,7 +129,7 @@ index 9c38c24..4b7ad14 100644
  				if(mainGame->dInfo.isReplay)
  					break;
  				mainGame->stCardListTip->setVisible(false);
-@@ -632,9 +699,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -632,9 +703,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  					if(list_command == COMMAND_LIST)
  						break;
  					if(list_command == COMMAND_SPSUMMON) {
@@ -132,7 +143,7 @@ index 9c38c24..4b7ad14 100644
  						DuelClient::SetResponseI((index << 16) + 1);
  						mainGame->HideElement(mainGame->wCardSelect, true);
  						ShowCancelOrFinishButton(0);
-@@ -642,7 +710,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -642,7 +714,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  					}
  					if(list_command == COMMAND_ACTIVATE || list_command == COMMAND_OPERATION) {
  						int index = -1;
@@ -141,7 +152,7 @@ index 9c38c24..4b7ad14 100644
  						select_options.clear();
  						for (size_t i = 0; i < activatable_cards.size(); ++i) {
  							if (activatable_cards[i] == command_card) {
-@@ -655,6 +723,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -655,6 +727,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  								if (index == -1) index = static_cast<int>(i);
  							}
  						}
@@ -149,7 +160,7 @@ index 9c38c24..4b7ad14 100644
  						if (select_options.size() == 1) {
  							if (mainGame->dInfo.curMsg == MSG_SELECT_IDLECMD) {
  								DuelClient::SetResponseI((index << 16) + 5);
-@@ -675,17 +744,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -675,17 +748,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  					break;
  				}
  				case MSG_SELECT_CARD: {
@@ -172,7 +183,7 @@ index 9c38c24..4b7ad14 100644
  						selected_cards.push_back(command_card);
  					}
  					auto sel = selected_cards.size();
-@@ -695,28 +764,29 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -695,28 +768,29 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  						mainGame->HideElement(mainGame->wCardSelect, true);
  					} else if (sel >= select_min) {
  						select_ready = true;
@@ -208,7 +219,7 @@ index 9c38c24..4b7ad14 100644
  					}
  					selected_cards.push_back(command_card);
  					if (selected_cards.size() > 0) {
-@@ -724,16 +794,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -724,16 +798,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  						ShowCancelOrFinishButton(0);
  						mainGame->HideElement(mainGame->wCardSelect, true);
  					}
@@ -228,7 +239,7 @@ index 9c38c24..4b7ad14 100644
  					} else
  						selected_cards.push_back(command_card);
  					ShowSelectSum();
-@@ -741,8 +812,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -741,8 +816,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  				}
  				case MSG_SORT_CHAIN:
  				case MSG_SORT_CARD: {
@@ -240,7 +251,7 @@ index 9c38c24..4b7ad14 100644
  					if(sort_list[sel_seq]) {
  						select_min--;
  						int sel = sort_list[sel_seq];
-@@ -750,8 +822,8 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -750,8 +826,8 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  						for(uint32_t i = 0; i < select_max; ++i)
  							if(sort_list[i] > sel)
  								sort_list[i]--;
@@ -251,7 +262,7 @@ index 9c38c24..4b7ad14 100644
  								break;
  							if(sort_list[offset + i]) {
  								mainGame->stCardPos[i]->setText(epro::to_wstring(sort_list[offset + i]).data());
-@@ -760,21 +832,30 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -760,21 +836,30 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  					} else {
  						select_min++;
  						sort_list[sel_seq] = select_min;
@@ -285,7 +296,7 @@ index 9c38c24..4b7ad14 100644
  			case BUTTON_CARD_SEL_OK: {
  				// Space and Return trigger the last focused button so the hide animation can be triggered again
  				// even if it's already hidden along with its child OK button
-@@ -889,112 +970,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -889,112 +974,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  				break;
  			}
  			case SCROLL_CARD_SELECT: {
@@ -404,7 +415,7 @@ index 9c38c24..4b7ad14 100644
  				break;
  			}
  			}
-@@ -1023,59 +1007,24 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1023,59 +1011,24 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			break;
  		}
  		case irr::gui::EGET_ELEMENT_HOVERED: {
@@ -476,7 +487,7 @@ index 9c38c24..4b7ad14 100644
  			}
  			if(id == TEXT_CARD_LIST_TIP) {
  				mainGame->stCardListTip->setVisible(false);
-@@ -1106,9 +1055,14 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1106,9 +1059,14 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
  			if(root->getElementFromPoint(mousepos) != root)
  				break;
@@ -491,7 +502,7 @@ index 9c38c24..4b7ad14 100644
  			GetHoverField(mousepos);
  			if((hovered_location & (LOCATION_DECK | LOCATION_GRAVE | LOCATION_REMOVED | LOCATION_EXTRA)) == 0)
  				break;
-@@ -1131,7 +1085,11 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1131,7 +1089,11 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  				mainGame->chain_when_avail = false;
  				UpdateChainButtons();
  			}
@@ -503,7 +514,7 @@ index 9c38c24..4b7ad14 100644
  				break;
  			if(mainGame->wCmdMenu->isVisible() && !mainGame->wCmdMenu->getRelativePosition().isPointInside(mousepos))
  				mainGame->wCmdMenu->setVisible(false);
-@@ -1522,7 +1480,11 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1522,7 +1484,11 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			irr::core::vector2di mousepos(event.MouseInput.X, event.MouseInput.Y);
  			irr::s32 x = pos.X;
  			irr::s32 y = pos.Y;
@@ -515,7 +526,7 @@ index 9c38c24..4b7ad14 100644
  				mainGame->stTip->setVisible(should_show_tip);
  				break;
  			}
-@@ -1550,12 +1512,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1550,12 +1516,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  				} else if(hovered_location == LOCATION_SKILL) {
  					mcard = skills[hovered_controler];
  				} else {
@@ -531,7 +542,7 @@ index 9c38c24..4b7ad14 100644
  				}
  			}
  			if(hovered_location == LOCATION_HAND && (mainGame->dInfo.is_shuffling || mainGame->dInfo.curMsg == MSG_SHUFFLE_HAND))
-@@ -1671,7 +1636,13 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1671,7 +1640,13 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			break;
  		}
  		case irr::EMIE_LMOUSE_PRESSED_DOWN: {
@@ -546,7 +557,7 @@ index 9c38c24..4b7ad14 100644
  				break;
  			mainGame->always_chain = true;
  			mainGame->ignore_chain = false;
-@@ -1680,7 +1651,13 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
+@@ -1680,7 +1655,13 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
  			break;
  		}
  		case irr::EMIE_RMOUSE_PRESSED_DOWN: {
@@ -561,7 +572,7 @@ index 9c38c24..4b7ad14 100644
  				break;
  			mainGame->ignore_chain = true;
  			mainGame->always_chain = false;
-@@ -1846,6 +1823,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -1846,6 +1827,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  				lstsSize.LowerRightCorner.Y = mainGame->ResizeY(300 - mainGame->Scale(7)) - mainGame->Scale(10);
  				mainGame->lstLog->setRelativePosition(lstsSize);
  				mainGame->lstChat->setRelativePosition(lstsSize);
@@ -569,7 +580,7 @@ index 9c38c24..4b7ad14 100644
  				return true;
  			}
  			case BUTTON_REPO_CHANGELOG:	{
-@@ -1950,7 +1928,12 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -1950,7 +1932,12 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  				return true;
  			}
  			case CHECKBOX_ALTERNATIVE_PHASE_LAYOUT: {
@@ -582,7 +593,7 @@ index 9c38c24..4b7ad14 100644
  				mainGame->SetPhaseButtons(true);
  				return true;
  			}
-@@ -2047,11 +2030,20 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -2047,11 +2034,20 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  				break;
  			}
  			case CHECKBOX_TOPDOWN: {
@@ -603,7 +614,7 @@ index 9c38c24..4b7ad14 100644
  				break;
  			}
  			case CHECKBOX_KEEP_CARD_ASPECT_RATIO: {
-@@ -2122,6 +2114,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -2122,6 +2118,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  					}
  					mainGame->infosExpanded = 1;
  				}
@@ -611,7 +622,7 @@ index 9c38c24..4b7ad14 100644
  				return true;
  			}
  			break;
-@@ -2193,11 +2186,13 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -2193,11 +2190,13 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  			return true;
  		}
  		case irr::KEY_F9: {
@@ -625,7 +636,7 @@ index 9c38c24..4b7ad14 100644
  			return true;
  		}
  		case irr::KEY_F10: {
-@@ -2259,6 +2254,17 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
+@@ -2259,6 +2258,17 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
  			case irr::EMIE_MOUSE_WHEEL: {
  				irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
  				irr::gui::IGUIElement* elem = root->getElementFromPoint({ event.MouseInput.X, event.MouseInput.Y });
@@ -643,7 +654,7 @@ index 9c38c24..4b7ad14 100644
  				auto IsStaticText = [](irr::gui::IGUIElement* elem) -> bool {
  					return elem && elem->getType() == irr::gui::EGUIET_STATIC_TEXT;
  				};
-@@ -2450,6 +2456,13 @@ bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, const std::vector<Cli
+@@ -2450,6 +2460,13 @@ bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, const std::vector<Cli
  }
  
  void ClientField::GetHoverField(const irr::core::vector2d<irr::s32>& mouse) {
@@ -657,7 +668,7 @@ index 9c38c24..4b7ad14 100644
  	const int three_columns = mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD);
  	const int not_separate_pzones = !mainGame->dInfo.HasFieldFlag(DUEL_SEPARATE_PZONE);
  	if(CheckHand(mouse, hand[0])) {
-@@ -2698,7 +2711,37 @@ void ClientField::ShowMenu(int flag, int x, int y) {
+@@ -2698,7 +2715,37 @@ void ClientField::ShowMenu(int flag, int x, int y) {
  	irr::core::vector2di mouse = mainGame->Resize(x, y);
  	x = mouse.X;
  	y = mouse.Y;
@@ -695,7 +706,7 @@ index 9c38c24..4b7ad14 100644
  }
  void ClientField::UpdateChainButtons(irr::gui::IGUIElement* caller) {
  	if(!caller) {
-@@ -2742,6 +2785,10 @@ void ClientField::ShowCancelOrFinishButton(int buttonOp) {
+@@ -2742,6 +2789,10 @@ void ClientField::ShowCancelOrFinishButton(int buttonOp) {
  	else {
  		mainGame->btnCancelOrFinish->setVisible(false);
  	}
@@ -706,7 +717,7 @@ index 9c38c24..4b7ad14 100644
  }
  void ClientField::SetShowMark(ClientCard* pcard, bool enable) {
  	if(pcard->equipTarget)
-@@ -2762,6 +2809,10 @@ void ClientField::SetShowMark(ClientCard* pcard, bool enable) {
+@@ -2762,6 +2813,10 @@ void ClientField::SetShowMark(ClientCard* pcard, bool enable) {
  	}
  }
  void ClientField::ShowCardInfoInList(ClientCard* pcard, irr::gui::IGUIElement* element, irr::gui::IGUIElement* parent) {
@@ -717,7 +728,7 @@ index 9c38c24..4b7ad14 100644
  	std::wstring str(L"");
  	if(pcard->code) {
  		str.append(gDataManager->GetName(pcard->code).data());
-@@ -2782,15 +2833,35 @@ void ClientField::ShowCardInfoInList(ClientCard* pcard, irr::gui::IGUIElement* e
+@@ -2782,15 +2837,35 @@ void ClientField::ShowCardInfoInList(ClientCard* pcard, irr::gui::IGUIElement* e
  		parent->addChild(mainGame->stCardListTip);
  		irr::core::recti ePos = element->getRelativePosition();
  		irr::s32 x = (ePos.UpperLeftCorner.X + ePos.LowerRightCorner.X) / 2;

@@ -1,8 +1,8 @@
 {
-  "scope": "Real Windows OCG matches/card initialization/prompt scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
+  "scope": "Real Windows OCG matches/card initialization/prompt and canonical effect scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
   "python": {
-    "run": 77,
-    "passed": 76,
+    "run": 78,
+    "passed": 77,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
@@ -154,7 +154,11 @@
     "originBoundUIKitInputSourceReviewed": true,
     "nativeInputGateTestsExecuted": false,
     "nativeLifecycleTestsExecuted": false,
-    "localResumeClockResetSourceReviewed": true
+    "localResumeClockResetSourceReviewed": true,
+    "duelCloseAcknowledgementSourceReviewed": true,
+    "restartHUDStateSourceReviewed": true,
+    "restartClosesIOSControlsSourceReviewed": true,
+    "nativeSessionLifecycleTestsExecuted": false
   },
   "windowsPromptScenarios": {
     "report": "host-prompt-validation.json",
@@ -180,5 +184,26 @@
     "testLuaSHA256": "5569b3987af6bc65bea7620f4c7aa51e73ebe46954f8c7b8cd27a0544754176c",
     "nativeIOSExecuted": false,
     "limit": "Acceptance of covered operations only; not every prompt variant, ordering strategy or effect interaction"
+  },
+  "windowsEffectScenarios": {
+    "report": "host-effect-validation.json",
+    "reportSHA256": "f53fd91eb825c98f0598ce9cdb943d76ed3f262f2c7d68b043a94974a3cd22de",
+    "accepted": 8,
+    "responses": 112,
+    "retries": 0,
+    "scriptErrors": 0,
+    "interactions": [
+      "destruction_revival",
+      "spell_activation_negation",
+      "effect_and_battle_damage",
+      "fusion_summon"
+    ],
+    "finalStateLuaAssertionsVerified": true,
+    "fullMatchesClaimed": 0,
+    "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b",
+    "testLuaSHA256": "fcb4387e702bf3f14e0f8c12fe24a4f322925e62759d07d713daaf3f7e515f9c",
+    "harnessSHA256": "9eb057c02aa9d6d0cbad74ae6cfdbb8b8132e35c8e7437c3f98007114c2f303b",
+    "nativeIOSExecuted": false,
+    "limit": "Fixed small fields and selected canonical effects only; not all deck/effect combinations or iOS GUI behavior"
   }
 }

@@ -59,6 +59,14 @@ class MatchHarnessTests(unittest.TestCase):
         engine=m.Engine.__new__(m.Engine)
         for kind,player in (('invalid',0),('choices',2),('choices',-1)):
             with self.subTest(kind=kind,player=player),self.assertRaises(ValueError): engine.prompt_scenario(kind,player,1)
+        with self.assertRaises(ValueError): engine.prompt_scenario('choices',0,1,effect=True)
+        with self.assertRaises(ValueError): engine.prompt_scenario('fusion_summon',0,1)
+    def test_scenario_evidence_requires_real_message_and_canonical_script(self):
+        m.require_scenario_evidence({63,74},{50:3,63:1,74:1},{'c24094653.lua'},{'constant.lua','c24094653.lua'})
+        with self.assertRaisesRegex(ValueError,'expected messages'):
+            m.require_scenario_evidence({63,74},{74:1},{'c24094653.lua'},{'c24094653.lua'})
+        with self.assertRaisesRegex(ValueError,'required canonical scripts'):
+            m.require_scenario_evidence({63,74},{63:1,74:1},{'c24094653.lua'},{'constant.lua'})
     def test_answer_passes_only_declarable_codes_and_selecting_player(self):
         engine=m.Engine.__new__(m.Engine);engine.cards={100:self.card(),101:self.card(alias=100)}
         engine.positions=Mock(return_value={'0':1});node=Mock()

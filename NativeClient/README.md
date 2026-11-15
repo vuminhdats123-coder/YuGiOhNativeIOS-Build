@@ -109,11 +109,23 @@ hồi được chấp nhận, không retry/lỗi Lua. Kết hợp với 36 ván 
 21 nhóm prompt AI hỗ trợ. Đây là kiểm tra chấp nhận phản hồi, chưa bao phủ mọi
 biến thể/hiệu ứng; xem [HOST_PROMPT_VALIDATION.md](HOST_PROMPT_VALIDATION.md).
 
+Tám [kịch bản hiệu ứng](HOST_EFFECT_VALIDATION.md) bổ sung kiểm tra phá huỷ rồi
+hồi sinh, vô hiệu kích hoạt phép và trả cost, sát thương phép/chiến đấu và Fusion
+bằng Polymerization. Cả hai phía chơi đều dùng AI production và script thẻ đã pin;
+112 phản hồi được chấp nhận, không retry/lỗi Lua. Kiểm tra xác nhận LP, vị trí,
+lý do di chuyển và nguyên liệu; không tính các kịch bản này thành ván hoàn chỉnh.
+
 Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
 Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.
 Dừng/chơi lại có kiểm soát trạng thái; lỗi được hiện sau khi đóng bàn đấu để không
 chờ vô hạn. Kiểm thử C++ trực tiếp cho hàng đợi đã viết tại
 `overlays/offline-ai/tests/response_mailbox_checks.cpp`, chưa biên dịch/chạy.
+
+Cleanup đóng bàn đấu giữ cùng mutex với luồng đang chờ xác nhận, tránh mất tín
+hiệu khiến lần mở trận tiếp theo bị kẹt. Restart đóng menu điều khiển và cập nhật
+LP/tên/hình học bàn đấu dưới khóa render. Các ca thoát, shutdown, restart giữa
+animation và thắng rồi chơi tiếp nằm trong
+`overlays/offline-ai/tests/session_lifecycle_checks.md`; chưa chạy native.
 
 ```powershell
 python -m unittest discover -s tests -v

@@ -50,6 +50,10 @@ từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOS
 Sáu [kịch bản prompt bổ sung](NativeClient/HOST_PROMPT_VALIDATION.md) đã được
 engine thật chấp nhận cả 54 phản hồi; kết hợp với các ván trước, đã quan sát đủ
 21 nhóm prompt AI hỗ trợ. Chưa bao phủ mọi biến thể prompt hoặc hiệu ứng.
+Đã thêm 8 [kịch bản hiệu ứng thật](NativeClient/HOST_EFFECT_VALIDATION.md), gồm
+phá huỷ/hồi sinh, vô hiệu phép, sát thương và Fusion; tất cả đạt với 112 phản hồi,
+không retry/lỗi Lua. Sửa nguồn bổ sung xử lý mất tín hiệu khi đóng ván và cập nhật
+HUD khi restart; các đường GUI này vẫn cần kiểm tra native.
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong

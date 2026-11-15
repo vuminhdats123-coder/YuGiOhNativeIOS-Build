@@ -25,6 +25,13 @@ forwards pause/resume to the client's Suspend/Resume. The first resumed frame
 resets local animation elapsed time, except during a live network duel so its
 countdown retains the existing behavior. No scene manifest replaces this path.
 
+Duel cleanup and its close acknowledgement run under the same `gMutex` held by
+the requesting worker until it waits; notification cannot overtake that wait.
+Restart also publishes HUD names/LP and field geometry under the render mutex,
+and closes the iOS controls menu before beginning the next duel. Native session
+regression cases are in `../overlays/offline-ai/tests/session_lifecycle_checks.md`
+and have not been executed.
+
 The Info.plist uses Xcode product/version substitutions and iOS's `UILaunchScreen`
 dictionary. It does not reference the upstream missing LaunchScreen storyboard,
 old signing data, SDK build identifiers, or compiled Assets.car. App icons are

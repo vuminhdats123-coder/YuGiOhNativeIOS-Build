@@ -23,6 +23,13 @@ SCENARIO_PROMPTS = {
     'attack_cost_order': {21},
     'forced_chain': {16},
 }
+EFFECT_SCENARIO_SOURCE = ROOT / 'tests/fixtures/ocg_effect_scenarios.lua'
+EFFECT_SCENARIOS = {
+    'destruction_revival': {'messages': {50,63,74}, 'scripts': {'c53129443.lua','c83764718.lua'}},
+    'spell_activation_negation': {'messages': {50,74,75}, 'scripts': {'c53129443.lua','c77414722.lua'}},
+    'effect_and_battle_damage': {'messages': {74,91,110,111}, 'scripts': {'c46918794.lua'}},
+    'fusion_summon': {'messages': {50,63,74}, 'scripts': {'c24094653.lua','c23995346.lua','proc_fusion.lua'}},
+}
 
 def sha(data): return hashlib.sha256(data).hexdigest()
 def packets(data):
@@ -37,6 +44,12 @@ def packets(data):
 def scenario_completed(message, payload, player, marker):
     # HINT_MESSAGE = 2. The marker comes from resumed Lua, never from a fabricated packet.
     return message == 2 and len(payload) == 10 and struct.unpack('<BBQ', payload) == (2, player, marker)
+
+def require_scenario_evidence(expected_messages, observed_messages, required_scripts=(), loaded_scripts=()):
+    missing=set(expected_messages)-set(observed_messages)
+    if missing: raise ValueError('Scenario did not issue expected messages: '+str(sorted(missing)))
+    missing=set(required_scripts)-set(loaded_scripts)
+    if missing: raise ValueError('Scenario did not execute required canonical scripts: '+str(sorted(missing)))
 
 def parse_deck(path):
     zones = {'main':[], 'extra':[], 'side':[]}; zone = 'main'
@@ -272,14 +285,19 @@ class Engine:
         report.update(messages=dict(sorted(counts.items())),promptCounts=dict(sorted(prompts.items())),scriptsLoaded=sorted(self.loaded),missingScriptRequests=sorted(self.missing),cardsRead=len(self.read_codes),scriptErrors=self.errors,durationSeconds=round(time.monotonic()-started,3))
         return report
 
-    def prompt_scenario(self,kind,player,seed):
-        if kind not in SCENARIO_PROMPTS or player not in (0,1): raise ValueError('Unknown prompt scenario')
+    def prompt_scenario(self,kind,player,seed,effect=False):
+        definitions=EFFECT_SCENARIOS if effect else SCENARIO_PROMPTS
+        if kind not in definitions or player not in (0,1): raise ValueError('Unknown scenario')
+        expected=EFFECT_SCENARIOS[kind]['messages'] if effect else SCENARIO_PROMPTS[kind]
+        required=EFFECT_SCENARIOS[kind]['scripts'] if effect else set()
         self.errors=[];self.loaded=set();self.read_codes=set();self.missing=set()
         report={'scenario':kind,'player':player,'seed':seed,'status':'running','retryCount':0,
-                'expectedPrompts':sorted(SCENARIO_PROMPTS[kind]),'responses':[], 'forcedChains':0}
+                'expectedMessages' if effect else 'expectedPrompts':sorted(expected),'responses':[], 'forcedChains':0}
         duel=C.c_void_p();node=None;counts=collections.Counter();marker=9000000+seed
-        source=SCENARIO_SOURCE.read_bytes();entry=f'HostPromptScenario({player},"{kind}",{marker})'.encode()
+        source=(EFFECT_SCENARIO_SOURCE if effect else SCENARIO_SOURCE).read_bytes()
+        entry=f'Host{"Effect" if effect else "Prompt"}Scenario({player},"{kind}",{marker})'.encode()
         report.update(testLuaSHA256=sha(source),entryScript=entry.decode(),completionMarker=marker)
+        if effect: report.update(requiredCanonicalScripts=sorted(required),events=[])
         started=time.monotonic()
         try:
             node=Node(self.metadata)
@@ -288,13 +306,15 @@ class Engine:
             if self.dll.OCG_CreateDuel(C.byref(duel),C.byref(opts)) or not duel: raise ValueError('Scenario duel creation failed')
             for name in (b'constant.lua',b'utility.lua'):
                 if not self.read_script(None,duel,name): raise ValueError('Scenario base Lua failed')
-            for data,name in ((source,b'host-prompt-scenarios'),(entry,b'host-prompt-entry')):
+            for data,name in ((source,b'host-scenarios'),(entry,b'host-scenario-entry')):
                 if not self.dll.OCG_LoadScript(duel,data,len(data),name): raise ValueError('Scenario Lua load failed')
             self.dll.OCG_StartDuel(duel)
             for step in range(500):
                 status=self.dll.OCG_DuelProcess(duel);responded=False
                 for message,payload in self.messages(duel):
                     counts[message]+=1
+                    if effect and message in {50,62,63,70,71,72,73,74,75,91,110,111,113,114}:
+                        report['events'].append({'message':message,'payload':list(payload)})
                     if message==1: report['retryCount']+=1;raise ValueError('Core rejected scenario response')
                     node.call(op='observe',message=message,bytes=list(payload))
                     if scenario_completed(message,payload,player,marker):
@@ -310,8 +330,7 @@ class Engine:
                 if status==0: raise ValueError('Core ended without scenario marker')
                 if status==1 and not responded: raise ValueError('Core awaiting without a supported prompt')
             else: raise ValueError('Scenario step limit reached')
-            missing=SCENARIO_PROMPTS[kind]-set(counts)
-            if missing: raise ValueError('Scenario did not issue expected prompts: '+str(sorted(missing)))
+            require_scenario_evidence(expected,counts,required,self.loaded)
             if kind=='forced_chain' and not report['forcedChains']: raise ValueError('No forced chain was exercised')
         except Exception as error: report['status']='failed';report['error']=str(error)
         finally:
@@ -319,6 +338,7 @@ class Engine:
             if node: node.close()
         report.update(messages=dict(sorted(counts.items())),scriptErrors=self.errors,canonicalScriptsLoaded=sorted(self.loaded),
                       durationSeconds=round(time.monotonic()-started,3),fullMatch=False)
+        if effect: report['requiredCanonicalScriptSHA256']={name:sha(self.script_cache[name]) for name in sorted(required) if name in self.loaded}
         return report
 
     def initialize_pool(self):
@@ -350,11 +370,12 @@ class Engine:
         return {'status':'passed' if not self.errors and not required else 'failed','mappedUniqueCodes':len(codes),'batches':(len(codes)+31)//32,'cardsReadIncludingDependencies':len(self.read_codes),'canonicalRuntimeScriptsLoaded':len(self.loaded),'missingRequiredScripts':required,'missingNormalCardScripts':len(normal),'errors':batches,'auditSHA256':sha(audit_path.read_bytes()),'scope':'Card creation and initial_effect/base dependency execution only; does not exercise every effect activation.'}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v6');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--report',type=Path);args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v6');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--effect-scenarios',action='store_true',help='Bounded canonical card effect interactions with final-state assertions');p.add_argument('--report',type=Path);args=p.parse_args()
     if not 1<=args.matches<=100: p.error('--matches must be 1..100')
-    if args.prompt_scenarios and (args.suite or args.sample_decks or args.pool_check or args.deck_a or args.deck_b or args.matches!=1): p.error('--prompt-scenarios cannot be combined with match or pool options')
+    if args.prompt_scenarios and args.effect_scenarios: p.error('Select one scenario suite')
+    if (args.prompt_scenarios or args.effect_scenarios) and (args.suite or args.sample_decks or args.pool_check or args.deck_a or args.deck_b or args.matches!=1): p.error('Scenario suites cannot be combined with match or pool options')
     if args.seed<1: p.error('--seed must be positive')
-    if args.report is None: args.report=ROOT/'NativeClient'/('host-prompt-validation.json' if args.prompt_scenarios else 'host-validation.json')
+    if args.report is None: args.report=ROOT/'NativeClient'/('host-effect-validation.json' if args.effect_scenarios else 'host-prompt-validation.json' if args.prompt_scenarios else 'host-validation.json')
     if not args.worker:
         exe=prepare_python(args.download_python)
         cmd=[str(exe),str(Path(__file__).resolve()),'--worker',*sys.argv[1:]]
@@ -364,15 +385,16 @@ def main():
         return
     equivalence=source_equivalence();ai_hash=sha((AI_DIR/'offline_ai.js').read_bytes());host_hash=sha((AI_DIR/'offline_ai_host.js').read_bytes())
     engine=Engine(args.runtime.resolve())
-    if args.prompt_scenarios:
-        fixture_hash=sha(SCENARIO_SOURCE.read_bytes());scenarios=[]
-        for kind in SCENARIO_PROMPTS:
+    if args.prompt_scenarios or args.effect_scenarios:
+        fixture=EFFECT_SCENARIO_SOURCE if args.effect_scenarios else SCENARIO_SOURCE
+        fixture_hash=sha(fixture.read_bytes());harness_hash=sha(Path(__file__).read_bytes());scenarios=[]
+        for kind in (EFFECT_SCENARIOS if args.effect_scenarios else SCENARIO_PROMPTS):
             for player in (0,1):
-                result=engine.prompt_scenario(kind,player,args.seed+len(scenarios));scenarios.append(result)
+                result=engine.prompt_scenario(kind,player,args.seed+len(scenarios),effect=args.effect_scenarios);scenarios.append(result)
                 print(json.dumps({k:result[k] for k in ('scenario','player','status','retryCount','forcedChains','durationSeconds')}),flush=True)
-        if fixture_hash!=sha(SCENARIO_SOURCE.read_bytes()) or ai_hash!=sha((AI_DIR/'offline_ai.js').read_bytes()) or host_hash!=sha((AI_DIR/'offline_ai_host.js').read_bytes()): raise ValueError('Scenario or AI changed during validation')
+        if fixture_hash!=sha(fixture.read_bytes()) or harness_hash!=sha(Path(__file__).read_bytes()) or ai_hash!=sha((AI_DIR/'offline_ai.js').read_bytes()) or host_hash!=sha((AI_DIR/'offline_ai_host.js').read_bytes()): raise ValueError('Scenario, harness or AI changed during validation')
         counts=collections.Counter(r['message'] for s in scenarios for r in s['responses'])
-        missing={21,22,24,25,132,140,141,142}-set(counts)
+        missing=set() if args.effect_scenarios else {21,22,24,25,132,140,141,142}-set(counts)
         report={'schemaVersion':1,'scope':'Real OCG-generated prompts answered by production JavaScript; completion markers prove resumed Lua operations, not complete matches or iOS UI execution.',
                 'platform':'Windows x86 portable Python 3.12.10','pythonURL':PYTHON_URL,'pythonSHA256':PYTHON_SHA256,'pythonHashSource':PYTHON_SOURCE,
                 'coreBinary':engine.binary,'binarySourceRevision':SOURCE_REVISION,'iosCoreRevision':IOS_CORE_REVISION,'exactIOSRevisionBinary':False,
@@ -381,6 +403,12 @@ def main():
                 'scenariosAccepted':sum(s['status']=='accepted_completion_marker' for s in scenarios),'scenarios':scenarios,
                 'promptResponseCounts':dict(sorted(counts.items())),'previouslyUncoveredPromptIDs':[21,22,24,25,132,140,141,142],'missingTargetPrompts':sorted(missing),
                 'fullMatchesExecutedThisRun':0,'buildTriggered':False,'iosRuntimeVerified':False,'invocation':sys.argv[1:]}
+        if args.effect_scenarios:
+            report.pop('previouslyUncoveredPromptIDs');report.pop('missingTargetPrompts')
+            report.update(scope='Canonical card scripts executed by real OCG with production AI; observer Lua asserts final game state before completion markers. These are bounded scenarios, not full games or iOS UI execution.',
+                          harnessSHA256=harness_hash,databaseSHA256=sha((engine.runtime/'cards.cdb').read_bytes()),
+                          canonicalScriptArchiveSHA256=sha(SCRIPT_ARCHIVE.read_bytes()),
+                          interactions=list(EFFECT_SCENARIOS),testAssertionsVerified=all(s['status']=='accepted_completion_marker' for s in scenarios))
         args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
         if missing or any(s['status']!='accepted_completion_marker' for s in scenarios): raise SystemExit(1)
         return
