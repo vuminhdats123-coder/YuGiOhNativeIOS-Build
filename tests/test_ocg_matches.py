@@ -116,6 +116,9 @@ class MatchHarnessTests(unittest.TestCase):
             queried.append((info._obj.con,info._obj.loc,info._obj.seq))
             length._obj.value=len(self.visible_card_query());return C.addressof(visible)
         engine.dll.OCG_DuelQueryField.side_effect=field;engine.dll.OCG_DuelQuery.side_effect=query
+        empty=C.create_string_buffer(b'\0\0\0\0')
+        def location(duel,length,info): length._obj.value=4; return C.addressof(empty)
+        engine.dll.OCG_DuelQueryLocation.side_effect=location
         board=engine.board(None,1)
         self.assertEqual(queried,[(0,4,0)])
         self.assertEqual(board['self']['lp'],7500)

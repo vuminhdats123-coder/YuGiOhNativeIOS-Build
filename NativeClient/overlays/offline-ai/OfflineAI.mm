@@ -47,6 +47,56 @@ bool readBytes(JSValue* value, std::vector<uint8_t>& out, std::string& error) {
 	}
 	return true;
 }
+NSDictionary* queriedCard(const Duel* duel, uint8_t controller, uint32_t location, uint32_t sequence) {
+	if(!duel) return nil;
+	constexpr uint32_t queryFlags = 0x1u | 0x2u | 0x8u | 0x10u | 0x20u | 0x100u | 0x200u | 0x80000u | 0x800000u;
+	OCG_QueryInfo query{queryFlags, controller, location, sequence, 0};
+	uint32_t length = 0;
+	const auto* raw = static_cast<const uint8_t*>(duel->DuelQuery(&length, &query));
+	if(!raw || length == 0) return nil;
+	uint32_t code = 0, position = 0, type = 0, level = 0, rank = 0, link = 0, status = 0;
+	int32_t attack = 0, defense = 0;
+	size_t at = 0;
+	while(at + sizeof(uint16_t) <= length) {
+		const auto size = static_cast<uint16_t>(raw[at] | (uint16_t(raw[at + 1]) << 8)); at += sizeof(uint16_t);
+		if(size < sizeof(uint32_t) || at + size > length) return nil;
+		const uint32_t flag = uint32_t(raw[at]) | (uint32_t(raw[at + 1]) << 8) | (uint32_t(raw[at + 2]) << 16) | (uint32_t(raw[at + 3]) << 24);
+		at += sizeof(uint32_t);
+		const auto read32 = [&]() -> uint32_t {
+			if(at + sizeof(uint32_t) > length || at + sizeof(uint32_t) > at + size - sizeof(uint32_t)) return 0;
+			const uint32_t value = uint32_t(raw[at]) | (uint32_t(raw[at + 1]) << 8) | (uint32_t(raw[at + 2]) << 16) | (uint32_t(raw[at + 3]) << 24); at += sizeof(uint32_t); return value;
+		};
+		switch(flag) {
+		case 0x1u: code = read32(); break; case 0x2u: position = read32(); break; case 0x8u: type = read32(); break;
+		case 0x10u: level = read32(); break; case 0x20u: rank = read32(); break; case 0x100u: attack = static_cast<int32_t>(read32()); break;
+		case 0x200u: defense = static_cast<int32_t>(read32()); break; case 0x80000u: status = read32(); break; case 0x800000u: link = read32(); read32(); break;
+		default: at += size - sizeof(uint32_t); break;
+		}
+		const size_t recordEnd = at; if(recordEnd < at) return nil;
+	}
+	if(!code) return nil;
+	return @{@"code":@(code), @"location":@(location), @"sequence":@(sequence), @"position":@(position), @"type":@(type),
+		@"attack":@(attack), @"defense":@(defense), @"level":@(level), @"rank":@(rank), @"link":@(link), @"disabled":@((status & 1u) != 0)};
+}
+NSArray* queriedZone(const Duel* duel, uint8_t controller, uint32_t location, uint32_t count) {
+	NSMutableArray* result = [NSMutableArray array];
+	// Hand/Extra are bounded by deck rules; public Grave can grow through effects, so cap bridge work.
+	const uint32_t limit = std::min<uint32_t>(count, 256);
+	for(uint32_t sequence = 0; sequence < limit; ++sequence) {
+		if(NSDictionary* card = queriedCard(duel, controller, location, sequence)) [result addObject:card];
+	}
+	return result;
+}
+NSDictionary* ownAndPublicZones(const Duel* duel) {
+	if(!duel) return @{};
+	NSMutableDictionary* result = [NSMutableDictionary dictionary];
+	const auto count = [&](uint8_t controller, uint32_t location) { return duel->DuelQueryCount(controller, location); };
+	[result setObject:queriedZone(duel, 1, LOCATION_HAND, count(1, LOCATION_HAND)) forKey:@"hand"];
+	[result setObject:queriedZone(duel, 1, LOCATION_EXTRA, count(1, LOCATION_EXTRA)) forKey:@"extra"];
+	[result setObject:queriedZone(duel, 1, LOCATION_GRAVE, count(1, LOCATION_GRAVE)) forKey:@"selfGrave"];
+	[result setObject:queriedZone(duel, 0, LOCATION_GRAVE, count(0, LOCATION_GRAVE)) forKey:@"opponentGrave"];
+	return result;
+}
 // Caller holds gMutex. dField uses the human/render perspective, so translate every core player.
 NSDictionary* publicBoardSide(uint8_t corePlayer) {
 	const auto local = mainGame->LocalPlayer(corePlayer);
@@ -116,7 +166,7 @@ bool FilterForHuman(uint8_t message, const uint8_t* data, size_t size, std::vect
 		return !visible || readBytes(result, filtered, error);
 	}
 }
-bool Respond(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error) {
+bool Respond(const Duel* duel, uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error) {
 	if(!Handles(message) || size == 0 || !data || data[0] != 1) { error = "AI must respond only to player 1 prompts."; return false; }
 	// Despite its historical name, selector redaction is relative to the prompt's selecting player.
 	// Keep legal search/public identities and wire indices; conceal opposing hidden identities.
@@ -137,13 +187,21 @@ bool Respond(uint8_t message, const uint8_t* data, size_t size, std::vector<uint
 			for(auto code : codes) [declarable addObject:@(code)];
 		}
 		NSMutableDictionary* positions = [NSMutableDictionary dictionary];
-		NSDictionary* state;
+		NSMutableDictionary* selfState;
+		NSMutableDictionary* opponentState;
 		{
 			std::lock_guard<epro::mutex> lock(mainGame->gMutex);
 			for(auto* card : mainGame->dField.mzone[mainGame->LocalPlayer(1)]) if(card)
 				positions[[NSString stringWithFormat:@"%u", card->sequence]] = @(card->position);
-			state = @{@"self":publicBoardSide(1), @"opponent":publicBoardSide(0)};
+			selfState = [NSMutableDictionary dictionaryWithDictionary:publicBoardSide(1)];
+			opponentState = [NSMutableDictionary dictionaryWithDictionary:publicBoardSide(0)];
+			const auto zones = ownAndPublicZones(duel);
+			selfState[@"hand"] = zones[@"hand"];
+			selfState[@"extra"] = zones[@"extra"];
+			selfState[@"grave"] = zones[@"selfGrave"];
+			opponentState[@"grave"] = zones[@"opponentGrave"];
 		}
+		NSDictionary* state = @{@"self":selfState, @"opponent":opponentState};
 		JSValue* result = [bot invokeMethod:@"decide" withArguments:@[@(message),bytes(prompt.data(),prompt.size()),declarable,positions,state]];
 		if(!checkError(error)) return false;
 		if(![result[@"handled"] toBool]) { error = "Offline AI did not handle the engine prompt."; return false; }

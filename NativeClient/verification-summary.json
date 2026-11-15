@@ -1,5 +1,5 @@
 {
-  "scope": "v8 visible-state tactical AI: 36 real Windows OCG matches, 14 tactical and 36 regression scenarios, privacy boundary tests and full resource-copy checks; no iOS executable",
+  "scope": "Current visible-state tactical AI v9 source: 36 real Windows OCG matches, 14 current tactical, 6 combo and 8/10 current Extra Deck regression; privacy boundaries checked, no iOS executable",
   "python": {
     "run": 84,
     "passed": 83,
@@ -9,11 +9,14 @@
   "javascript": {
     "promptFamilies": 21,
     "testsPassed": true,
-    "scriptSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
+    "scriptSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
     "engineWasNotExecuted": false,
     "tacticalProfiles": 22,
     "privacyBoundaryTestsPassed": true,
-    "privacyTestSHA256": "fd877bcd6b95617c8a58efb48aab9036ba85c3d721d2bc57b84ad1cb95c8e054"
+    "privacyTestSHA256": "fd877bcd6b95617c8a58efb48aab9036ba85c3d721d2bc57b84ad1cb95c8e054",
+    "hostAdapterSHA256": "6605cb24dd44a4d195534e251600600c6a723f37f066d1caac2eb01c2d3eb964",
+    "visibleTacticalProfiles": 50,
+    "comboSnapshotZonesHandExtraPublicGrave": true
   },
   "renderer": {
     "layout": {
@@ -97,18 +100,18 @@
   "actionsDispatched": false,
   "ipaCreated": false,
   "windowsCoreValidation": {
-    "report": "host-validation-v8.json",
+    "report": "host-validation-v9.json",
     "matches": 36,
-    "turns": 609,
-    "responses": 14955,
+    "turns": 896,
+    "responses": 20595,
     "retries": 0,
     "scriptErrors": 0,
     "mappedCardsInitialized": 7486,
     "runtimeScriptsLoaded": 6872,
     "exactIOSBinary": false,
     "coreSourceEquivalent": true,
-    "aiSHA256": "d74846dd50dbbaa10548c4502ab8f78d3033c300f6066561af88c4c109dae73f",
-    "reportSHA256": "329a0051de2d03a4f7ae74d0fa77e7b9b637d33f3277d42e4d390a8225916bdb",
+    "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
+    "reportSHA256": "e1f1221b4add70e6eac0d6d8e345f755b52f2caecbbdc64825520d681daa4a06",
     "poolInitializationReport": "host-validation.json",
     "poolInitializationRerun": false,
     "poolDatabaseAndLuaUnchanged": true
@@ -257,11 +260,12 @@
       "offline-ai/offline_ai.js"
     ],
     "files": 46163,
-    "bytes": 424875146,
-    "manifestSHA256": "bc7c087c01130e19ebab7708d7ac7bdc131d1f34524ac517acc92dd188b2d7a0",
-    "previousPackage": "outputs/edopro-game-v7",
-    "currentPackage": "outputs/edopro-game-v8",
-    "databaseLuaDecksImagesAudioUnchanged": true
+    "bytes": 424884218,
+    "manifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf",
+    "previousPackage": "outputs/edopro-game-v8",
+    "currentPackage": "outputs/edopro-game-v9a",
+    "databaseLuaDecksImagesAudioUnchanged": true,
+    "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966"
   },
   "windowsRitualPendulumScenarios": {
     "report": "host-ritual-pendulum-validation.json",
@@ -349,6 +353,53 @@
     "bothPlayersHiddenPermutationTestsPassed": true,
     "nativePolicySourceReviewed": true,
     "nativePolicyAssertionsExecuted": false,
-    "nativeBridgeExecuted": false
+    "nativeBridgeExecuted": false,
+    "selfPrivateZones": "Own hand/Extra identities and public Graves are now supplied synchronously for bounded combo choices; no MainDeck/opponent private identities/deck order/seed"
+  },
+  "windowsComboScenarios": {
+    "report": "host-combo-validation.json",
+    "reportSHA256": "3790c1ef7762ef2346e01b11ab0568be61f3a536940a8e379aec3b11c43cd16f",
+    "accepted": 6,
+    "responses": 80,
+    "retries": 0,
+    "scriptErrors": 0,
+    "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
+    "fullMatchesClaimed": 0,
+    "nativeIOSExecuted": false,
+    "limit": "Three bounded sequences; full ROTA to Synchro not proven",
+    "harnessSHA256": "5e34014ad93b08f7629fe1485eb069c07b9ee2b086fdfea599e08e80acf24e9b"
+  },
+  "windowsExtraDeckCurrent": {
+    "report": "host-extra-deck-validation-v9.json",
+    "reportSHA256": "b166038a664355b385270e23c51445baa8837b0936ec2de7b3eb12a7e8c3fe23",
+    "accepted": 8,
+    "total": 10,
+    "failedCases": [
+      "link_discard_destroy/player0",
+      "link_discard_destroy/player1"
+    ],
+    "retries": 0,
+    "scriptErrors": 0,
+    "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
+    "historicalFullSuite": "host-extra-deck-validation.json",
+    "nativeIOSExecuted": false
+  },
+  "runtimePackagePending": "outputs/edopro-game-v9a current payload verified locally; not executable and not committed",
+  "resourceCopyV9a": {
+    "fixture": "outputs/resource-copy-check-v9a/ResourceCopyFixture.app",
+    "copyReport": "outputs/resource-copy-v9a.json",
+    "manifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf",
+    "allHashesVerified": true,
+    "executablePresent": false
+  },
+  "windowsTacticalCurrent": {
+    "report": "host-tactical-validation-v9.json",
+    "reportSHA256": "b4ced1bd38d906c45bd3e0633dfed2d72325d793aa2c49226ca0fc49426322cf",
+    "accepted": 14,
+    "responses": 181,
+    "retries": 0,
+    "scriptErrors": 0,
+    "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
+    "nativeIOSExecuted": false
   }
 }

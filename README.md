@@ -66,3 +66,5 @@ Recipe Xcode, dependency iPhoneOS đã kiểm tra và bước copy toàn bộ `B
 nằm trong [NativeClient/iOS/README.md](NativeClient/iOS/README.md). Project sinh
 trên Windows chỉ phục vụ kiểm tra cấu trúc; phải sinh lại trên runner macOS với
 đường dẫn của runner. Không đưa project có đường dẫn Windows vào build trên Mac.
+
+Combo evidence passes 6/6 for Foolish Burial→Monster Reborn, Trade-In→Silver's Cry and ROTA→Junk Synchron search/summon; the third Synchro step remains unproven. Two Knightmare Phoenix regression cases remain documented gaps.

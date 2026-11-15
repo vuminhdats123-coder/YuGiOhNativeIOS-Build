@@ -765,7 +765,7 @@ index 7b3360f..9a7ed4f 100644
  				mainGame->HideElement(mainGame->wMainMenu);
  				mainGame->stSinglePlayInfo->setText(L"");
 diff --git a/gframe/single_mode.cpp b/gframe/single_mode.cpp
-index 3aabc46..2c04b6a 100644
+index 3aabc46..9767ec4 100644
 --- a/gframe/single_mode.cpp
 +++ b/gframe/single_mode.cpp
 @@ -1,4 +1,6 @@
@@ -1208,7 +1208,7 @@ index 3aabc46..2c04b6a 100644
 +			if(packet.data()[0] == 1) {
 +				SinglePlayRefresh();
 +				std::vector<uint8_t> response;
-+				if(!OfflineAI::Respond(packet.message, packet.data(), packet.buff_size(), response, error)) return FailAI(error);
++				if(!OfflineAI::Respond(pduel.get(), packet.message, packet.data(), packet.buff_size(), response, error)) return FailAI(error);
 +				pduel->DuelSetResponse(response.data(), static_cast<uint32_t>(response.size()));
 +				last_response_ai = true;
 +				return true;

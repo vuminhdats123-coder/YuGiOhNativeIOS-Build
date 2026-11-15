@@ -202,6 +202,23 @@ const tacticsMetadata={901:{type:17,attack:300,defense:100,level:1},902:{type:17
   903:{type:33,attack:3000,defense:2500,level:8},904:{type:33,attack:2000,defense:1500,level:4},
   905:{type:33,attack:1700,defense:1000,level:4},906:{type:0x20002,attack:0,defense:0,level:0},
   ...Object.fromEntries(Object.values(C).map(code=>[code,{type:[C.JAMMER,C.JUDGMENT].includes(code)?0x100004:2,attack:0,defense:0,level:0}]))};
+const C2={FOOLISH:81439173,REBORN:83764718,TRADE_IN:38120068,SILVER_CRY:87025064,ROTA:32807846,
+  JUNK_SYNCHRON:63977008,JUNK_WARRIOR:60800381,BLUE_EYES:89631139,LEVEL2:80019195,
+  DUALITY:98645731,BOTTOMLESS:29401950,TORRENTIAL:53582587,COMPULSORY:94192409,DIMENSIONAL:70342110,
+  DUST_TORNADO:60082869,SUMMON_STRIKE:40605147,SUMMON_WARNING:84749824,VEILER:97268402,ASH:14558127,
+  RAIGEKI_BREAK:4178474,ONE_FOR_ONE:2295440,MELODY:48800175,REINCARNATION:74848038,
+  PREMATURE:70828912,CALL_HAUNTED:97077563,DUALITY2:98645731,CYBER_DRAGON:70095154,
+  BLUE_EYES_ALT:38517737,CYBER_NOVA:58069384,CYBER_INFINITY:10443957,SCRAP_WARRIOR:42711820,
+  JUNK_GARDNA:37993923,JUNK_DESTROYER:74860293,JUNK_BERSERKER:59771339,D_D_WARRIOR:7572887};
+Object.assign(tacticsMetadata,{[C2.BLUE_EYES]:{type:17,attack:3000,defense:2500,level:8},[C2.LEVEL2]:{type:17,attack:500,defense:1500,level:2},
+  [C2.FOOLISH]:{type:4,level:1},[C2.REBORN]:{type:4,level:1},[C2.TRADE_IN]:{type:4,level:8},[C2.SILVER_CRY]:{type:4,level:1},
+  [C2.ROTA]:{type:4,level:1},[C2.JUNK_SYNCHRON]:{type:17,attack:1300,defense:500,level:3},[C2.JUNK_WARRIOR]:{type:33,attack:2300,defense:1300,level:5},
+  [C2.DUALITY]:{type:4,level:4},[C2.ONE_FOR_ONE]:{type:4,level:1},[C2.MELODY]:{type:4,level:1},[C2.REINCARNATION]:{type:4,level:1},
+  [C2.PREMATURE]:{type:4,level:1},[C2.CALL_HAUNTED]:{type:4,level:1},[C2.CYBER_DRAGON]:{type:17,attack:2100,defense:1600,level:5},
+  [C2.BLUE_EYES_ALT]:{type:33,attack:3000,defense:2500,level:8},[C2.CYBER_NOVA]:{type:33,attack:2100,defense:1600,rank:5},
+  [C2.CYBER_INFINITY]:{type:33,attack:2700,defense:2100,rank:6},[C2.SCRAP_WARRIOR]:{type:33,attack:2300,defense:2000,level:5},
+  [C2.JUNK_GARDNA]:{type:33,attack:1900,defense:1500,level:6},[C2.JUNK_DESTROYER]:{type:33,attack:2600,defense:2500,level:8},
+  [C2.JUNK_BERSERKER]:{type:33,attack:2700,defense:1800,level:7}});
 const onField=(code,sequence=0,overrides={})=>({code,location:4,sequence,position:1,...tacticsMetadata[code],...overrides});
 const state=(own=[],enemy=[],options={})=>({self:{lp:8000,handCount:2,deckCount:20,extraCount:0,cards:own,...options.self},
   opponent:{lp:8000,handCount:2,deckCount:20,extraCount:0,cards:enemy,...options.opponent}});
@@ -213,6 +230,7 @@ const chainPrompt=codes=>[1,0,0,...u(0),...u(0),...list(codes.map((code,index)=>
 const chainEvent=(code,controller=0,location=8,sequence=0)=>[
   ...card(code,controller,location,sequence,1),controller,location,...u(sequence),...u(1,8),...u(1)];
 const act=(message,payload,live,prepare)=>{const bot=ai.create(tacticsMetadata);if(prepare)prepare(bot);return bot.decide(message,payload,[],{},live).response;};
+const ownCard=(code,location=2,sequence=0,overrides={})=>({code,location,sequence,position:1,...tacticsMetadata[code],...overrides});
 const strongSelf=state([onField(903)],[onField(901)]),strongEnemy=state([onField(901)],[onField(903)]);
 assert.deepEqual(act(11,idleEffects([C.DARK]),strongSelf),u(7));
 assert.deepEqual(act(11,idleEffects([C.DARK]),strongEnemy),u(5));
@@ -266,6 +284,31 @@ assert.deepEqual(judgment([onField(903,0,{attack:4000})]),u(-1));
 assert.deepEqual(act(11,idleEffects([C.FIRE]),state([],[],{self:{lp:500}})),u(7));
 assert.deepEqual(act(11,idleEffects([C.FIRE]),state()),u(5));
 assert.deepEqual(act(11,idleEffects([C.POT]),state([],[],{self:{deckCount:1}})),u(7),'do not draw into an empty deck');
+
+// Current-state combo planning uses only own hand/Extra and public Grave; no Main Deck identity/order is supplied.
+const comboState=(hand=[],graveCards=[],extraCards=[],options={})=>state([],[],{self:{hand:hand.map((c,i)=>({...c,location:2,sequence:i})),
+  grave:graveCards.map((c,i)=>({...c,location:16,sequence:i})),extra:extraCards.map((c,i)=>({...c,location:64,sequence:i})),
+  handCount:hand.length,extraCount:extraCards.length,...options}});
+const idleSpecial=(special=[],activate=[])=>[1,...empty,...list(special),...empty,...empty,...empty,
+  ...list(activate.map(code=>effect(code,1,2,0))),0,1,0];
+const foolishBoard=comboState([ownCard(C2.FOOLISH),ownCard(C2.REBORN)]);
+assert.deepEqual(act(11,idleEffects([C2.FOOLISH,C2.REBORN]),foolishBoard),u(5),'Foolish is useful when Reborn is held');
+const rebornBoard=comboState([ownCard(C2.REBORN)],[ownCard(C2.BLUE_EYES)]);
+const rebornBot=ai.create(tacticsMetadata);
+assert.deepEqual(rebornBot.decide(11,idleEffects([C2.REBORN]),[],{},rebornBoard).response,u(5));
+rebornBot.observe(2,hint(509));
+assert.deepEqual(rebornBot.decide(15,pick([card(C2.BLUE_EYES,1,16,0,1)]),[],{},rebornBoard).response,selected([0]),'Reborn targets strongest public Grave monster');
+const tradeBoard=comboState([ownCard(C2.TRADE_IN),ownCard(C2.BLUE_EYES)]);
+assert.deepEqual(act(11,idleEffects([C2.TRADE_IN]),tradeBoard),u(5),'Trade-In only fires with a discardable Level 8');
+assert.deepEqual(act(11,idleEffects([C2.SILVER_CRY]),comboState([ownCard(C2.SILVER_CRY)],[ownCard(C2.BLUE_EYES)])),u(5),'Silver\'s Cry revives a public normal Dragon');
+const junkBoard=comboState([ownCard(C2.ROTA)],[ownCard(C2.LEVEL2)], [ownCard(C2.JUNK_WARRIOR)]);
+assert.deepEqual(act(11,idleEffects([C2.ROTA]),junkBoard),u(5),'ROTA remains useful only when Junk Synchron is missing');
+assert.deepEqual(act(11,idleSpecial([short(C2.JUNK_WARRIOR)]),comboState([ownCard(C2.JUNK_SYNCHRON)],[ownCard(C2.LEVEL2)],[ownCard(C2.JUNK_WARRIOR)])),u(1),'Junk Warrior is selected when its current material payoff exists');
+assert.deepEqual(act(11,idleEffects([C2.ROTA]),comboState([ownCard(C2.ROTA),ownCard(C2.JUNK_SYNCHRON)],[],[ownCard(C2.JUNK_WARRIOR)])),u(7),'ROTA is held when Synchron is already in hand and no Level 2 is public');
+assert.deepEqual(act(11,idleEffects([C2.REBORN]),comboState([ownCard(C2.REBORN)])),u(7),'Reborn is held with no legal current Grave target');
+const comboHiddenA=comboState([ownCard(C2.REBORN)],[ownCard(C2.BLUE_EYES,16,0,{position:8})]);
+const comboHiddenB=comboState([ownCard(C2.REBORN)],[ownCard(C2.BLUE_EYES,16,0,{position:8,attack:999999})]);
+assert.deepEqual(act(11,idleEffects([C2.REBORN]),comboHiddenA),act(11,idleEffects([C2.REBORN]),comboHiddenB),'face-down public data cannot change combo plan');
 
 // Rush waits for actual Damage Step and is spent only when +700 changes the outcome or is lethal.
 const rushBattle=state([onField(902,0,{defense:1000})],[onField(904)]);

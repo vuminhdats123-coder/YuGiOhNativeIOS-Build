@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand tactics beyond 22 named profiles and current 36 full host matches/50 bounded scenarios; verify human iOS play"
+    "Expand combo/effect coverage beyond current grounded profiles; fix the two Knightmare Phoenix regression cases; verify native human iOS play"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -38,7 +38,8 @@
     "visibleStateTacticalAI": true,
     "preObserverInformationFilter": true,
     "preDecisionHiddenIdentityFilter": true,
-    "decisionOnlyDeckSequenceRedaction": true
+    "decisionOnlyDeckSequenceRedaction": true,
+    "comboSnapshotZonesHandExtraPublicGrave": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -84,7 +85,14 @@
     "windowsCoreTacticalResponses": 181,
     "hiddenInformationInvarianceNodeTestsPassed": true,
     "nativeObservationBoundaryTestsExecuted": false,
-    "nativeTacticalBridgeExecuted": false
+    "nativeTacticalBridgeExecuted": false,
+    "visibleTacticalProfiles": 50,
+    "windowsCoreComboScenarios": 6,
+    "windowsCoreComboResponses": 80,
+    "windowsCoreExtraDeckCurrentScenarios": 8,
+    "windowsCoreFullMatchesCurrent": 36,
+    "currentRuntimePackage": "outputs/edopro-game-v9a",
+    "currentRuntimeManifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf"
   },
   "limitations": [
     "Bounded visible-state tactics with 22 named profiles; no universal effect/combo planner",

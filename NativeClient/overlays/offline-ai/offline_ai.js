@@ -12,18 +12,47 @@
     JUDGMENT:41420027,JAMMER:77414722,CHALICE:25789292,RUSH:70046172,MIRROR:44095762,
     NEGATE_ATTACK:14315573,POLY:24094653,RITUAL:55761792,POT:55144522,CHARITY:79571449,
     UPSTART:70368879,FISSURE:66788016,SMASHING:97169186,BOOK:14087893,
-    AQUAMIRROR:46159582,PHOENIX:2857636,COWBOY:12014404,FIRE:46918794};
+    AQUAMIRROR:46159582,PHOENIX:2857636,COWBOY:12014404,FIRE:46918794,
+    BOTTOMLESS:29401950,TORRENTIAL:53582587,COMPULSORY:94192409,DIMENSIONAL:70342110,
+    DUST_TORNADO:60082869,SUPER_POLY:48130390,SUMMON_STRIKE:40605147,SUMMON_WARNING:84749824,
+    VEILER:97268402,ASH:14558127,RAIGEKI_BREAK:4178474,DUALITY:98645731,ONE_FOR_ONE:2295440,
+    MELODY:48800175,FOOLISH:81439173,FOOLISH_GOODS:35726888,REINCARNATION:74848038,
+    PREMATURE:70828912,CALL_HAUNTED:97077563,TRADE_IN:38120068,SILVER_CRY:87025064,
+    ROTA:32807846,JUNK_SYNCHRON:63977008,JUNK_WARRIOR:60800381,CYBER_DRAGON:70095154,
+    BLUE_EYES_ALT:38517737,CYBER_NOVA:58069384,CYBER_INFINITY:10443957,SCRAP_WARRIOR:42711820,
+    JUNK_GARDNA:37993923,JUNK_DESTROYER:74860293,JUNK_BERSERKER:59771339,DECODE:1861629,D_D_WARRIOR:7572887,
+    EFFECT_VEILER:97268402,CYBER_CORE:23893227,PREMATURE_BURIAL:70828912,RAIGEKI_BOTTLE:11741041};
+  const PROFILE = Object.freeze({
+    removal:new Set([CARD.RAIGEKI,CARD.MST,CARD.FISSURE,CARD.SMASHING,CARD.BOTTOMLESS,CARD.TORRENTIAL,CARD.COMPULSORY,CARD.DIMENSIONAL,CARD.DUST_TORNADO,CARD.RAIGEKI_BREAK]),
+    negate:new Set([CARD.JUDGMENT,CARD.JAMMER,CARD.SUMMON_STRIKE,CARD.SUMMON_WARNING,CARD.VEILER,CARD.ASH]),
+    revive:new Set([CARD.REBORN,CARD.REINCARNATION,CARD.PREMATURE,CARD.CALL_HAUNTED,CARD.SILVER_CRY]),
+    draw:new Set([CARD.POT,CARD.CHARITY,CARD.UPSTART,CARD.TRADE_IN,CARD.DUALITY]),
+    search:new Set([CARD.ROTA,CARD.MELODY,CARD.FOOLISH,CARD.FOOLISH_GOODS,CARD.ONE_FOR_ONE]),
+    battle:new Set([CARD.RUSH,CARD.CHALICE,CARD.MIRROR,CARD.NEGATE_ATTACK,CARD.BOOK]),
+    extra:new Set([CARD.PHOENIX,CARD.COWBOY,CARD.DECODE,CARD.CYBER_NOVA,CARD.CYBER_INFINITY,CARD.SCRAP_WARRIOR,CARD.JUNK_GARDNA,CARD.JUNK_DESTROYER,CARD.JUNK_BERSERKER,CARD.JUNK_WARRIOR])
+  });
   function safeBoard(input) {
     if (!input || !input.self || !input.opponent || !Array.isArray(input.self.cards) || !Array.isArray(input.opponent.cards)) return null;
     const number=(v,fallback=0)=>Number.isFinite(v)?Math.max(0,Math.min(100000000,v)):fallback;
+    const record=(c,location)=>{
+      if(!c || c.location!==location || !Number.isInteger(c.sequence)) return null;
+      const base={code:Number.isInteger(c.code)&&c.code>0?c.code:0,location,sequence:c.sequence,position:Number.isInteger(c.position)?c.position:0};
+      // Private hand/Extra belong to the AI; public Grave is safe for both players. No Main Deck/banished arrays are accepted.
+      if(location===2 || location===64 || location===16 || (base.position&5))
+        return {...base,type:number(c.type),attack:number(c.attack),defense:number(c.defense),level:number(c.level),rank:number(c.rank),link:number(c.link),disabled:c.disabled===true};
+      return {...base,code:0};
+    };
     const side=s=>({lp:number(s.lp,8000),handCount:number(s.handCount),deckCount:number(s.deckCount),extraCount:number(s.extraCount),
-      cards:s.cards.slice(0,32).filter(c=>c && [4,8].includes(c.location) && Number.isInteger(c.sequence)).map(c=>{
+      hand:Array.isArray(s.hand)?s.hand.slice(0,64).map(c=>record(c,2)).filter(Boolean):[],
+      extra:Array.isArray(s.extra)?s.extra.slice(0,64).map(c=>record(c,64)).filter(Boolean):[],
+      grave:Array.isArray(s.grave)?s.grave.slice(0,64).map(c=>record(c,16)).filter(Boolean):[],
+      cards:Array.isArray(s.cards)?s.cards.slice(0,32).filter(c=>c && [4,8].includes(c.location) && Number.isInteger(c.sequence)).map(c=>{
         const base={code:0,location:c.location,sequence:c.sequence,position:Number.isInteger(c.position)?c.position:0};
         // Neither hidden identities nor extra caller-provided fields can enter tactical state.
         if (!(base.position&5) || !Number.isInteger(c.code) || c.code<=0) return base;
         return {...base,code:c.code,type:number(c.type),attack:number(c.attack),defense:number(c.defense),
           level:number(c.level),rank:number(c.rank),link:number(c.link),disabled:c.disabled===true};
-      })});
+      }):[]});
     return {self:side(input.self),opponent:side(input.opponent)};
   }
   function fail(message) { throw new Error(message); }
@@ -142,15 +171,25 @@
     }
     const sideCards=(self,location)=>board?(self?board.self:board.opponent).cards.filter(c=>c.location===location)
       .map(c=>({...c,controller:self?selfPlayer:1-selfPlayer})):[];
+    const privateCards=(self,zone)=>board?(self?board.self:board.opponent)[zone].map(c=>({...c,controller:self?selfPlayer:1-selfPlayer})):[];
     const monsters=self=>sideCards(self,4), spells=self=>sideCards(self,8);
+    const hand=self=>privateCards(self,'hand'), extra=self=>privateCards(self,'extra'), grave=self=>privateCards(self,'grave');
+    const ownHand=()=>hand(true), ownGrave=()=>grave(true), ownExtra=()=>extra(true);
+    const profile=(card,set)=>set.has(codeOf(card));
+    const hasCode=(cards,code)=>cards.some(card=>codeOf(card)===code);
+    const isMonster=(card)=>{const data=info(card);return !!(data&&(data.type&1));};
+    const isLevel8=(card)=>{const data=info(card);return !!(data&&data.level>=8);};
+    const isDragonNormal=(card)=>{const data=info(card);return !!(data&&data.type&1&&data.level>0&&(data.type&0x10));};
+    const isLevel2=(card)=>{const data=info(card);return !!(data&&data.level>0&&data.level<=2);};
     function value(card) {
       const data=info(card);
       if (!data) return card.location===8?650:900;
       if ((data.type&1) || card.location===4 || data.attack || data.defense)
         return 250+Math.max(0,data.attack||0)*0.7+Math.max(0,data.defense||0)*0.3+((data.type&32)&&!data.disabled?180:0)+(data.link||0)*80;
       const code=codeOf(card);
-      if ([CARD.JUDGMENT,CARD.JAMMER,CARD.REBORN,CARD.RAIGEKI,CARD.POT].includes(code)) return 1400;
-      if ([CARD.DARK_HOLE,CARD.MIRROR,CARD.POLY,CARD.RITUAL].includes(code)) return 1150;
+      if (PROFILE.negate.has(code)||PROFILE.revive.has(code)||PROFILE.draw.has(code)) return 1400;
+      if (PROFILE.removal.has(code)||PROFILE.battle.has(code)||PROFILE.search.has(code)) return 1150;
+      if (PROFILE.extra.has(code)) return 1800;
       return 750;
     }
     const total=cards=>cards.reduce((n,c)=>n+value(c),0);
@@ -208,6 +247,62 @@
       default:return lastChain.location===4?value(lastChain)*0.6:250;
       }
     }
+    function bestGrave(predicate) {
+      const candidates=ownGrave().filter(c=>isMonster(c)&&(!predicate||predicate(c)));
+      candidates.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
+      return candidates[0]||null;
+    }
+    function bestGraveAny(predicate) {
+      const candidates=ownGrave().filter(predicate);
+      candidates.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
+      return candidates[0]||null;
+    }
+    function comboPlan(card) {
+      const code=codeOf(card), target=bestGrave();
+      if (code===CARD.FOOLISH) {
+        const payoff=hasCode(ownHand(),CARD.REBORN)||hasCode(ownHand(),CARD.SILVER_CRY)||hasCode(ownHand(),CARD.REINCARNATION);
+        return {utility:board.self.deckCount>0&&payoff?2600:0};
+      }
+      if (code===CARD.REBORN||code===CARD.REINCARNATION||code===CARD.PREMATURE||code===CARD.CALL_HAUNTED) {
+        return {utility:target?Math.max(0,1900+value(target)-(monsters(true).length>=5?850:0)):0,target};
+      }
+      if (code===CARD.TRADE_IN) {
+        const discard=ownHand().filter(c=>c!==card&&isLevel8(c));
+        return {utility:discard.length&&board.self.deckCount>=2?(1600+Math.min(2,discard.length)*280):0,target:discard[0]};
+      }
+      if (code===CARD.SILVER_CRY) {
+        const dragon=bestGrave(isDragonNormal);
+        return {utility:dragon?2200+value(dragon):0,target:dragon};
+      }
+      if (code===CARD.ROTA) {
+        const junk=hasCode(ownHand(),CARD.JUNK_SYNCHRON), payoff=hasCode(ownExtra(),CARD.JUNK_WARRIOR)||hasCode(ownExtra(),CARD.JUNK_DESTROYER);
+        return {utility:!junk&&payoff&&bestGrave(isLevel2)?2400:(!junk?600:0)};
+      }
+      if (code===CARD.MELODY) {
+        const dragon=ownHand().filter(c=>isMonster(c)&&((info(c)?.type||0)&0x200));
+        return {utility:dragon.length&&board.self.deckCount>=2?1300:0,target:dragon[0]};
+      }
+      if (code===CARD.FOOLISH_GOODS) {
+        return {utility:hasCode(ownHand(),CARD.SILVER_CRY)||hasCode(ownHand(),CARD.PREMATURE)?1450:0};
+      }
+      if (code===CARD.ONE_FOR_ONE) {
+        return {utility:hasCode(ownHand(),CARD.JUNK_SYNCHRON)&&bestGrave(isLevel2)?1750:0};
+      }
+      return {utility:0};
+    }
+    function extraComboPlan(card) {
+      const code=codeOf(card), tuner=hasCode(ownHand(),CARD.JUNK_SYNCHRON)||
+        (board&&board.self.cards.some(c=>c.location===4&&c.code===CARD.JUNK_SYNCHRON)),
+        level2=bestGraveAny(c=>{const data=info(c)||c;const level=Number(data.level||c.level||0);return level>0&&level<=2;});
+      if (code===CARD.JUNK_WARRIOR) return {utility:tuner&&level2?4200:0,target:level2};
+      if (code===CARD.SCRAP_WARRIOR||code===CARD.JUNK_GARDNA||code===CARD.JUNK_DESTROYER||code===CARD.JUNK_BERSERKER)
+        return {utility:ownHand().some(isMonster)&&monsters(true).length<5?1500:0};
+      if (code===CARD.CYBER_NOVA||code===CARD.CYBER_INFINITY)
+        return {utility:monsters(true).filter(c=>codeOf(c)===CARD.CYBER_DRAGON).length>=2?3600:0};
+      if (code===CARD.PHOENIX) return effectPlan(card);
+      if (code===CARD.COWBOY) return effectPlan(card);
+      return {utility:0};
+    }
     function effectPlan(card) {
       if (!board || !known(card)) return {utility:0};
       const code=codeOf(card), own=monsters(true), enemy=monsters(false);
@@ -217,7 +312,9 @@
         return {utility:gain>350?10000+gain:incomingDanger()>=10000?12000:0};
       }
       case CARD.RAIGEKI:return {utility:enemy.length?9000+total(enemy):0};
-      case CARD.REBORN:return {utility:own.length<5?(own.length?1600:3000):0};
+      case CARD.REBORN:case CARD.REINCARNATION:case CARD.PREMATURE:case CARD.CALL_HAUNTED:case CARD.FOOLISH:
+      case CARD.TRADE_IN:case CARD.SILVER_CRY:case CARD.ROTA:case CARD.MELODY:case CARD.FOOLISH_GOODS:case CARD.ONE_FOR_ONE:
+        return comboPlan(card);
       case CARD.MST: {
         const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
         targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
@@ -250,6 +347,14 @@
       case CARD.POT:return {utility:board.self.deckCount>=2?4200:0};
       case CARD.CHARITY:return {utility:board.self.deckCount>=3?2600:0};
       case CARD.UPSTART:return {utility:board.self.deckCount>=1&&board.self.handCount<5?800:0};
+      case CARD.DUALITY:return {utility:board.self.deckCount>=3&&board.self.handCount<6?1100:0};
+      case CARD.SUMMON_STRIKE:case CARD.SUMMON_WARNING:case CARD.VEILER:case CARD.ASH:
+        return {utility:Math.max(0,chainThreat()- (board.self.handCount<=1?1100:600))};
+      case CARD.BOTTOMLESS:case CARD.TORRENTIAL:case CARD.COMPULSORY:case CARD.DIMENSIONAL:
+        return {utility:enemy.length?Math.max(...enemy.map(value)):0};
+      case CARD.DUST_TORNADO:return {utility:spells(false).length?1050+Math.max(...spells(false).map(value)):0};
+      case CARD.RAIGEKI_BREAK:return {utility:enemy.length&&board.self.handCount>1?900+Math.max(...enemy.map(value)):0};
+      case CARD.FOOLISH_GOODS:return comboPlan(card);
       case CARD.POLY:case CARD.RITUAL:return {utility:own.length<5?2300:0};
       case CARD.AQUAMIRROR:return {utility:card.location===16?1300:own.length<5?2300:0};
       case CARD.PHOENIX: {
@@ -263,6 +368,11 @@
         if (defense) return {utility:board.opponent.lp<=800?12000:1250};
         // Its attack-position operation is a later battle-start +1000/-500, not the 800 burn.
         return {utility:canBattle&&enemy.some(c=>power(c)!==null&&score(card)<=power(c)&&score(card)+1500>power(c))?2200:0};
+      }
+      case CARD.PHOENIX: {
+        const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
+        targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
+        return {utility:targets.length&&board.self.handCount?Math.max(0,value(targets[0])+600-(board.self.handCount<=1?1000:650)):0,target:targets[0]};
       }
       case CARD.FIRE:return {utility:board.self.lp<=500||board.self.lp<=1000&&board.opponent.lp>1000?0:board.opponent.lp<=1000?12000:1400};
       default: {
@@ -306,8 +416,9 @@
     function rankSelection(cards, hint) {
       const ranked = cards.slice();
       if (board) {
-        if ([500,501,504].includes(hint) && cards.every(c=>c.controller===selfPlayer))
+        if ([500,501].includes(hint) && cards.every(c=>c.controller===selfPlayer))
           return ranked.sort((a,b)=>value(a)-value(b)||a.index-b.index);
+        if (hint===504) return ranked.sort((a,b)=>value(b)-value(a)||a.index-b.index);
         if (intent?.target && ![500,501,504].includes(hint))
           return ranked.sort((a,b)=>Number(same(b,intent.target))-Number(same(a,intent.target))||value(b)-value(a)||a.index-b.index);
         if ([506,508,509].includes(hint)) return ranked.sort((a,b)=>value(b)-value(a)||a.index-b.index);
@@ -448,7 +559,12 @@
               };
               const actions=[
                 tacticalAction(activate,5,'activate',effectPlan),
-                tacticalAction(special,1,'special',c=>({utility:1300+value(c)})),
+                tacticalAction(special,1,'special',c=>{
+                  const plan=extraComboPlan(c);
+                  if(plan.utility>0) return plan;
+                  // Unknown Extra Deck effects are not auto-used merely because the engine lists them.
+                  return PROFILE.extra.has(codeOf(c))?{utility:900+value(c)*0.2}:{utility:0};
+                }),
                 tacticalAction(summon,0,'normal',c=>summonPlan(c)),
                 tacticalAction(setMonster,3,'setmonster',c=>wantsDefense(c)?summonPlan(c,true):{utility:0}),
                 tacticalAction(setSpell,4,'setspell',c=>({utility:spells(true).length<4&&((info(c)?.type||0)&(4|0x10000))?200+value(c)*0.1:0})),

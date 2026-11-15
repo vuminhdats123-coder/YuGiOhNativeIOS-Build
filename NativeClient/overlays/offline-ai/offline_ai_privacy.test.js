@@ -39,11 +39,12 @@ try {
     }
     const hidden = {...publicCard(89631139,3000),position:8};
     const side = {lp:8000,handCount:3,deckCount:35,extraCount:2,cards:[hidden,publicCard(100,1200,1),{...hidden,location:1},{...hidden,location:2},{...hidden,location:64}],deck:[89631139],hand:[89631139],extra:[89631139],nextDraw:89631139};
-    host.handle({op:'decide',botID:player,message:11,bytes:[player],board:{self:side,opponent:side,seed:123,nextDraw:89631139}});
+    const opponentSide={...side,hand:[],extra:[]};
+    host.handle({op:'decide',botID:player,message:11,bytes:[player],board:{self:side,opponent:opponentSide,seed:123,nextDraw:89631139}});
     const sent = decisions[0][4];
     assert.deepEqual(Object.keys(sent).sort(),['opponent','self']);
     for (const view of Object.values(sent)) {
-      assert.deepEqual(Object.keys(view).sort(),['cards','deckCount','extraCount','handCount','lp']);
+      assert.deepEqual(Object.keys(view).sort(),['cards','deckCount','extra','extraCount','grave','hand','handCount','lp']);
       assert.equal(view.cards.length,2);
       assert.deepEqual(view.cards[0],{code:0,location:4,sequence:0,position:8});
       assert.deepEqual(view.cards[1],publicCard(100,1200,1));
@@ -81,7 +82,7 @@ for (const player of [0,1]) {
     host.handle({op:'start',botID:player,metadata:{100:{attack:1800,defense:1000,type:33,level:4},53129443:{attack:0,defense:0,type:2,level:0},[secret]:{attack:secret%5000,defense:secret%4000,type:33,level:8}}});
     for (const [message,bytes] of privateEvents(player,secret)) host.handle({op:'observe',botID:player,message,bytes});
     const self = {lp:8000,handCount:2,deckCount:35,extraCount:0,cards:[],deck:[secret,100],nextDraw:secret};
-    const opponent = {lp:8000,handCount:4,deckCount:34,extraCount:5,cards:[publicCard(200,2400),publicCard(300,2000,1),{...publicCard(secret,secret%5000,2),position:8}],hand:[secret]};
+    const opponent = {lp:8000,handCount:4,deckCount:34,extraCount:5,cards:[publicCard(200,2400),publicCard(300,2000,1),{...publicCard(secret,secret%5000,2),position:8}],hand:[],extra:[]};
     const normal = [...u(100),player,2,...u(0)];
     const spell = [...u(53129443),player,2,...u(1),...u(1,8),0];
     const answer = host.handle({op:'decide',botID:player,message:11,bytes:[player,...list([normal]),...empty,...empty,...empty,...empty,...list([spell]),1,1,0],board:{self,opponent,seed:secret}});

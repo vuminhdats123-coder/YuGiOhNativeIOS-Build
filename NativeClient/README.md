@@ -150,3 +150,5 @@ tra PNG, Unicode, hướng ảnh và luồng của compositor được viết tr
 `overlays/card-renderer/tests/card_face_native_checks.mm` nhưng chưa chạy.
 
 Client và core theo AGPL-3.0-or-later; Lua theo MIT. Giữ thông báo bản quyền và giấy phép nguồn/dependency khi đóng gói. Tài nguyên và script có giấy phép riêng; không đổi quyền của tài nguyên OBB.
+
+Combo evidence: HOST_COMBO_VALIDATION.md. Two Knightmare Phoenix Extra Deck cases remain documented gaps, not passes.

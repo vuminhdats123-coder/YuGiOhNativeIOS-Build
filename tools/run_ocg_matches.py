@@ -57,12 +57,19 @@ TACTICAL_SCENARIOS = {
     'rush_damage_step_win': {'messages': {70,74,91,110,113}, 'scripts': {'c70046172.lua'}, 'ruleOptions': MR5|2},
     'rush_hold_winning_battle': {'messages': {91,110,113}, 'forbiddenMessages': {70}, 'scripts': {'c70046172.lua'}, 'ruleOptions': MR5|2},
 }
+COMBO_SCENARIO_SOURCE = ROOT / 'tests/fixtures/ocg_combo_scenarios.lua'
+COMBO_SCENARIOS = {
+    'foolish_reborn': {'messages': {50,70,74}, 'scripts': {'c81439173.lua','c83764718.lua'}},
+    'tradein_silverscry': {'messages': {50,70,74}, 'scripts': {'c38120068.lua','c87025064.lua'}},
+    'rota_junk_search_summon': {'messages': {50,60,61,70,74}, 'scripts': {'c32807846.lua','c63977008.lua'}},
+}
 SCENARIO_SUITES = {
     'prompt': (SCENARIO_SOURCE, SCENARIO_PROMPTS, 'Prompt', 'host-prompt-validation.json'),
     'effect': (EFFECT_SCENARIO_SOURCE, EFFECT_SCENARIOS, 'Effect', 'host-effect-validation.json'),
     'extra-deck': (EXTRA_DECK_SCENARIO_SOURCE, EXTRA_DECK_SCENARIOS, 'ExtraDeck', 'host-extra-deck-validation.json'),
     'ritual-pendulum': (RITUAL_PENDULUM_SCENARIO_SOURCE, RITUAL_PENDULUM_SCENARIOS, 'RitualPendulum', 'host-ritual-pendulum-validation.json'),
     'tactical': (TACTICAL_SCENARIO_SOURCE, TACTICAL_SCENARIOS, 'Tactical', 'host-tactical-validation.json'),
+    'combo': (COMBO_SCENARIO_SOURCE, COMBO_SCENARIOS, 'Combo', 'host-combo-validation.json'),
 }
 
 def sha(data): return hashlib.sha256(data).hexdigest()
@@ -125,10 +132,10 @@ def public_field_summary(data):
     if at+chains*28!=len(data): raise ValueError('Invalid field chain summary length')
     return sides
 
-def visible_query_card(data, occupied):
+def visible_query_card(data, occupied, disclose=False):
     """Only face-up on-field queries may contribute identities or dynamic stats."""
     result={'code':0,**{key:occupied[key] for key in ('location','sequence','position')}}
-    if not (result['position']&5): return result
+    if not disclose and not (result['position']&5): return result
     values={};at=0
     while at<len(data):
         if at+2>len(data): raise ValueError('Truncated card query')
@@ -138,7 +145,7 @@ def visible_query_card(data, occupied):
     if values.get(1)==b'\0\0\0\0': return result
     for flag,name in ((1,'code'),(8,'type'),(16,'level'),(32,'rank'),(256,'attack'),(512,'defense'),(0x800000,'link')):
         value=values.get(flag,b'')
-        if len(value)<4: raise ValueError('Missing visible card query field')
+        if len(value)<4: raise ValueError('Missing visible card query field '+name+' flags='+str(sorted(values)))
         result[name]=struct.unpack_from('<i' if name in ('attack','defense') else '<I',value)[0]
     status=values.get(0x80000,b'')
     if len(status)!=4: raise ValueError('Missing visible card status')
@@ -258,7 +265,7 @@ class Engine:
         if [C.sizeof(t) for t in (Card,Player,Options,NewCard,Query)] != [56,12,104,24,20]: raise ValueError('Unexpected OCG x86 ABI layout')
         # ocgapi.h uses ordinary C declarations: cdecl, not WinDLL/stdcall.
         self.dll=C.CDLL(str(DEFAULT_DLL))
-        defs={'OCG_GetVersion':(None,[C.POINTER(C.c_int),C.POINTER(C.c_int)]),'OCG_CreateDuel':(C.c_int,[C.POINTER(C.c_void_p),C.POINTER(Options)]),'OCG_DestroyDuel':(None,[C.c_void_p]),'OCG_DuelNewCard':(None,[C.c_void_p,C.POINTER(NewCard)]),'OCG_StartDuel':(None,[C.c_void_p]),'OCG_DuelProcess':(C.c_int,[C.c_void_p]),'OCG_DuelGetMessage':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32)]),'OCG_DuelSetResponse':(None,[C.c_void_p,C.c_void_p,C.c_uint32]),'OCG_LoadScript':(C.c_int,[C.c_void_p,C.c_char_p,C.c_uint32,C.c_char_p]),'OCG_DuelQuery':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32),C.POINTER(Query)]),'OCG_DuelQueryField':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32)])}
+        defs={'OCG_GetVersion':(None,[C.POINTER(C.c_int),C.POINTER(C.c_int)]),'OCG_CreateDuel':(C.c_int,[C.POINTER(C.c_void_p),C.POINTER(Options)]),'OCG_DestroyDuel':(None,[C.c_void_p]),'OCG_DuelNewCard':(None,[C.c_void_p,C.POINTER(NewCard)]),'OCG_StartDuel':(None,[C.c_void_p]),'OCG_DuelProcess':(C.c_int,[C.c_void_p]),'OCG_DuelGetMessage':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32)]),'OCG_DuelSetResponse':(None,[C.c_void_p,C.c_void_p,C.c_uint32]),'OCG_LoadScript':(C.c_int,[C.c_void_p,C.c_char_p,C.c_uint32,C.c_char_p]),'OCG_DuelQuery':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32),C.POINTER(Query)]),'OCG_DuelQueryField':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32)]),'OCG_DuelQueryLocation':(C.c_void_p,[C.c_void_p,C.POINTER(C.c_uint32),C.POINTER(Query)])}
         for name,(restype,args) in defs.items(): f=getattr(self.dll,name);f.restype=restype;f.argtypes=args
         major=C.c_int();minor=C.c_int();self.dll.OCG_GetVersion(C.byref(major),C.byref(minor));self.version=[major.value,minor.value]
         if self.version!=[11,0]: raise ValueError('Unexpected OCG API version')
@@ -345,6 +352,29 @@ class Engine:
                 ptr=self.dll.OCG_DuelQuery(duel,C.byref(n),C.byref(q))
                 if not ptr or not n.value: raise ValueError('Missing visible field card')
                 side['cards'][index]=visible_query_card(C.string_at(ptr,n.value),card)
+        def query_zone(controller,location,disclose):
+            q=Query(flags,controller,location,0,0);ptr=self.dll.OCG_DuelQueryLocation(duel,C.byref(n),C.byref(q))
+            if not ptr or not n.value: return []
+            data=C.string_at(ptr,n.value)
+            if len(data)<4: raise ValueError('Missing location summary')
+            total=struct.unpack_from('<I',data)[0];at=4;cards=[];sequence=0
+            card_data=bytearray()
+            while at< len(data) and at<4+total:
+                if at+2>len(data): raise ValueError('Truncated location card')
+                size=struct.unpack_from('<H',data,at)[0];at+=2
+                if size<4 or at+size>len(data): raise ValueError('Invalid location card size')
+                record=data[at-2:at+size];card_data.extend(record)
+                flag=struct.unpack_from('<I',data,at)[0];at+=size
+                if flag==0x80000000:
+                    cards.append(visible_query_card(bytes(card_data),{'code':0,'location':location,'sequence':sequence,'position':0},disclose))
+                    sequence+=1;card_data.clear()
+            return cards
+        for controller,side in enumerate(sides):
+            if controller==player:
+                side['hand']=query_zone(controller,2,True);side['extra']=query_zone(controller,64,True)
+            else:
+                side['hand']=[];side['extra']=[]
+            side['grave']=query_zone(controller,16,True)
         return {'self':sides[player],'opponent':sides[1-player]}
     def match(self,paths,seed,max_turns=120,max_steps=100000):
         self.errors=[];self.loaded=set();self.read_codes=set();self.missing=set()
@@ -440,7 +470,7 @@ class Engine:
                     if message in PROMPTS:
                         response=self.answer(node,duel,message,payload)
                         report['responses'].append({'message':message,'player':payload[0],'payload':list(payload),'response':list(response)})
-                        if suite=='tactical': report['responses'][-1]['board']=self.last_board
+                        if suite in ('tactical','combo'): report['responses'][-1]['board']=self.last_board
                         if message==16 and len(payload)>2 and payload[2]: report['forcedChains']+=1
                         self.dll.OCG_DuelSetResponse(duel,response,len(response));responded=True
                 if self.errors: raise ValueError('Scenario callback/script errors')
@@ -490,7 +520,7 @@ class Engine:
         return {'status':'passed' if not self.errors and not required else 'failed','mappedUniqueCodes':len(codes),'batches':(len(codes)+31)//32,'cardsReadIncludingDependencies':len(self.read_codes),'canonicalRuntimeScriptsLoaded':len(self.loaded),'missingRequiredScripts':required,'missingNormalCardScripts':len(normal),'errors':batches,'auditSHA256':sha(audit_path.read_bytes()),'scope':'Card creation and initial_effect/base dependency execution only; does not exercise every effect activation.'}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v8');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--effect-scenarios',action='store_true',help='Bounded canonical card effect interactions with final-state assertions');p.add_argument('--report',type=Path)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v9a');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--effect-scenarios',action='store_true',help='Bounded canonical card effect interactions with final-state assertions');p.add_argument('--report',type=Path)
     p.add_argument('--extra-deck-scenarios',action='store_true',help='Canonical Synchro/Xyz/Link summons, effects and summon negation')
     p.add_argument('--scenario-suite',choices=SCENARIO_SUITES,help='Named bounded scenario suite; legacy scenario flags remain aliases')
     args=p.parse_args()

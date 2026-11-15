@@ -23,12 +23,12 @@ function publicObservation(message, bytes, player) {
 
 function visibleBoard(board) {
   if (board === undefined || board === null) return undefined;
-  const integer = value => { if (!Number.isInteger(value)) throw new Error('Invalid board integer'); return value; };
+  const integer = value => value === undefined ? 0 : (Number.isInteger(value) ? value : (()=>{ throw new Error('Invalid board integer'); })());
   const result = {};
   for (const side of ['self','opponent']) {
     const source = board[side];
     if (!source || !Array.isArray(source.cards) || source.cards.length > 15) throw new Error('Invalid board side');
-    const target = {lp:integer(source.lp),handCount:integer(source.handCount),deckCount:integer(source.deckCount),extraCount:integer(source.extraCount),cards:[]};
+    const target = {lp:integer(source.lp),handCount:integer(source.handCount),deckCount:integer(source.deckCount),extraCount:integer(source.extraCount),cards:[],hand:[],extra:[],grave:[]};
     for (const card of source.cards) {
       if (![4,8].includes(card.location)) continue;
       const entry = {code:0,location:card.location,sequence:integer(card.sequence),position:integer(card.position)};
@@ -38,6 +38,19 @@ function visibleBoard(board) {
       }
       target.cards.push(entry);
     }
+    for (const zone of ['hand','extra','grave']) {
+      const records = source[zone] === undefined ? [] : source[zone];
+      if (!Array.isArray(records) || records.length > 60) throw new Error('Invalid board zone');
+      target[zone]=records.map(card => {
+        const entry={code:integer(card.code),location:integer(card.location),sequence:integer(card.sequence),position:integer(card.position)};
+        if (zone==='grave' || side==='self') {
+          for (const key of ['type','attack','defense','level','rank','link']) entry[key]=integer(card[key]);
+          entry.disabled=Boolean(card.disabled);
+        }
+        return entry;
+      });
+    }
+    if (side==='opponent' && (target.hand.length || target.extra.length)) throw new Error('Opponent private zones must be empty');
     result[side]=target;
   }
   return result;

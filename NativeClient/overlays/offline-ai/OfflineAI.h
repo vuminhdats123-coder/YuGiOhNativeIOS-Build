@@ -10,6 +10,7 @@
 
 namespace ygo {
 struct Deck;
+class Duel;
 namespace OfflineAI {
 constexpr int MENU_OPEN = 30001, MENU_START = 30002, MENU_CANCEL = 30003;
 // Restrict delivery before JS.observe. Unknown/private event families never reach the bot.
@@ -49,9 +50,10 @@ void Stop();
 bool Handles(uint8_t message);
 bool Observe(uint8_t message, const uint8_t* data, size_t size, std::string& error);
 // decide's fifth argument is a relative self/opponent snapshot: LP, public zone counts and
-// on-field cards only. Face-down records contain no identity/stats; both hands and Extra Deck
-// identities are omitted. Own legal selection/search candidates come from the current prompt.
-bool Respond(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error);
+// on-field cards, plus the AI's own hand/Extra identities and both public Grave arrays.
+// Opponent hand/Extra and Main Deck identities/order are omitted. Face-down field records
+// contain no identity/stats; own legal selection/search candidates still come from the prompt.
+bool Respond(const Duel* duel, uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error);
 // Human ClientAnalyze needs real deck sequences for GetCard; only decision input hides deck order.
 bool FilterForHuman(uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& filtered, bool& visible, std::string& error, bool hideDeckOrder = false);
 bool LoadDeck(epro::path_stringview name, Deck& output, std::string& error);
@@ -60,7 +62,7 @@ inline bool Start(std::string& error) { error = "Offline AI requires the iOS Jav
 inline void Stop() {}
 inline bool Handles(uint8_t) { return false; }
 inline bool Observe(uint8_t, const uint8_t*, size_t, std::string&) { return true; }
-inline bool Respond(uint8_t, const uint8_t*, size_t, std::vector<uint8_t>&, std::string&) { return false; }
+inline bool Respond(const Duel*, uint8_t, const uint8_t*, size_t, std::vector<uint8_t>&, std::string&) { return false; }
 inline bool FilterForHuman(uint8_t, const uint8_t*, size_t, std::vector<uint8_t>&, bool&, std::string&, bool = false) { return false; }
 inline bool LoadDeck(epro::path_stringview, Deck&, std::string& error) { error = "Offline AI is currently iOS-only."; return false; }
 #endif

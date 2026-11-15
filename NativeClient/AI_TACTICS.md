@@ -4,7 +4,7 @@ The production JavaScript uses the current visible board to compare actions.
 It prioritizes useful removal before committing another monster, avoids clearly
 losing attacks into known stats, selects a defense position where appropriate,
 and prefers lower-value discard/tribute costs. Its named effect profiles cover
-22 cards: Dark Hole, Raigeki, Monster Reborn, Mystical Space Typhoon, Solemn
+50+ grounded card profiles: Dark Hole, Raigeki, Monster Reborn, Mystical Space Typhoon, Solemn
 Judgment, Magic Jammer, Forbidden Chalice, Rush Recklessly, Mirror Force, Negate
 Attack, Polymerization, Black Luster Ritual, Pot of Greed, Graceful Charity,
 Upstart Goblin, Fissure, Smashing Ground, Book of Moon, Gishki Aquamirror,
@@ -65,3 +65,6 @@ The native policy has authored assertions in
 `tactical_snapshot_privacy_checks.md`; they have not been compiled/executed.
 Passing the host tests is not proof of an on-device JavaScriptCore/UI session,
 perfect strategy, or coverage of every possible effect interaction.
+
+
+Current combo evidence is in HOST_COMBO_VALIDATION.md: 6/6 real-core sequences. ROTA stops after search and Junk Synchron Normal Summon; a third Synchro step remains unproven.

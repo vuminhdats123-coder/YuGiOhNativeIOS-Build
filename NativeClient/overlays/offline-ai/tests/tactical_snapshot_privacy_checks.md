@@ -7,8 +7,11 @@ The fifth `decide` argument is `{self, opponent}`. Each side has `lp`, `handCoun
 `deckCount`, `extraCount`, and `cards` containing only Monster/Spell/Trap Zone occupancy.
 Face-down records contain only `code: 0`, `location`, `sequence`, and `position`.
 Face-up records add current `type`, `attack`, `defense`, `level`, `rank`, `link`, `disabled`.
-Neither side exposes hand/Extra Deck identities or any Main Deck order. Own legal prompt
-candidates can supply known choices; this snapshot does not enable full hand-combo planning.
+The self side additionally has `hand` and `extra` arrays with the same fields, queried
+directly from the duel core on the duel thread. Both sides have public `grave` arrays.
+The opponent side has no `hand` or `extra` identities. No Main Deck order or identity is
+queried. Own hand/Extra access is authorized for combo planning; no future draw position is
+provided.
 
 After native testing is authorized:
 
@@ -16,7 +19,8 @@ After native testing is authorized:
    has a changed ATK/DEF. Values must equal the refreshed `ClientCard`, not database base stats.
 2. Pair two otherwise identical duels with different opponent hand identities, deck orders
    and set-card identities/stats. Snapshot fields must be identical except public counts
-   if deliberately changed. No hand/deck/Extra card record may be present.
+   if deliberately changed. The self hand/Extra records may differ only when the AI's own
+   legal cards differ; opponent hand/Extra records must never be present.
 3. Turn a previously face-up card face-down. Its remembered `ClientCard::code`, type,
    ATK/DEF, rank/link and disabled status must not reappear in the next snapshot.
 4. Check the mapping with `dInfo.isFirst` both true and false. `self` and `ownPositions`
@@ -39,6 +43,10 @@ After native testing is authorized:
    default `hideDeckOrder=false` must preserve the original deck sequences needed by
    `GetCard`. Selecting a nonzero-index candidate must still reference and submit the
    correct card. The AI path alone passes `true`; its response entry indices stay intact.
+9. Verify the expanded core query bridge: own hand and Extra identities match
+   `DuelQueryCount`/`DuelQuery` results on the current duel thread; both Grave arrays contain
+   only public card records; Main Deck is never queried. A large Grave is capped at the
+   documented bridge bound without affecting legal prompt candidates.
 
 `observation_privacy_checks.cpp` directly exercises the production whitelist/redaction
 helper, including malformed lengths and private-zone sequence normalization. It remains
