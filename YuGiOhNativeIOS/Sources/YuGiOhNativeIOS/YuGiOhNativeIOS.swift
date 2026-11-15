@@ -130,6 +130,7 @@ private struct CardDetailView: View {
                 if let level = card.level { Text("Level: \(level) | ATK: \(card.atk.map(String.init) ?? "?") | DEF: \(card.def.map(String.init) ?? "?")") }
                 Text(card.description).font(.body)
                 if !card.genres.isEmpty { Text(card.genres.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }
+                if let pack = CardPackStore.summary, pack.status == "empty" { Text("Pack assignment: unavailable in source table").font(.caption).foregroundStyle(.secondary) }
                 if let relation = CardRelationStore.relation(for: card.konamiID) {
                     if !relation.archetypes.isEmpty { Text("Archetype codes: " + relation.archetypes.map(String.init).joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }
                     if !relation.links.isEmpty { Text("Related links: " + relation.links.map { "\($0.target) (\($0.kind))" }.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }

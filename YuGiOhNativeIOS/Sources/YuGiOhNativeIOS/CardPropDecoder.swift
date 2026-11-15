@@ -24,3 +24,12 @@ enum CardRelationStore {
     }()
     static func relation(for konamiID: Int?) -> CardRelation? { konamiID.flatMap { index[String($0)] } }
 }
+
+
+struct CardPackSummary: Decodable { let status: String; let nonZeroRecords: Int; let records: Int; let note: String }
+enum CardPackStore {
+    static let summary: CardPackSummary? = {
+        guard let url = Bundle.main.url(forResource: "card-pack-summary", withExtension: "json", subdirectory: "GeneratedData"), let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(CardPackSummary.self, from: data)
+    }()
+}
