@@ -1,5 +1,7 @@
-# Current Extra Deck regression with expanded tactical AI
+# Current Extra Deck regression
 
-The current AI rechecked the Extra Deck suite. **8/10 scenarios passed** with zero retries/core/Lua errors: Synchro trigger, Xyz detach, Solemn Judgment summon negation and Link Rating material passed for both players. The two `link_discard_destroy` cases remain failed because the tactical policy does not yet select Knightmare Phoenix in that exact starting prompt. These are concrete gaps, not passes. The historical 10/10 report uses the earlier AI and remains separate.
+With runtime v9a and the current tactical AI, the canonical Extra Deck suite passes **10/10 scenarios** from both perspectives: Synchro trigger, Xyz detach, Knightmare Phoenix discard/destroy, Solemn Judgment summon negation and Link Rating material. The core accepted every response with zero retries or Lua/core errors.
 
-This is bounded Windows core evidence. No compiler, Xcode, Actions or IPA build was run.
+This current report is `host-extra-deck-validation-v9-final.json`; the earlier 8/10 diagnostic was caused by the previous runtime/AI profile and is not the current result.
+
+This remains Windows precompiled-core evidence. Native iOS UI, Objective-C++ bridge, touch and device lifecycle are unverified; no compiler, Xcode, Actions or IPA build was run.

@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand combo/effect coverage beyond current grounded profiles; fix the two Knightmare Phoenix regression cases; verify native human iOS play"
+    "Verify native human iOS play and continue broadening combo/effect coverage beyond current profiles"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -80,7 +80,7 @@
     "currentAIScenarioRegressionCases": 36,
     "effectiveScenarioRulesVerified": true,
     "ritualSumNativeTestsExecuted": false,
-    "tacticalNamedCardProfiles": 22,
+    "tacticalNamedCardProfiles": 50,
     "windowsCoreTacticalScenarios": 14,
     "windowsCoreTacticalResponses": 181,
     "hiddenInformationInvarianceNodeTestsPassed": true,
@@ -89,13 +89,14 @@
     "visibleTacticalProfiles": 50,
     "windowsCoreComboScenarios": 6,
     "windowsCoreComboResponses": 80,
-    "windowsCoreExtraDeckCurrentScenarios": 8,
+    "windowsCoreExtraDeckCurrentScenarios": 10,
     "windowsCoreFullMatchesCurrent": 36,
     "currentRuntimePackage": "outputs/edopro-game-v9a",
-    "currentRuntimeManifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf"
+    "currentRuntimeManifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf",
+    "aiSHA256": "02ff13060ac2aa207f9bff900e1487b771bcc0cf0314dafee78b2f2153cf023a"
   },
   "limitations": [
-    "Bounded visible-state tactics with 22 named profiles; no universal effect/combo planner",
+    "Bounded visible-state tactics with 50+ grounded profiles; no universal effect/combo planner",
     "Offline replay saving is disabled",
     "Legacy Vietnamese text can differ from current effect scripts",
     "Installed package upgrades preserve user data by refusing automatic migration",

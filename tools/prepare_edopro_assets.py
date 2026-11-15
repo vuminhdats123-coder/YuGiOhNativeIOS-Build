@@ -195,12 +195,24 @@ def copy_file(source: Path, target: Path) -> None:
     shutil.copyfile(source, target)
 
 
+def canonical_distribution_relative(value: str) -> str:
+    # Windows checkouts can expose a UTF-8 filename through a legacy code page,
+    # producing e.g. ``FranÃ§ais``. Repair only a reversible latin1->UTF-8 form;
+    # ordinary Unicode names are left untouched.
+    try:
+        repaired = value.encode("latin1").decode("utf-8")
+    except UnicodeError:
+        return value
+    return repaired if any(marker in value for marker in ("Ã", "Â", "â")) else value
+
+
 def copy_tree(source: Path, target: Path) -> None:
     for item in sorted(source.rglob("*")):
         if item.is_symlink() or getattr(item, "is_junction", lambda: False)():
             raise ValueError(f"Linked source assets are not allowed: {item}")
         if item.is_file():
-            copy_file(item, target / safe_relative(item.relative_to(source).as_posix()))
+            relative = canonical_distribution_relative(item.relative_to(source).as_posix())
+            copy_file(item, target / safe_relative(relative))
 
 
 def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: Path,

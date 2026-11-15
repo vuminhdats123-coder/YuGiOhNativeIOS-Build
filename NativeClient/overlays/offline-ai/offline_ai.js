@@ -299,8 +299,9 @@
         return {utility:ownHand().some(isMonster)&&monsters(true).length<5?1500:0};
       if (code===CARD.CYBER_NOVA||code===CARD.CYBER_INFINITY)
         return {utility:monsters(true).filter(c=>codeOf(c)===CARD.CYBER_DRAGON).length>=2?3600:0};
-      if (code===CARD.PHOENIX) return effectPlan(card);
+      if (code===CARD.PHOENIX) { const plan=effectPlan(card); return plan.utility>0?{...plan,utility:Math.max(plan.utility,3600)}:plan; }
       if (code===CARD.COWBOY) return effectPlan(card);
+      if (code===CARD.DECODE) return {utility:monsters(true).length>=2?4200:0};
       return {utility:0};
     }
     function effectPlan(card) {

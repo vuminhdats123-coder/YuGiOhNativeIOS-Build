@@ -31,7 +31,7 @@
     11,
     0
   ],
-  "aiSHA256": "a9c93dbed3aac676de6d74f13d859a8b0009049ff86082f0f84fbd02d500c966",
+  "aiSHA256": "02ff13060ac2aa207f9bff900e1487b771bcc0cf0314dafee78b2f2153cf023a",
   "hostAdapterSHA256": "6605cb24dd44a4d195534e251600600c6a723f37f066d1caac2eb01c2d3eb964",
   "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
   "scenariosAccepted": 6,
@@ -39,7 +39,7 @@
     {
       "scenario": "foolish_reborn",
       "player": 0,
-      "seed": 701,
+      "seed": 1,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -1357,8 +1357,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(0,\"foolish_reborn\",9000701)",
-      "completionMarker": 9000701,
+      "entryScript": "HostComboScenario(0,\"foolish_reborn\",9000001)",
+      "completionMarker": 9000001,
       "requiredCanonicalScripts": [
         "c81439173.lua",
         "c83764718.lua"
@@ -1756,7 +1756,7 @@
         "unofficial/proc_unofficial.lua",
         "utility.lua"
       ],
-      "durationSeconds": 0.141,
+      "durationSeconds": 0.14,
       "fullMatch": false,
       "requiredCanonicalScriptSHA256": {
         "c81439173.lua": "6e65769ede8ba639875e3b36e1d041475ceb2e86ed8d3e987184db893ecd8907",
@@ -1766,7 +1766,7 @@
     {
       "scenario": "foolish_reborn",
       "player": 1,
-      "seed": 702,
+      "seed": 2,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -3222,8 +3222,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(1,\"foolish_reborn\",9000702)",
-      "completionMarker": 9000702,
+      "entryScript": "HostComboScenario(1,\"foolish_reborn\",9000002)",
+      "completionMarker": 9000002,
       "requiredCanonicalScripts": [
         "c81439173.lua",
         "c83764718.lua"
@@ -3621,7 +3621,7 @@
         "unofficial/proc_unofficial.lua",
         "utility.lua"
       ],
-      "durationSeconds": 0.109,
+      "durationSeconds": 0.125,
       "fullMatch": false,
       "requiredCanonicalScriptSHA256": {
         "c81439173.lua": "6e65769ede8ba639875e3b36e1d041475ceb2e86ed8d3e987184db893ecd8907",
@@ -3631,7 +3631,7 @@
     {
       "scenario": "tradein_silverscry",
       "player": 0,
-      "seed": 703,
+      "seed": 3,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -4972,8 +4972,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(0,\"tradein_silverscry\",9000703)",
-      "completionMarker": 9000703,
+      "entryScript": "HostComboScenario(0,\"tradein_silverscry\",9000003)",
+      "completionMarker": 9000003,
       "requiredCanonicalScripts": [
         "c38120068.lua",
         "c87025064.lua"
@@ -5381,7 +5381,7 @@
     {
       "scenario": "tradein_silverscry",
       "player": 1,
-      "seed": 704,
+      "seed": 4,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -6873,8 +6873,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(1,\"tradein_silverscry\",9000704)",
-      "completionMarker": 9000704,
+      "entryScript": "HostComboScenario(1,\"tradein_silverscry\",9000004)",
+      "completionMarker": 9000004,
       "requiredCanonicalScripts": [
         "c38120068.lua",
         "c87025064.lua"
@@ -7282,7 +7282,7 @@
     {
       "scenario": "rota_junk_search_summon",
       "player": 0,
-      "seed": 705,
+      "seed": 5,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -8285,8 +8285,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(0,\"rota_junk_search_summon\",9000705)",
-      "completionMarker": 9000705,
+      "entryScript": "HostComboScenario(0,\"rota_junk_search_summon\",9000005)",
+      "completionMarker": 9000005,
       "requiredCanonicalScripts": [
         "c32807846.lua",
         "c63977008.lua"
@@ -8548,7 +8548,7 @@
     {
       "scenario": "rota_junk_search_summon",
       "player": 1,
-      "seed": 706,
+      "seed": 6,
       "status": "accepted_completion_marker",
       "retryCount": 0,
       "expectedMessages": [
@@ -9704,8 +9704,8 @@
       "expectedRuleOptions": 190464,
       "effectiveRuleOptions": 190464,
       "testLuaSHA256": "dc7c39462c0b059e4c7b51b7111bdfdebf57afe5e74422c8063f6bc0e282638d",
-      "entryScript": "HostComboScenario(1,\"rota_junk_search_summon\",9000706)",
-      "completionMarker": 9000706,
+      "entryScript": "HostComboScenario(1,\"rota_junk_search_summon\",9000006)",
+      "completionMarker": 9000006,
       "requiredCanonicalScripts": [
         "c32807846.lua",
         "c63977008.lua"
@@ -9981,12 +9981,10 @@
     "combo",
     "--runtime",
     "outputs/edopro-game-v8",
-    "--seed",
-    "701",
     "--report",
     "NativeClient/host-combo-validation.json"
   ],
-  "harnessSHA256": "5e34014ad93b08f7629fe1485eb069c07b9ee2b086fdfea599e08e80acf24e9b",
+  "harnessSHA256": "66dc60b8d5cff8a093f7fc0706f1c3eb2421af788c981ad511a3f53268356fb3",
   "databaseSHA256": "cbc868862e257745a97e7139d791ae0a96c7a7c10ac4370bc67b200de60506b2",
   "canonicalScriptArchiveSHA256": "72e4cb87d41ed2a9d174bb631155e8d64c421af901a2528739cb376701312842",
   "interactions": [

@@ -1,7 +1,7 @@
 # Canonical combo validation
 
-`host-combo-validation.json` records **6/6 real-core combo scenarios** (three
-sequences from both player perspectives) on runtime v9 with the current
+`host-combo-validation-v9.json` records **6/6 real-core combo scenarios** (three
+sequences from both player perspectives) on runtime v9a with the current
 production AI. All reached their Lua completion marker with zero retries or
 script errors.
 
