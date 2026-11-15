@@ -106,8 +106,19 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
-          cd "$RUNNER_TEMP/ipa"
-          /usr/bin/zip -r "$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa" Payload
+          export IPA_ROOT="$RUNNER_TEMP/ipa" IPA_OUTPUT="$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa"
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          import os
+          root = Path(os.environ["IPA_ROOT"])
+          output = Path(os.environ["IPA_OUTPUT"])
+          with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
+              for path in sorted((root / "Payload").rglob("*")):
+                  if path.is_file():
+                      archive.write(path, path.relative_to(root).as_posix())
+          print(output, output.stat().st_size)
+          PY
 
       - name: Upload unsigned IPA and archive
         uses: actions/upload-artifact@v4
