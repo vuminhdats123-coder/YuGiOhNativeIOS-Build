@@ -8,15 +8,33 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Archive unsigned iPhone app
-        run: xcodebuild archive -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphoneos -configuration Release -archivePath build/YuGiOhNativeIOS.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
-      - name: Package unsigned IPA
+      - name: Install signing assets
+        env:
+          IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+          IOS_MOBILEPROVISION_BASE64: ${{ secrets.IOS_MOBILEPROVISION_BASE64 }}
+          IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERT_DIR="$RUNNER_TEMP/certificates"
+          mkdir -p "$CERT_DIR"
+          echo "$IOS_P12_BASE64" | base64 --decode > "$CERT_DIR/signing.p12"
+          echo "$IOS_MOBILEPROVISION_BASE64" | base64 --decode > "$CERT_DIR/profile.mobileprovision"
+          security create-keychain -p build "$RUNNER_TEMP/build.keychain-db"
+          security default-keychain -s "$RUNNER_TEMP/build.keychain-db"
+          security unlock-keychain -p build "$RUNNER_TEMP/build.keychain-db"
+          security import "$CERT_DIR/signing.p12" -k "$RUNNER_TEMP/build.keychain-db" -P "$IOS_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$CERT_DIR/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/315e7844-7e14-4cd1-83db-79.mobileprovision"
+      - name: Archive signed iPhone app
+        run: xcodebuild archive -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphoneos -configuration Release -archivePath build/YuGiOhNativeIOS.xcarchive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=ZJCEW PROVISIONING_PROFILE_SPECIFIER=Azor_00008130-001069C43646001C
+      - name: Package IPA
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ipa/Payload
           cp -R build/YuGiOhNativeIOS.xcarchive/Products/Applications/YuGiOhNativeIOS.app ipa/Payload/
-          ditto -c -k --sequesterRsrc --keepParent ipa/Payload ipa/YuGiOhNativeIOS-unsigned.ipa
+          ditto -c -k --sequesterRsrc --keepParent ipa/Payload ipa/YuGiOhNativeIOS-signed.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: YuGiOhNativeIOS-unsigned-ipa
-          path: ipa/YuGiOhNativeIOS-unsigned.ipa
+          name: YuGiOhNativeIOS-signed-ipa
+          path: ipa/YuGiOhNativeIOS-signed.ipa
