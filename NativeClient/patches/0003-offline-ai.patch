@@ -1,3 +1,23 @@
+diff --git a/gframe/duelclient.cpp b/gframe/duelclient.cpp
+index 05b5092..52cdd37 100644
+--- a/gframe/duelclient.cpp
++++ b/gframe/duelclient.cpp
+@@ -2317,6 +2317,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
+ 		uint8_t positions = BufferIO::Read<uint8_t>(pbuf);
+ 		if (positions == POS_FACEUP_ATTACK || positions == POS_FACEDOWN_ATTACK || positions == POS_FACEUP_DEFENSE || positions == POS_FACEDOWN_DEFENSE) {
+ 			SetResponseI(positions);
++			SendResponse();
+ 			return true;
+ 		}
+ 		int count = 0, filter = 0x1, startpos;
+@@ -3944,6 +3945,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
+ 		mainGame->wANCard->setText(gDataManager->GetDesc(select_hint ? select_hint : 564, mainGame->dInfo.compat_mode).data());
+ 		if(mainGame->dField.UpdateDeclarableList() == 0) {
+ 			DuelClient::SetResponseI(0);
++			DuelClient::SendResponse();
+ 			return true;
+ 		}
+ 		mainGame->PopupElement(mainGame->wANCard);
 diff --git a/gframe/game.cpp b/gframe/game.cpp
 index f4aa146..ce7c73e 100644
 --- a/gframe/game.cpp
@@ -133,7 +153,7 @@ index 7b3360f..9a7ed4f 100644
  				mainGame->HideElement(mainGame->wMainMenu);
  				mainGame->stSinglePlayInfo->setText(L"");
 diff --git a/gframe/single_mode.cpp b/gframe/single_mode.cpp
-index 3aabc46..02ab6e7 100644
+index 3aabc46..9395caf 100644
 --- a/gframe/single_mode.cpp
 +++ b/gframe/single_mode.cpp
 @@ -1,4 +1,6 @@
@@ -143,44 +163,109 @@ index 3aabc46..02ab6e7 100644
  #include "game_config.h"
  #include "duelclient.h"
  #include "game.h"
-@@ -21,6 +23,8 @@ DuelPtr SingleMode::pduel = nullptr;
- bool SingleMode::is_closing = false;
- bool SingleMode::is_continuing = false;
- bool SingleMode::is_restarting = false;
+@@ -18,9 +20,15 @@
+ namespace ygo {
+ 
+ DuelPtr SingleMode::pduel = nullptr;
+-bool SingleMode::is_closing = false;
+-bool SingleMode::is_continuing = false;
+-bool SingleMode::is_restarting = false;
++std::atomic_bool SingleMode::is_closing{ false };
++std::atomic_bool SingleMode::is_continuing{ false };
++std::atomic_bool SingleMode::is_restarting{ false };
++epro::mutex SingleMode::lifecycle_mutex;
++bool SingleMode::accepting_controls = false;
++DuelResponseMailbox SingleMode::responses;
++std::string SingleMode::duel_error;
 +bool SingleMode::is_offline_ai = false;
 +bool SingleMode::last_response_ai = false;
  Replay SingleMode::last_replay;
  Replay SingleMode::new_replay;
  ReplayStream SingleMode::replay_stream;
-@@ -32,6 +36,7 @@ bool SingleMode::StartPlay(DuelOptions&& duelOptions) {
+@@ -32,13 +40,36 @@ bool SingleMode::StartPlay(DuelOptions&& duelOptions) {
  		return false;
  	if(single_mode_thread.joinable())
  		single_mode_thread.join();
++	{
++		std::lock_guard<epro::mutex> gui_lock(mainGame->gMutex);
++		std::lock_guard<epro::mutex> lock(lifecycle_mutex);
++		is_closing = false;
++		is_restarting = false;
++		is_continuing = true;
++		accepting_controls = true;
++		responses.Reset();
++		mainGame->actionSignal.SetNoWait(false);
++		mainGame->replaySignal.SetNoWait(false);
++	}
 +	mainGame->dInfo.isSingleMode = true;
  	single_mode_thread = epro::thread(SinglePlayThread, std::move(duelOptions));
  	return true;
  }
-@@ -54,8 +59,11 @@ void SingleMode::Restart() {
+ void SingleMode::StopPlay(bool is_exiting) {
+-	is_closing = is_exiting;
+-	is_continuing = false;
+-	is_restarting = false;
++	{
++		std::lock_guard<epro::mutex> gui_lock(mainGame->gMutex);
++		std::lock_guard<epro::mutex> lock(lifecycle_mutex);
++		if(!is_exiting && !accepting_controls) return;
++		accepting_controls = false;
++		is_closing = is_exiting;
++		is_continuing = false;
++		is_restarting = false;
++		responses.Stop();
++		// A reveal animation may not have reached its acknowledgement wait yet.
++		mainGame->actionSignal.SetNoWait(true);
++		mainGame->replaySignal.SetNoWait(true);
++		mainGame->saveReplay = false;
++	}
+ 	mainGame->actionSignal.Set();
+ 	if(is_closing) {
+ 		singleSignal.SetNoWait(true);
+@@ -48,15 +79,23 @@ void SingleMode::StopPlay(bool is_exiting) {
+ 		singleSignal.Set();
+ }
+ void SingleMode::Restart() {
+-	StopPlay();
+-	is_restarting = true;
++	{
++		std::lock_guard<epro::mutex> gui_lock(mainGame->gMutex);
++		std::lock_guard<epro::mutex> lock(lifecycle_mutex);
++		if(is_closing || !accepting_controls) return;
++		is_restarting = true;
++		is_continuing = false;
++		responses.Stop();
++		mainGame->actionSignal.SetNoWait(true);
++		mainGame->replaySignal.SetNoWait(true);
++		mainGame->saveReplay = false;
++	}
++	mainGame->actionSignal.Set();
++	singleSignal.Set();
+ }
  void SingleMode::SetResponse(void* resp, size_t len) {
- 	if(!pduel)
- 		return;
+-	if(!pduel)
+-		return;
 -	last_replay.Write<uint8_t>(static_cast<uint8_t>(len), false);
 -	last_replay.WriteData(resp, len);
-+	last_response_ai = false;
-+	if(!is_offline_ai) {
-+		last_replay.Write<uint8_t>(static_cast<uint8_t>(len), false);
-+		last_replay.WriteData(resp, len);
-+	}
- 	pduel->DuelSetResponse(resp, static_cast<uint32_t>(len));
+-	pduel->DuelSetResponse(resp, static_cast<uint32_t>(len));
++	// GUI and auto-answer callbacks only publish bytes; the duel thread owns core and replay access.
++	responses.Submit(resp, len);
  }
  int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
-@@ -83,14 +91,23 @@ int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
- 	is_continuing = false;
- 	is_restarting = false;
+ 	Utils::SetThreadName("SinglePlay");
+@@ -80,17 +119,27 @@ int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
+ 		new_replay.Write<uint64_t>(opt);
+ 	};
+ 	mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 45));
+-	is_continuing = false;
+-	is_restarting = false;
++	bool restarting = false;
  	auto rnd = Utils::GetRandomNumberGenerator();
 +	Deck offline_decks[2];
 +	std::string offline_error;
  restart:
++	duel_error.clear();
++	offline_error.clear();
  	mainGame->dInfo.isSingleMode = true;
 +	is_offline_ai = duelOptions.offlineAI;
 +	last_response_ai = false;
@@ -199,7 +284,7 @@ index 3aabc46..02ab6e7 100644
  	mainGame->dInfo.duel_params = opt;
  	mainGame->dInfo.duel_field = mainGame->GetMasterRule(mainGame->dInfo.duel_params);
  	matManager.SetActiveVertices(mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD),
-@@ -100,11 +117,13 @@ restart:
+@@ -100,11 +149,13 @@ restart:
  	mainGame->dInfo.startlp = mainGame->dInfo.lp[0] = mainGame->dInfo.lp[1] = duelOptions.startingLP;
  	mainGame->dInfo.strLP[0] = mainGame->dInfo.strLP[1] = epro::to_wstring(mainGame->dInfo.lp[0]);
  	mainGame->dInfo.selfnames = { mainGame->ebNickName->getText() };
@@ -216,7 +301,7 @@ index 3aabc46..02ab6e7 100644
  	if(saveReplay) {
  		auto replay_header = ExtendedReplayHeader::CreateDefaultHeader(REPLAY_YRP1, static_cast<uint32_t>(time(nullptr)));
  		replay_header.SetSeed(seed);
-@@ -119,7 +138,21 @@ restart:
+@@ -119,7 +170,21 @@ restart:
  		new_replay.WriteHeader(replay_header);
  		replay_stream.clear();
  	}
@@ -239,21 +324,34 @@ index 3aabc46..02ab6e7 100644
  		script_name = "hand-test-mode";
  		InitReplay();
  		Deck playerdeck(mainGame->deckBuilder.GetCurrentDeck());
-@@ -166,6 +199,13 @@ restart:
+@@ -165,7 +230,17 @@ restart:
+ 		}
  		InitReplay();
  	}
++	if(is_closing) {
++		pduel = nullptr;
++		OfflineAI::Stop();
++		responses.Stop();
++		mainGame->dInfo.isSingleMode = false;
++		mainGame->dInfo.isHandTest = false;
++		return 0;
++	}
  	if(!loaded) {
 +		OfflineAI::Stop();
-+		if(is_offline_ai) {
-+			std::lock_guard<epro::mutex> lock(mainGame->gMutex);
-+			mainGame->btnOfflineStart->setEnabled(true);
-+			mainGame->stMessage->setText(BufferIO::DecodeUTF8(offline_error.empty() ? "Offline duel initialization failed." : offline_error).data());
-+			mainGame->PopupElement(mainGame->wMessage);
-+		}
++		responses.Stop();
  		pduel = nullptr;
  		mainGame->dInfo.isSingleMode = false;
  		mainGame->dInfo.isHandTest = false;
-@@ -184,7 +224,7 @@ restart:
+@@ -173,7 +248,7 @@ restart:
+ 		last_replay.EndRecord();
+ 		new_replay.EndRecord();
+ 		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
+-		if(is_restarting) {
++		if(restarting && !is_closing) {
+ 			mainGame->dInfo.isInDuel = false;
+ 			mainGame->dInfo.isStarted = false;
+ 			mainGame->dInfo.isSingleMode = false;
+@@ -184,7 +259,7 @@ restart:
  			}
  			mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
  			if(!hand_test) {
@@ -262,24 +360,140 @@ index 3aabc46..02ab6e7 100644
  				mainGame->stTip->setVisible(false);
  			}
  			mainGame->SetMessageWindow();
-@@ -207,7 +247,7 @@ restart:
+@@ -202,15 +277,28 @@ restart:
+ 			}
+ 		} else
+ 			mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+-		is_restarting = false;
++		{
++			std::lock_guard<epro::mutex> lifecycle_lock(lifecycle_mutex);
++			accepting_controls = false;
++			is_restarting = false;
++			is_continuing = false;
++			if(!is_closing) {
++				mainGame->actionSignal.SetNoWait(false);
++				mainGame->replaySignal.SetNoWait(false);
++			}
++		}
++		if(is_offline_ai && !is_closing) {
++			mainGame->btnOfflineStart->setEnabled(true);
++			mainGame->stMessage->setText(BufferIO::DecodeUTF8(offline_error.empty() ? "Offline duel initialization failed." : offline_error).data());
++			mainGame->PopupElement(mainGame->wMessage);
++		}
+ 		return 0;
  	}
  	mainGame->gMutex.lock();
- 	if(!hand_test && !is_restarting) {
+-	if(!hand_test && !is_restarting) {
 -		mainGame->HideElement(mainGame->wSinglePlay);
++	if(!hand_test && !restarting) {
 +		mainGame->HideElement(is_offline_ai ? mainGame->wOfflineDuel : mainGame->wSinglePlay);
  		mainGame->ClearCardInfo();
  	}
- 	is_restarting = false;
-@@ -245,6 +285,7 @@ restart:
+-	is_restarting = false;
+ 	mainGame->mTopMenu->setVisible(false);
+ 	mainGame->wCardImg->setVisible(true);
+ 	mainGame->wInfos->setVisible(true);
+@@ -228,11 +316,9 @@ restart:
+ 	mainGame->SetMessageWindow();
+ 	mainGame->device->setEventReceiver(&mainGame->dField);
+ 	mainGame->gMutex.unlock();
+-	is_closing = false;
+-	is_continuing = true;
+ 	int engFlag = 0;
+ 	for(auto& message : CoreUtils::ParseMessages(pduel.get()))
+-		is_continuing = SinglePlayAnalyze(message) && is_continuing;
++		if(!SinglePlayAnalyze(message)) is_continuing = false;
+ 	if(is_continuing) {
+ 		pduel->StartDuel();
+ 		do {
+@@ -240,11 +326,13 @@ restart:
+ 			for(auto& message : CoreUtils::ParseMessages(pduel.get())) {
+ 				if(message.message == MSG_WIN && hand_test)
+ 					continue;
+-				is_continuing = SinglePlayAnalyze(message) && is_continuing;
++				if(!SinglePlayAnalyze(message)) is_continuing = false;
+ 			}
  		} while(is_continuing && engFlag && mainGame->dInfo.curMsg != MSG_WIN);
  	}
  	pduel = nullptr;
++	responses.Stop();
 +	OfflineAI::Stop();
  	if(saveReplay && !is_restarting) {
  		last_replay.EndRecord(0x1000);
  		auto oldbuffer = last_replay.GetSerializedBuffer();
-@@ -305,13 +346,14 @@ restart:
+@@ -264,7 +352,7 @@ restart:
+ 	}
+ 	gSoundManager->StopSounds();
+ 	bool was_restarting = is_restarting;
+-	if(saveReplay && !was_restarting) {
++	if(saveReplay && !was_restarting && is_continuing) {
+ 		auto now = std::time(nullptr);
+ 		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
+ 		mainGame->PopupSaveWindow(gDataManager->GetSysString(1340), epro::format(L"{:%Y-%m-%d %H-%M-%S}", epro::localtime(now)), gDataManager->GetSysString(1342));
+@@ -278,44 +366,65 @@ restart:
+ 	mainGame->dField.Clear();
+ 	mainGame->gMutex.unlock();
+ 	if(!is_closing) {
+-		if(was_restarting || hand_test) {
+-			std::lock_guard<epro::mutex> lock(mainGame->gMutex);
+-			for(auto wit = mainGame->fadingList.begin(); wit != mainGame->fadingList.end(); ++wit) {
+-				if(wit->isFadein)
+-					wit->autoFadeoutFrame = 1;
++		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
++		if(is_closing) { open_file = false; return 0; }
++		{
++			std::lock_guard<epro::mutex> lifecycle_lock(lifecycle_mutex);
++			const bool restart_now = accepting_controls && is_restarting && !is_closing;
++			if(restart_now || hand_test) {
++				for(auto wit = mainGame->fadingList.begin(); wit != mainGame->fadingList.end(); ++wit) {
++					if(wit->isFadein)
++						wit->autoFadeoutFrame = 1;
++				}
++				mainGame->wACMessage->setVisible(false);
++				mainGame->wANAttribute->setVisible(false);
++				mainGame->wANCard->setVisible(false);
++				mainGame->wANNumber->setVisible(false);
++				mainGame->wANRace->setVisible(false);
++				mainGame->wCardSelect->setVisible(false);
++				mainGame->wCardDisplay->setVisible(false);
++				mainGame->wCmdMenu->setVisible(false);
++				mainGame->wMessage->setVisible(false);
++				mainGame->wOptions->setVisible(false);
++				mainGame->wPosSelect->setVisible(false);
++				mainGame->wQuery->setVisible(false);
++				mainGame->stHintMsg->setVisible(false);
+ 			}
+-			mainGame->wACMessage->setVisible(false);
+-			mainGame->wANAttribute->setVisible(false);
+-			mainGame->wANCard->setVisible(false);
+-			mainGame->wANNumber->setVisible(false);
+-			mainGame->wANRace->setVisible(false);
+-			mainGame->wCardSelect->setVisible(false);
+-			mainGame->wCardDisplay->setVisible(false);
+-			mainGame->wCmdMenu->setVisible(false);
+-			mainGame->wMessage->setVisible(false);
+-			mainGame->wOptions->setVisible(false);
+-			mainGame->wPosSelect->setVisible(false);
+-			mainGame->wQuery->setVisible(false);
+-			mainGame->stHintMsg->setVisible(false);
+-			if(was_restarting)
++			if(restart_now) {
++				is_restarting = false;
++				is_continuing = true;
++				responses.Reset();
++				mainGame->actionSignal.SetNoWait(false);
++				mainGame->replaySignal.SetNoWait(false);
++				restarting = true;
+ 				goto restart;
++			}
++			accepting_controls = false;
++			is_continuing = false;
++			is_restarting = false;
++			mainGame->actionSignal.SetNoWait(false);
++			mainGame->replaySignal.SetNoWait(false);
+ 		}
+-		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
+ 		mainGame->dInfo.isInDuel = false;
  		mainGame->dInfo.isStarted = false;
  		mainGame->dInfo.isSingleMode = false;
  		mainGame->dInfo.isHandTest = false;
@@ -295,7 +509,15 @@ index 3aabc46..02ab6e7 100644
  			mainGame->stTip->setVisible(false);
  		}
  		mainGame->SetMessageWindow();
-@@ -333,9 +375,41 @@ restart:
+ 		mainGame->device->setEventReceiver(&mainGame->menuHandler);
++		if(!duel_error.empty()) {
++			mainGame->stMessage->setText(BufferIO::DecodeUTF8(duel_error).data());
++			mainGame->PopupElement(mainGame->wMessage);
++		}
+ 		if(hand_test) {
+ 			mainGame->btnChainIgnore->setVisible(false);
+ 			mainGame->btnChainAlways->setVisible(false);
+@@ -333,9 +442,54 @@ restart:
  }
  
  bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
@@ -303,10 +525,9 @@ index 3aabc46..02ab6e7 100644
 +	if(is_closing || !is_continuing) return false;
 +	auto FailAI = [](const std::string& message)->bool {
 +		is_continuing = false;
-+		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
-+		mainGame->stMessage->setText(BufferIO::DecodeUTF8("Offline AI stopped: " + message).data());
-+		mainGame->PopupElement(mainGame->wMessage);
-+		mainGame->actionSignal.Wait(lock);
++		responses.Stop();
++		// Show the failure after cleanup; a blocking acknowledgement can miss a concurrent Stop.
++		duel_error = "Offline AI stopped: " + message;
 +		return false;
 +	};
 +	std::string error;
@@ -336,28 +557,58 @@ index 3aabc46..02ab6e7 100644
 +		if(!visible) return true;
 +		CoreUtils::Packet filtered(packet.message, bytes.data(), bytes.size());
 +		return DuelClient::ClientAnalyze(filtered);
++	};
++	auto PlayerPrompt = [&] {
++		if(!responses.Begin()) return;
++		const bool automatic = Analyze();
++		if(!is_continuing || is_closing) { responses.Stop(); return; }
++		if(automatic && !DuelClient::answered.load()) { FailAI("Client did not submit its automatic response."); return; }
++		std::vector<uint8_t> response;
++		if(!responses.Receive(response) || !is_continuing || is_closing) return;
++		last_response_ai = false;
++		if(!is_offline_ai) {
++			last_replay.Write<uint8_t>(static_cast<uint8_t>(response.size()), false);
++			last_replay.WriteData(response.data(), response.size());
++		}
++		pduel->DuelSetResponse(response.data(), static_cast<uint32_t>(response.size()));
  	};
  	replay_stream.clear();
  	if(is_closing || !is_continuing)
-@@ -411,7 +485,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -345,10 +499,9 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 	bool record_last = false;
+ 	switch(mainGame->dInfo.curMsg) {
+ 		case MSG_RETRY:	{
+-			std::unique_lock<epro::mutex> lock(mainGame->gMutex);
+-			mainGame->stMessage->setText(gDataManager->GetSysString(1434).data());
+-			mainGame->PopupElement(mainGame->wMessage);
+-			mainGame->actionSignal.Wait(lock);
++			duel_error = BufferIO::EncodeUTF8(gDataManager->GetSysString(1434));
++			is_continuing = false;
++			responses.Stop();
+ 			return false;
+ 		}
+ 		case MSG_HINT: {
+@@ -411,8 +564,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  		case MSG_SELECT_IDLECMD: {
  			record = false;
  			SinglePlayRefresh();
 -			if(!Analyze())
-+			if(!Analyze() && is_continuing)
- 				singleSignal.Wait();
+-				singleSignal.Wait();
++			PlayerPrompt();
  			break;
  		}
-@@ -442,7 +516,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 		case MSG_SELECT_EFFECTYN:
+@@ -442,8 +594,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  				SinglePlayRefresh(1, LOCATION_SZONE);
  				record_last = true;
  			}
 -			if(!Analyze())
-+			if(!Analyze() && is_continuing)
- 				singleSignal.Wait();
+-				singleSignal.Wait();
++			PlayerPrompt();
  			break;
  		}
-@@ -451,6 +525,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 		default: {
+@@ -451,6 +602,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  			break;
  		}
  	}
@@ -365,7 +616,7 @@ index 3aabc46..02ab6e7 100644
  	auto* pbuf = packet.data();
  	switch(mainGame->dInfo.curMsg) {
  		case MSG_SHUFFLE_DECK: {
-@@ -508,8 +583,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -508,8 +660,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  	}
  	if(record)
  		replay_stream.insert(record_last ? replay_stream.end() : replay_stream.begin(), std::move(packet));
@@ -375,7 +626,7 @@ index 3aabc46..02ab6e7 100644
  	return is_continuing;
  }
  void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t flag) {
-@@ -519,8 +593,9 @@ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t fl
+@@ -519,8 +670,9 @@ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t fl
  	auto buff = pduel->DuelQueryLocation(&len, &info);
  	if(len == 0)
  		return;
@@ -387,7 +638,7 @@ index 3aabc46..02ab6e7 100644
  	mainGame->gMutex.lock();
  	mainGame->dField.UpdateFieldCard(mainGame->LocalPlayer(player), location, buffer.data());
  	mainGame->gMutex.unlock();
-@@ -535,8 +610,9 @@ void SingleMode::SinglePlayRefreshSingle(uint8_t player, uint8_t location, uint8
+@@ -535,8 +687,9 @@ void SingleMode::SinglePlayRefreshSingle(uint8_t player, uint8_t location, uint8
  	auto buff = pduel->DuelQuery(&len, &info);
  	if(buff == nullptr)
  		return;
@@ -400,19 +651,37 @@ index 3aabc46..02ab6e7 100644
  	mainGame->dField.UpdateCard(mainGame->LocalPlayer(player), location, sequence, buffer.data());
  	mainGame->gMutex.unlock();
 diff --git a/gframe/single_mode.h b/gframe/single_mode.h
-index dc88c1e..83b3256 100644
+index dc88c1e..39f3bb8 100644
 --- a/gframe/single_mode.h
 +++ b/gframe/single_mode.h
-@@ -16,6 +16,8 @@ private:
- 	static bool is_closing;
- 	static bool is_continuing;
- 	static bool is_restarting;
+@@ -7,15 +7,23 @@
+ #include "mysignal.h"
+ #include "core_utils.h"
+ #include "text_types.h"
++#include "DuelResponseMailbox.h"
++#include <atomic>
+ 
+ namespace ygo {
+ 
+ class SingleMode {
+ private:
+ 	static DuelPtr pduel;
+-	static bool is_closing;
+-	static bool is_continuing;
+-	static bool is_restarting;
++	static std::atomic_bool is_closing;
++	static std::atomic_bool is_continuing;
++	static std::atomic_bool is_restarting;
++	static epro::mutex lifecycle_mutex;
++	static bool accepting_controls;
++	static DuelResponseMailbox responses;
++	static std::string duel_error;
 +	static bool is_offline_ai;
 +	static bool last_response_ai;
  	static epro::thread single_mode_thread;
  
  public:
-@@ -25,6 +27,9 @@ public:
+@@ -25,6 +33,9 @@ public:
  		uint32_t drawCountPerTurn{ 1 };
  		uint64_t duelFlags{ 0 };
  		bool handTestNoOpponent{ true };

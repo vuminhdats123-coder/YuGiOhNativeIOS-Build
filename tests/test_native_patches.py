@@ -157,7 +157,7 @@ class BootstrapSourceContract(unittest.TestCase):
         patch = patches.PATCH.read_text(encoding="utf-8-sig")
         added = "\n".join(line[1:] for line in patch.splitlines() if line.startswith("+") and not line.startswith("+++"))
         for required in ["cards.cdb", "script/constant.lua", "script/utility.lua", "config/strings.conf",
-                         "fonts/NotoSansJP-Regular.otf", "package-manifest.json"]:
+                         "fonts/NotoSansJP-Regular.otf", "package-manifest.json", "offline-ai/offline_ai.js"]:
             self.assertIn(required, added)
         self.assertIn("NSJSONSerialization", added)
         self.assertIn("isEqualToData:bundledManifest", added)

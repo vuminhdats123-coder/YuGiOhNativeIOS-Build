@@ -76,39 +76,73 @@
         return {sum:values.reduce((s,a) => s + Math.min(...a),0), max:values.reduce((s,a) => s + Math.max(...a),0), least:values.length ? Math.min(...values.flat()) : Infinity};
       }
       const start = aggregate(mandatory);
+      // Avoid exploring every combination of small contributions before a
+      // sufficient later card. Keep wire indices independent of search order.
+      const ordered = optional.map((card,index) => ({index,values:choices(card.value)}));
+      ordered.sort((a,b) => Math.max(...b.values)-Math.max(...a.values) || a.index-b.index);
       const stack = [{index:0, indices:[], ...start}];
       while (stack.length) {
         tick(); const state = stack.pop();
         // Matches SelectSum's greater-or-equal/minimal-contribution validation.
         if (state.max >= target && state.sum - state.least < target && mandatory.length + state.indices.length > 0) return state.indices;
         if (state.index >= optional.length || state.sum - state.least >= target) continue;
-        const next = state.index + 1, values = choices(optional[state.index].value);
+        const next = state.index + 1, entry = ordered[state.index], values = entry.values;
         stack.push({...state, index:next});
-        stack.push({index:next, indices:[...state.indices,state.index], sum:state.sum + Math.min(...values),
+        stack.push({index:next, indices:[...state.indices,entry.index], sum:state.sum + Math.min(...values),
                     max:state.max + Math.max(...values), least:Math.min(state.least,...values)});
       }
     } else fail('Unknown sum mode');
     fail('No legal sum selection found');
   }
 
-  function create(metadata = {}) {
-    const used = new Set(); let decisions = 0, lastChainPlayer = null;
+  function create(metadata = {}, selfPlayer = 1) {
+    if (selfPlayer !== 0 && selfPlayer !== 1) fail('Invalid AI player');
+    const used = new Set(); let decisions = 0, lastChainPlayer = null, selectionHint = null, attackingCard = null;
+    function known(card) {
+      return !(card.controller !== selfPlayer && (card.location === 1 || card.location === 2 || card.location === 64 ||
+        (card.position & 10) || (card.position === undefined && (card.location & 12))));
+    }
     function score(card) {
       // Never infer hidden opponent cards from unfiltered core selection codes.
-      if (card.controller === 0 && (card.location === 1 || card.location === 2 || card.location === 64 ||
-          (card.position & 10) || (card.position === undefined && (card.location & 12)))) return 0;
+      if (!known(card)) return 0;
       const info = metadata[String(card.code)]; return info ? Math.max(0, info.attack || 0) : 0;
     }
+    function rankSelection(cards, hint) {
+      const ranked = cards.slice();
+      if (hint === 501 && cards.every(c => c.controller === selfPlayer && c.location === 2)) {
+        ranked.sort((a,b) => score(a)-score(b) || a.index-b.index);
+      } else if ([506,508,509].includes(hint)) {
+        ranked.sort((a,b) => score(b)-score(a) || a.index-b.index);
+      } else if (hint === 502) {
+        const value = c => c.controller !== selfPlayer ? 100000+score(c) : -score(c);
+        ranked.sort((a,b) => value(b)-value(a) || a.index-b.index);
+      } else if (hint === 549 && attackingCard && cards.every(c => c.controller !== selfPlayer && c.location === 4)) {
+        const attackerPower = score(attackingCard);
+        const target = c => {
+          const info = known(c) ? metadata[String(c.code)] : null;
+          if (!info) return [1,0]; // Deterministic unknown-target policy, never use its code.
+          const power = Math.max(0,(c.position & 4) ? info.defense || 0 : info.attack || 0);
+          return [power < attackerPower ? 0 : power === attackerPower ? 2 : 3,power];
+        };
+        ranked.sort((a,b) => { const x=target(a), y=target(b); return x[0]-y[0] || x[1]-y[1] || a.index-b.index; });
+      }
+      return ranked;
+    }
     function chooseAction(cards, command, usedPrefix, plainIndex = false) {
-      const candidates = cards.filter(c => !used.has(`${usedPrefix}:${c.code}:${c.location}:${c.sequence}:${c.description || ''}`));
+      const key = c => `${usedPrefix}:${c.controller}:${known(c) ? c.code : 'hidden'}:${c.location}:${c.sequence}:${c.description || ''}`;
+      const candidates = cards.filter(c => !used.has(key(c)));
       candidates.sort((a,b) => score(b)-score(a) || a.index-b.index);
       if (!candidates.length) return null;
-      const card = candidates[0]; used.add(`${usedPrefix}:${card.code}:${card.location}:${card.sequence}:${card.description || ''}`);
+      const card = candidates[0]; used.add(key(card));
       return integer(plainIndex ? card.index : card.index * 65536 + command);
     }
     return {
       observe(message, bytes = []) {
-        if (message === 40) { used.clear(); decisions = 0; lastChainPlayer = null; }
+        if (message === 40) { used.clear(); decisions = 0; lastChainPlayer = null; selectionHint = null; attackingCard = null; }
+        if (message === 2) {
+          const r = new Reader(bytes), type = r.u8(), player = r.u8(), value = r.u64(); r.end();
+          if (type === 3 && player === selfPlayer) selectionHint = value <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(value) : null;
+        }
         if (message === 74) lastChainPlayer = null;
         if (message === 70) { const r = new Reader(bytes); r.card(true); lastChainPlayer = r.u8(); }
       },
@@ -117,17 +151,17 @@
         const hide = offset => { for(let i=0;i<4;i++) output[offset+i]=0; };
         if (message === 90 || message === 33 || message === 39) {
           const player = r.u8(), count = r.count();
-          for(let i=0;i<count;i++) { const offset=r.at; r.u32(); const pos=message===90?r.u32():0; if(player===1&&!(pos&5)) hide(offset); }
+          for(let i=0;i<count;i++) { const offset=r.at; r.u32(); const pos=message===90?r.u32():0; if(player===selfPlayer&&!(pos&5)) hide(offset); }
           r.end();
         } else if(message===50) {
           r.u32(); r.location(); const location=r.location();
-          if(location.controller===1 && !(location.location&(16|128)) && ((location.location&(1|2)) || (location.position&10))) hide(0);
+          if(location.controller===selfPlayer && !(location.location&(16|128)) && ((location.location&(1|2)) || (location.position&10))) hide(0);
         } else if(message===54 || message===62) {
           r.u32(); const location=r.location();
-          if(message===54 || (location.controller===1&&(location.position&10))) hide(0);
+          if(message===54 || (location.controller===selfPlayer&&(location.position&10))) hide(0);
         } else if(message===31) {
           const player=r.u8(), count=r.count();
-          if(count>0) { r.u32(); r.u8(); const location=r.u8(); if(player===1&&(location===1||location===64)) return null; }
+          if(count>0) { r.u32(); r.u8(); const location=r.u8(); if(player===selfPlayer&&(location===1||location===64)) return null; }
         } else if([15,20,23,26].includes(message)) {
           const player=r.u8();
           const hideCard=(full,extra)=>{
@@ -151,8 +185,10 @@
         if (!PROMPTS.has(message)) fail(`Unknown AI prompt ${message}`);
         const r = new Reader(bytes), player = r.u8();
         if (player !== 0 && player !== 1) fail('Invalid selecting player');
-        if (player === 0) return {handled:false};
+        if (player !== selfPlayer) return {handled:false};
         if (++decisions > 2048) fail('AI turn decision budget exceeded');
+        const requestedHint = selectionHint;
+        if ([15,20,23,26].includes(message)) selectionHint = null;
         let response;
         if (message === 10 || message === 11) {
           const effect = () => ({...r.card(false), description:r.u64().toString(), flag:r.u8()});
@@ -172,6 +208,7 @@
             const main2 = r.u8(), end = r.u8(); r.end();
             // Attack availability already accounts for remaining attacks and engine restrictions.
             attacks.sort((a,b) => score(b)-score(a) || a.index-b.index);
+            attackingCard = attacks.length ? attacks[0] : null;
             response = attacks.length ? integer(attacks[0].index * 65536 + 1) : chooseAction(activate,0,'battle-effect');
             if (!response) response = main2 ? integer(2) : end ? integer(3) : fail('No legal battle decision');
           }
@@ -185,7 +222,7 @@
         } else if (message === 15) {
           r.u8(); const min = r.count(), max = r.count(), cards = r.list(() => r.card(true)); r.end();
           if (min > max || min > cards.length) fail('Impossible card count');
-          response = selected(cards.slice(0,min).map(c => c.index));
+          response = selected(rankSelection(cards,requestedHint).slice(0,min).map(c => c.index));
         } else if (message === 26) {
           const finishable = r.u8(), cancelable = r.u8(); const min = r.count(), max = r.count();
           const select = r.list(() => r.card(true)), unselect = r.list(() => r.card(true)); r.end();
@@ -196,7 +233,7 @@
           r.u8(); const forced = r.u8(); r.u32(); r.u32();
           const cards = r.list(() => ({...r.card(true),description:r.u64().toString(),flag:r.u8()})); r.end();
           if (forced && !cards.length) fail('Forced empty chain');
-          response = forced ? integer(0) : lastChainPlayer===1 ? integer(-1) : (chooseAction(cards,0,'chain',true) || integer(-1));
+          response = forced ? integer(0) : lastChainPlayer===selfPlayer ? integer(-1) : (chooseAction(cards,0,'chain',true) || integer(-1));
         } else if (message === 18 || message === 24) {
           const count = Math.max(1,r.u8()), unavailable = r.u32(); r.end(); const available = (~unavailable) >>> 0;
           const places = [];
@@ -207,7 +244,9 @@
           }
           if (places.length < count) fail('Not enough legal zones'); response = places.slice(0,count).flat();
         } else if (message === 19) {
-          r.u32(); const mask = r.u8(); r.end(); const position = [1,4,8,2].find(p => (mask&p)!==0);
+          const code = r.u32(), mask = r.u8(); r.end();
+          const info = metadata[String(code)], defensive = info && (info.defense || 0) > (info.attack || 0);
+          const position = (defensive ? [4,8,1,2] : [1,4,8,2]).find(p => (mask&p)!==0);
           if (!position || (mask & ~15)) fail('Invalid position mask'); response = integer(position);
         } else if (message === 20) {
           const cancelable = r.u8(), min = r.count(), max = r.count();

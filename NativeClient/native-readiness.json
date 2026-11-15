@@ -44,8 +44,9 @@
   "runtimeVerified": false,
   "fullGameReady": false,
   "remaining": [
-    "Verify native compile/link and full matches after source preparation is complete and build hold permits it",
+    "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Verify native rendering, touch input, suspend/resume and audio on an iPhone",
-    "Validate complex AI selections against the running pinned OCG core"
+    "Execute native response/restart cancellation tests; Windows host tests do not run the iOS client",
+    "Expand runtime effect-interaction coverage beyond the 36-match regression suite"
   ]
 }

@@ -1,5 +1,5 @@
 diff --git a/gframe/iOS/porting_ios.mm b/gframe/iOS/porting_ios.mm
-index bfe00c1..10eea27 100644
+index bfe00c1..457491a 100644
 --- a/gframe/iOS/porting_ios.mm
 +++ b/gframe/iOS/porting_ios.mm
 @@ -67,18 +67,7 @@ static void sendTextInputResult(NSString* nstext) {
@@ -251,7 +251,7 @@ index bfe00c1..10eea27 100644
 +		return nil;
 +	}
 +	NSArray* required = @[@"package-manifest.json", @"cards.cdb", @"script/constant.lua", @"script/utility.lua",
-+		@"config/strings.conf", @"fonts/NotoSansJP-Regular.otf"];
++		@"config/strings.conf", @"fonts/NotoSansJP-Regular.otf", @"offline-ai/offline_ai.js"];
 +	for(NSString* relative in required) {
 +		if(!regularNonemptyFile(manager, [directory URLByAppendingPathComponent:relative], error))
 +			return nil;

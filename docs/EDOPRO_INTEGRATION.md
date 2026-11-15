@@ -100,8 +100,10 @@ WindBot Ignite không được nhúng vào bản này. `0003-offline-ai.patch` t
 deck qua OCG core và adapter JavaScriptCore dùng `offline_ai.js` trong bundle.
 Mô-đun xử lý 21 nhóm prompt theo API 11, giữ GUI cho player 0 và tự chọn cho player
 1; có kiểm thử Node về lựa chọn, chain và thông tin ẩn. Không bật `DUEL_SIMPLE_AI`.
-AI heuristic có giới hạn tìm kiếm, không tương đương WindBot theo từng bộ bài;
-native bridge và trận đấu hoàn chỉnh chưa được chạy. Replay offline chưa hỗ trợ.
+AI heuristic có giới hạn tìm kiếm, không tương đương WindBot theo từng bộ bài.
+Engine Windows đã chạy đủ 36 ván và kiểm tra khởi tạo 7.486 mã thẻ, xem
+[HOST_VALIDATION.md](../NativeClient/HOST_VALIDATION.md). Native bridge, GUI và
+trận đấu trên iPhone chưa được chạy. Replay offline chưa hỗ trợ.
 
 Trước khi tuyên bố hoàn tất cần kiểm tra: bootstrap sạch không mạng, card/script coverage và hashes, chọn deck và đấu đủ các prompt, effect/chain/replay/summon, lưu deck/replay, AI iPhone nếu có, suspend/resume, cảm ứng và bố cục, file unsigned đúng platform và không chứa key/profile. Những mục runtime này chưa kiểm chứng trong giai đoạn chưa build.
 

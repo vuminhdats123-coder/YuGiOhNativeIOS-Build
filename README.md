@@ -44,8 +44,10 @@ khởi tạo tài nguyên, đấu thật, offline AI và thao tác iPhone đư�
 Mã nguồn hiện có menu chọn hai deck và đấu offline bằng OCG core. AI dùng mô-đun
 JavaScript chạy trong JavaScriptCore của iOS; cùng mô-đun được kiểm thử bằng Node.
 Mặt thẻ được ghép bằng CoreGraphics/CoreText từ tranh OBB và thông tin database,
-có phương án hiển thị khi thiếu tranh. Đây là phần triển khai nguồn: chưa có chứng
-cứ một trận hoàn chỉnh hoặc hình ảnh đúng trên thiết bị khi chưa biên dịch/chạy app.
+có phương án hiển thị khi thiếu tranh. Kiểm tra bằng engine Windows đã hoàn tất
+36 ván và khởi tạo đủ 7.486 mã thẻ được ánh xạ, không lỗi script hoặc phản hồi bị
+từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOST_VALIDATION.md).
+Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Recipe Xcode, dependency iPhoneOS đã kiểm tra và bước copy toàn bộ `Bundle/game`
 nằm trong [NativeClient/iOS/README.md](NativeClient/iOS/README.md). Project sinh

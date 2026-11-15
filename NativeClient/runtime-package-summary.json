@@ -27,10 +27,11 @@
     "Current database/errata may differ from original OBB effects; consult mapping audit"
   ],
   "packagePath": "outputs/edopro-game-v3",
-  "manifestSHA256": "c6e701e5a706831b9dbdaf1a5eb8b7c73ad90aafbcc9f94a5a804c3845e3a7f6",
+  "manifestSHA256": "76921ccbc6e245b647e4c8d0f18bc5aac44dfeb7658169c6beca95e51af49a20",
   "payloadFiles": 46058,
-  "payloadBytes": 420250449,
+  "payloadBytes": 420252958,
   "vietnameseTexts": 7484,
   "metadataModified": false,
-  "runtimeVerified": false
+  "runtimeVerified": false,
+  "windowsCoreRuntimeVerified": true
 }

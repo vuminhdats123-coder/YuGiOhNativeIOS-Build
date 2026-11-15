@@ -29,7 +29,7 @@ làm migration trước khi phát hành bản nâng cấp cho người dùng.
 `tools/prepare_edopro_assets.py` nhận OBB, CDB, CardScripts ZIP, Distribution và
 báo cáo `ocg-coverage.json`; xuất thư mục dữ liệu mới với `package-manifest.json`.
 Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v3`: 46.058 file,
-420.250.449 byte chưa tính manifest, gồm mô-đun AI đã kiểm thử. Xem [runtime-package-summary.json](runtime-package-summary.json)
+420.252.958 byte chưa tính manifest, gồm mô-đun AI đã kiểm thử. Xem [runtime-package-summary.json](runtime-package-summary.json)
 để đối chiếu checksum và số lượng. Gói hiện nằm trên máy này, không được đưa vào Git.
 
 Tạo lại từ source và các archive đã pin (chọn thư mục output mới nếu đã tồn tại):
@@ -79,8 +79,20 @@ OCG, trộn Main Deck độc lập và dùng MR5, 8.000 LP. Người chơi trả
 GUI; AI chỉ trả lời player 1 bằng JavaScriptCore. Cùng mô-đun JS được kiểm thử bằng
 Node cho 21 nhóm prompt, chain, nguyên liệu, thông tin ẩn và đầu vào lỗi. Không dùng
 `DUEL_SIMPLE_AI`, không cần WindBot hoặc mạng. Lỗi protocol dừng rõ ràng, không tự
-gửi lại vô hạn. Đây là AI heuristic cơ bản có giới hạn tìm kiếm, chưa được kiểm
-chứng bằng một trận native; lưu replay offline đang tắt.
+gửi lại vô hạn. Đây là AI heuristic cơ bản có giới hạn tìm kiếm; lưu replay offline đang tắt.
+
+Đã kiểm chứng engine thật trên Windows bằng DLL upstream có nguồn C++/Lua tương
+đương pin của dự án: 36 ván hoàn tất, 444 lượt, 16.290 phản hồi, không có lỗi Lua
+hay phản hồi bị từ chối. Kiểm tra khởi tạo riêng đã chạy đủ 7.486 mã thẻ được ánh
+xạ và nạp 6.872 script runtime, không thiếu script bắt buộc. Đây là kiểm tra engine,
+script và logic quyết định dùng chung; chưa chạy client/JavaScriptCore trên iOS.
+Chi tiết và lệnh tái chạy ở [HOST_VALIDATION.md](HOST_VALIDATION.md).
+
+Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
+Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.
+Dừng/chơi lại có kiểm soát trạng thái; lỗi được hiện sau khi đóng bàn đấu để không
+chờ vô hạn. Kiểm thử C++ trực tiếp cho hàng đợi đã viết tại
+`overlays/offline-ai/tests/response_mailbox_checks.cpp`, chưa biên dịch/chạy.
 
 ```powershell
 python -m unittest discover -s tests -v
