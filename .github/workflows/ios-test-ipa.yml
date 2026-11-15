@@ -10,7 +10,7 @@ on:
       payload_asset_name:
         description: "Release asset name (.tar.zst or .zip) containing package-manifest.json"
         required: true
-        default: "edopro-game-v11.tar.zst"
+        default: "edopro-game-v12.tar.zst"
         type: string
       dependencies_asset_name:
         description: "Release asset containing the pinned vcpkg iPhoneOS dependency tree"
