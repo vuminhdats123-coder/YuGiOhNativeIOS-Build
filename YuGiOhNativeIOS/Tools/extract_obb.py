@@ -9,7 +9,7 @@ def split_utf16(blob):
 def clean(value): return " ".join(value.split())
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("obb",type=Path); ap.add_argument("out",type=Path); a=ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument("obb",type=Path); ap.add_argument("out",type=Path); ap.add_argument("--images", action="store_true", help="extract JPG card images"); a=ap.parse_args()
     a.out.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(a.obb) as z:
         infos=z.infolist(); names=z.namelist();
@@ -28,6 +28,11 @@ def main():
         names_e=split_utf16(z.read("assets/CARD_Name_E.bin")); desc_e=split_utf16(z.read("assets/CARD_Desc_E.bin"))
         cards=[{"sourceIndex":i,"name":clean(n),"description":clean(desc_e[i]) if i<len(desc_e) else ""} for i,n in enumerate(names_e) if clean(n)]
         (a.out/"cards-en.json").write_text(json.dumps(cards,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
+        if a.images:
+            image_dir=a.out/"CardImages"; image_dir.mkdir(exist_ok=True)
+            for n in names:
+                if n.lower().endswith(".jpg"):
+                    (image_dir/Path(n).name).write_bytes(z.read(n))
         (a.out/"card-tables.json").write_text(json.dumps(tables,ensure_ascii=False,indent=2),encoding="utf-8")
     print(f"wrote {len(infos)} files, {len(tables)} CARD tables and {len(cards)} cards")
 if __name__=="__main__": main()

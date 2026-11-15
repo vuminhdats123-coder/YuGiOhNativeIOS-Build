@@ -6,9 +6,10 @@ public struct Card: Identifiable, Hashable {
     public let type: String
     public let attribute: String
     public let description: String
+    public let imageName: String?
 
-    public init(id: Int, name: String, type: String, attribute: String, description: String) {
-        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description
+    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil) {
+        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName
     }
 }
 
@@ -22,7 +23,7 @@ public struct CardCatalog {
         guard let url = Bundle.main.url(forResource: "cards_en", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let rows = try? JSONDecoder().decode([Row].self, from: data) else { return sample }
-        return rows.map { Card(id: $0.id, name: $0.name, type: "Card", attribute: "", description: $0.description) }
+        return rows.map { Card(id: $0.id, name: $0.name, type: "Card", attribute: "", description: $0.description, imageName: String(format: "%04d.jpg", $0.id)) }
     }
     private struct Row: Decodable { let id: Int; let name: String; let description: String }
 }
@@ -69,8 +70,12 @@ public struct ContentView: View {
             .navigationDestination(for: Card.self) { card in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        RoundedRectangle(cornerRadius: 16).fill(.orange.gradient).frame(height: 220)
-                            .overlay(Text(card.name).font(.title2.bold()).multilineTextAlignment(.center).padding())
+                        if let imageName = card.imageName, let image = UIImage(named: imageName) {
+                            Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 320).clipShape(RoundedRectangle(cornerRadius: 16))
+                        } else {
+                            RoundedRectangle(cornerRadius: 16).fill(.orange.gradient).frame(height: 220)
+                                .overlay(Text(card.name).font(.title2.bold()).multilineTextAlignment(.center).padding())
+                        }
                         Text(card.name).font(.title.bold())
                         Label(card.type, systemImage: "rectangle.stack")
                         Label(card.attribute, systemImage: "circle.lefthalf.filled")
