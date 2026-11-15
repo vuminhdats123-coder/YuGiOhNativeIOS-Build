@@ -42,17 +42,17 @@ struct DeckListView: View {
                 List {
                     Section("Main (\(deck.main.count))") {
                         ForEach(Array(deck.main.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
+                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
                         }
                     }
                     Section("Extra (\(deck.extra.count))") {
                         ForEach(Array(deck.extra.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
+                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
                         }
                     }
                     Section("Side (\(deck.side.count))") {
                         ForEach(Array(deck.side.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
+                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
                         }
                     }
                 }
@@ -61,3 +61,4 @@ struct DeckListView: View {
         }
     }
 }
+
