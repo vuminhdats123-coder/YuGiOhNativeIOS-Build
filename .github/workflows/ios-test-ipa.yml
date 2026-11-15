@@ -75,6 +75,16 @@ jobs:
           VCPKG_ROOT: ${{ runner.temp }}/vcpkg/vcpkg-20260914
         run: |
           test -d "$VCPKG_ROOT" || { echo "The pinned iPhoneOS dependency cache was not found in the release asset." >&2; exit 1; }
+          git clone --depth 1 --branch 12.1.0 https://github.com/fmtlib/fmt.git "$RUNNER_TEMP/fmt-source"
+          cmake -S "$RUNNER_TEMP/fmt-source" -B "$RUNNER_TEMP/fmt-build" \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DFMT_TEST=OFF -DFMT_DOC=OFF -DFMT_INSTALL=OFF \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/fmt-build" --config Release --target fmt
+          cp "$RUNNER_TEMP/fmt-build/libfmt.a" "$VCPKG_ROOT/installed/arm64-ios/lib/libfmt.a"
           premake5 --os=ios --architecture=arm64 --vcpkg-root="$VCPKG_ROOT" --sound=miniaudio --no-joystick=true --ios-game-data="$PAYLOAD_DIR" xcode4
 
       - name: Archive unsigned iPhoneOS app
