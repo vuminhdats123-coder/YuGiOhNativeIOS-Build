@@ -4,6 +4,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 import zipfile
 
@@ -19,8 +20,10 @@ EFFECTS = {
     11740: (911883, 13, "Unexpected Dai"),
     4343: (12580477, 13, "Raigeki"),
     4342: (53129443, 13, "Dark Hole"),
+    4909: (5318639, 13, "Mystical Space Typhoon"),
+    4887: (44095762, 14, "Mirror Force"),
 }
-DEFERRED = {4909: (5318639, 13, "Mystical Space Typhoon")}
+EFFECT_ICONS = {kid: 1 if kid == 4861 else 5 if kid == 4909 else 0 for kid in EFFECTS}
 NAME_ONLY = {
     10855: "Number 94: Crystalzero",
     11766: "Number S39: Utopia the Lightning",
@@ -75,7 +78,8 @@ def supported(row):
     kid = row["propFirst"] & 0x3FFF
     if kid in EFFECTS:
         password, kind, _ = EFFECTS[kid]
-        return row["password"] == password and row["kindCode"] == kind
+        return (row["password"] == password and row["kindCode"] == kind
+                and row["spellTrapIcon"] == EFFECT_ICONS[kid])
     return (row["kindCode"] == 0 and 1 <= row["level"] <= 8
             and type(row["atk"]) is int and type(row["def"]) is int)
 
@@ -168,9 +172,10 @@ def validate(obb):
         for kid in NAME_ONLY:
             require(struct.unpack_from("<H", int_ids, (kid - 3900) * 2)[0] == 0,
                     f"Fallback {kid} now has native data; reassess support")
-        for kid, (password, kind, name) in (EFFECTS | DEFERRED).items():
+        for kid, (password, kind, name) in EFFECTS.items():
             row = by_konami[kid]
-            require(row["password"] == password and row["kindCode"] == kind and names[str(kid)] == name,
+            require(row["password"] == password and row["kindCode"] == kind and names[str(kid)] == name
+                    and row["spellTrapIcon"] == EFFECT_ICONS[kid],
                     f"Effect identity mismatch for {kid}")
 
         require(type(decks) is list and len(decks) == 799, "Expected 799 source decks")
@@ -198,7 +203,7 @@ def validate(obb):
         for kid in deck["main"]:
             uint(kid, 16, "practice card")
             require(kid in by_konami and supported(by_konami[kid]), f"Unsupported practice card {kid}")
-        require(set(EFFECTS) <= set(copies), "Each practice deck must include all eight supported effects")
+        require(set(EFFECTS) <= set(copies), "Each practice deck must include all ten supported effects")
         normal_count = sum(copies[kid] for kid in copies if by_konami[kid]["kindCode"] == 0)
         require(normal_count >= 24, "Each practice deck needs at least 24 Normal Monsters")
         require(any(by_konami[kid]["kindCode"] == 0 and 5 <= by_konami[kid]["level"] <= 6 for kid in copies)
@@ -210,6 +215,13 @@ def validate(obb):
                                               for kid in copies]})
     require(practice[0]["file"] != practice[1]["file"] and practice[0]["main"] != practice[1]["main"],
             "Practice decks must be distinct")
+    core_source = (PROJECT / "Sources/YuGiOhNativeIOS/DuelState.swift").read_text(encoding="utf-8-sig")
+    registry_matches = re.findall(
+        r"case\s*\(\s*(\d+)\s*,\s*([\d_]+)\s*\)\s*:\s*return\s+\.\w+", core_source)
+    registry = {(int(kind), int(password.replace("_", ""))) for kind, password in registry_matches}
+    expected_registry = {(kind, password) for password, kind, _ in EFFECTS.values()}
+    require(len(registry_matches) == len(EFFECTS) and registry == expected_registry,
+            "Swift effect registry differs from the ten OBB-verified kind/password identities")
     with obb.open("rb") as source:
         source_hash = hashlib.file_digest(source, "sha256").hexdigest()
     return {
@@ -226,12 +238,16 @@ def validate(obb):
         "nameOnlyNotPlayable": [{"konamiID": kid, "name": name, "nativeDefinitionAvailable": False}
                                 for kid, name in NAME_ONLY.items()],
         "supportedEffectIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
+                                       "spellTrapIcon": EFFECT_ICONS[kid],
                                        "sourceDescription": text_by_index[by_konami[kid]["sourceIndex"]]["description"]}
                                       for kid, (password, _, name) in EFFECTS.items()],
-        "deferredEffectIdentities": [{"konamiID": kid, "name": name, "password": f"{password:08d}",
-                                      "reason": "Quick-Play timing and destruction of active chain sources are not supported"}
-                                     for kid, (password, _, name) in DEFERRED.items()],
         "practiceDecks": practice_summary,
+        "sourceEffectRegistryIdentityCheck": {
+            "matchesOBBWhitelist": True,
+            "entries": len(registry_matches),
+            "scope": "Static source/data wiring only; effect behavior and Swift compilation not executed",
+            "sourceSHA256": hashlib.sha256(core_source.encode("utf-8")).hexdigest(),
+        },
         "engineBehaviorTestsExecuted": False,
         "iosBuildExecuted": False,
         "portComplete": False,

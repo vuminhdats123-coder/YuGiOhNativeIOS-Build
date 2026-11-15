@@ -28,66 +28,80 @@
       "konamiID": 4844,
       "name": "Pot of Greed",
       "password": "55144522",
+      "spellTrapIcon": 0,
       "sourceDescription": "Draw 2 cards."
     },
     {
       "konamiID": 4349,
       "name": "Sparks",
       "password": "76103675",
+      "spellTrapIcon": 0,
       "sourceDescription": "Inflict 200 points of damage to your opponent's Life Points."
     },
     {
       "konamiID": 4348,
       "name": "Dian Keto the Cure Master",
       "password": "84257639",
+      "spellTrapIcon": 0,
       "sourceDescription": "Increase your Life Points by 1000 points."
     },
     {
       "konamiID": 4861,
       "name": "Solemn Judgment",
       "password": "41420027",
+      "spellTrapIcon": 1,
       "sourceDescription": "When a monster would be Summoned, OR a Spell/Trap Card is activated: Pay half your Life Points; negate the Summon or activation, and if you do, destroy that card."
     },
     {
       "konamiID": 4842,
       "name": "Monster Reborn",
       "password": "83764718",
+      "spellTrapIcon": 0,
       "sourceDescription": "Target 1 monster in either player's Graveyard; Special Summon it."
     },
     {
       "konamiID": 11740,
       "name": "Unexpected Dai",
       "password": "00911883",
+      "spellTrapIcon": 0,
       "sourceDescription": "If you control no monsters: Special Summon 1 Level 4 or lower Normal Monster from the Deck."
     },
     {
       "konamiID": 4343,
       "name": "Raigeki",
       "password": "12580477",
+      "spellTrapIcon": 0,
       "sourceDescription": "Destroy all monsters your opponent controls."
     },
     {
       "konamiID": 4342,
       "name": "Dark Hole",
       "password": "53129443",
+      "spellTrapIcon": 0,
       "sourceDescription": "Destroy all monsters on the field."
-    }
-  ],
-  "deferredEffectIdentities": [
+    },
     {
       "konamiID": 4909,
       "name": "Mystical Space Typhoon",
       "password": "05318639",
-      "reason": "Quick-Play timing and destruction of active chain sources are not supported"
+      "spellTrapIcon": 5,
+      "sourceDescription": "Target 1 Spell/Trap Card on the field; destroy that target."
+    },
+    {
+      "konamiID": 4887,
+      "name": "Mirror Force",
+      "password": "44095762",
+      "spellTrapIcon": 0,
+      "sourceDescription": "When an opponent's monster declares an attack: Destroy all Attack Position monsters your opponent controls."
     }
   ],
   "practiceDecks": [
     {
       "name": "Practice A - Dragons and Stone",
       "cards": 40,
-      "uniqueCards": 21,
+      "uniqueCards": 23,
       "maxCopies": 3,
-      "normalMonsters": 26,
+      "normalMonsters": 24,
       "contents": [
         {
           "konamiID": 4008,
@@ -97,12 +111,12 @@
         {
           "konamiID": 4009,
           "name": "Hitotsu-Me Giant",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4010,
           "name": "Baby Dragon",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4012,
@@ -157,7 +171,7 @@
         {
           "konamiID": 4844,
           "name": "Pot of Greed",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4349,
@@ -187,11 +201,21 @@
         {
           "konamiID": 4343,
           "name": "Raigeki",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4342,
           "name": "Dark Hole",
+          "copies": 2
+        },
+        {
+          "konamiID": 4909,
+          "name": "Mystical Space Typhoon",
+          "copies": 2
+        },
+        {
+          "konamiID": 4887,
+          "name": "Mirror Force",
           "copies": 2
         }
       ]
@@ -199,9 +223,9 @@
     {
       "name": "Practice B - Warriors and Magic",
       "cards": 40,
-      "uniqueCards": 21,
+      "uniqueCards": 23,
       "maxCopies": 3,
-      "normalMonsters": 26,
+      "normalMonsters": 24,
       "contents": [
         {
           "konamiID": 4011,
@@ -211,12 +235,12 @@
         {
           "konamiID": 4014,
           "name": "Mushroom Man",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4019,
           "name": "Tyhone",
-          "copies": 3
+          "copies": 2
         },
         {
           "konamiID": 4031,
@@ -271,7 +295,7 @@
         {
           "konamiID": 4844,
           "name": "Pot of Greed",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4349,
@@ -301,16 +325,32 @@
         {
           "konamiID": 4343,
           "name": "Raigeki",
-          "copies": 2
+          "copies": 1
         },
         {
           "konamiID": 4342,
           "name": "Dark Hole",
           "copies": 2
+        },
+        {
+          "konamiID": 4909,
+          "name": "Mystical Space Typhoon",
+          "copies": 2
+        },
+        {
+          "konamiID": 4887,
+          "name": "Mirror Force",
+          "copies": 2
         }
       ]
     }
   ],
+  "sourceEffectRegistryIdentityCheck": {
+    "matchesOBBWhitelist": true,
+    "entries": 10,
+    "scope": "Static source/data wiring only; effect behavior and Swift compilation not executed",
+    "sourceSHA256": "e1b2291b0c9ca95f18320799bc51a80acc0ee1f4526b8b89ac9970306e0eeead"
+  },
   "engineBehaviorTestsExecuted": false,
   "iosBuildExecuted": false,
   "portComplete": false

@@ -24,7 +24,8 @@
   "manualBuildOnly": true,
   "engineBehaviorTests": "authored; not executed",
   "aiBehaviorTests": "authored; not executed",
-  "supportedEffectDefinitions": 8,
+  "supportedEffectDefinitions": 10,
+  "sourceEffectRegistryMatchesOBB": true,
   "swiftCompiled": false,
   "iosBuildExecuted": false,
   "portComplete": false,
@@ -32,8 +33,8 @@
     "Run Swift behavioral self-checks when authorized",
     "Validate UI on simulator/device when authorized",
     "Effect monsters and Extra Deck special summoning",
-    "Summon/battle response windows",
-    "Quick-Play timing and additional card effects",
+    "Full Damage Step and attack replay",
+    "Additional card effects and continuous effects",
     "Campaign/online services"
   ]
 }

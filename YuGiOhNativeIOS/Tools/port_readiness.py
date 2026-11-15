@@ -94,11 +94,12 @@ def main():
               'missingSourceDefinitions': [10855, 11766], 'manualBuildOnly': True,
               'engineBehaviorTests': 'authored; not executed', 'aiBehaviorTests': 'authored; not executed',
               'supportedEffectDefinitions': len(data['supportedEffectIdentities']),
+              'sourceEffectRegistryMatchesOBB': data['sourceEffectRegistryIdentityCheck']['matchesOBBWhitelist'],
               'swiftCompiled': False, 'iosBuildExecuted': False,
               'portComplete': False,
               'remaining': ['Run Swift behavioral self-checks when authorized', 'Validate UI on simulator/device when authorized',
-                            'Effect monsters and Extra Deck special summoning', 'Summon/battle response windows',
-                            'Quick-Play timing and additional card effects', 'Campaign/online services']}
+                            'Effect monsters and Extra Deck special summoning', 'Full Damage Step and attack replay',
+                            'Additional card effects and continuous effects', 'Campaign/online services']}
     (GENERATED / 'port-readiness.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

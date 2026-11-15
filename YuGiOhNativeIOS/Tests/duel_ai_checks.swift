@@ -13,7 +13,8 @@ enum DuelAIChecks {
         }
         let effects: [(Int, UInt32, Int)] = [
             (1, 55_144_522, 13), (2, 76_103_675, 13), (3, 84_257_639, 13), (4, 41_420_027, 14),
-            (5, 83_764_718, 13), (6, 911_883, 13), (7, 12_580_477, 13), (8, 53_129_443, 13)
+            (5, 83_764_718, 13), (6, 911_883, 13), (7, 12_580_477, 13), (8, 53_129_443, 13),
+            (9, 5_318_639, 13), (10, 44_095_762, 14)
         ]
         for (id, password, kind) in effects {
             result[id] = DuelCardDefinition(id: id, name: "Effect \(id)", kindCode: kind,
@@ -34,21 +35,38 @@ enum DuelAIChecks {
         try DuelState(definitions: definitions, decks: [deck(first), deck(second)])
     }
     static func mainPhase(_ game: inout DuelState) throws {
-        if game.phase == .draw { try game.nextPhase(player: game.activePlayer) }
-        if game.phase == .standby { try game.nextPhase(player: game.activePlayer) }
+        try settle(&game)
+        if game.phase == .draw { try advance(&game) }
+        if game.phase == .standby { try advance(&game) }
         precondition(game.phase == .main1)
     }
+    static func settle(_ game: inout DuelState) throws {
+        var steps = 0
+        while game.hasResponseWindow && game.winner == nil {
+            precondition(game.pendingSummonChoice == nil, "Choose a search target explicitly in this test")
+            try game.pass(player: game.decisionPlayer)
+            steps += 1
+            precondition(steps < 160, "Unbounded response-window continuation")
+        }
+    }
+    static func advance(_ game: inout DuelState) throws {
+        try settle(&game)
+        try game.nextPhase(player: game.activePlayer)
+        try settle(&game)
+    }
     static func finishTurn(_ game: inout DuelState) throws {
-        while game.phase != .end { try game.nextPhase(player: game.activePlayer) }
+        try settle(&game)
+        while game.phase != .end { try advance(&game) }
         let player = game.activePlayer, excess = game.players[game.activePlayer].hand.count - 6
         if excess > 0 { try game.discard(player: player, cardIDs: game.players[player].hand.suffix(excess).map(\.id)) }
-        try game.nextPhase(player: player)
+        try advance(&game)
     }
     static func hand(_ game: DuelState, player: Int, definition: Int) -> Int {
         game.players[player].hand.first { $0.definitionID == definition }!.id
     }
     static func conserved(_ game: DuelState) {
-        var ids = game.chain.map { $0.card.id }
+        var ids = game.chain.filter(\.sourceOnField).map { $0.card.id }
+        if let summon = game.pendingSummon { ids.append(summon.monster.card.id) }
         for player in game.players {
             ids += (player.deck + player.hand + player.graveyard).map(\.id)
             ids += player.field.map(\.id) + player.traps.map(\.id)
@@ -56,7 +74,7 @@ enum DuelAIChecks {
         precondition(ids.count == 80 && Set(ids).count == 80, "AI action lost or duplicated cards")
     }
     static func controller(_ game: DuelState) -> Int {
-        game.pendingSummonChoice?.player ?? (game.chain.isEmpty ? game.activePlayer : game.priorityPlayer)
+        game.decisionPlayer
     }
     static func shuffled(_ cards: [Int], seed: UInt64) -> [Int] {
         var values = cards, next = seed
@@ -92,7 +110,7 @@ enum DuelAIChecks {
                 try game.summon(player: 0, cardID: game.players[0].hand[0].id, set: true)
                 try finishTurn(&game); try mainPhase(&game)
                 try game.summon(player: 1, cardID: hand(game, player: 1, definition: 109))
-                try game.nextPhase(player: 1)
+                try advance(&game)
                 if index == 0 { first = game } else { second = game }
             }
             precondition(DuelAI.observe(first, player: 1)!.opponentField[0].definition == nil)
@@ -157,9 +175,117 @@ enum DuelAIChecks {
             conserved(game)
         }
 
+        // A set MST can answer a phase-exit request. Opponent set-card identities do not affect its target.
+        do {
+            var decisions: [DuelAction] = []
+            for hiddenCard in [4, 9] {
+                var game = try state([hiddenCard], [9])
+                try mainPhase(&game)
+                try game.setTrap(player: 0, cardID: hand(game, player: 0, definition: hiddenCard))
+                try finishTurn(&game); try mainPhase(&game)
+                try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 9))
+                try finishTurn(&game); try mainPhase(&game)
+                let oldPhase = game.phase
+                try game.nextPhase(player: 0)
+                precondition(game.hasResponseWindow && game.decisionPlayer == 1)
+                let action = DuelAI.chooseAction(state: game, player: 1)!
+                decisions.append(action)
+                precondition(action == .activateSpell(cardID: game.players[1].traps[0].id,
+                    targetID: game.players[0].traps[0].id, targetPlayer: 0, position: .attack))
+                try game.apply(action: action, player: 1)
+                try settle(&game)
+                precondition(game.phase == oldPhase && game.players[0].traps.isEmpty)
+                conserved(game)
+            }
+            precondition(decisions[0] == decisions[1])
+        }
+
+        // Do not spend MST on a Spell already activated; destruction is not negation.
+        do {
+            var game = try state([1], [9])
+            try finishTurn(&game); try mainPhase(&game)
+            try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 9))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.activateSpell(player: 0, cardID: hand(game, player: 0, definition: 1))
+            precondition(DuelAI.chooseAction(state: game, player: 1) == .pass)
+            try settle(&game)
+            precondition(game.players[1].traps.count == 1)
+            conserved(game)
+        }
+
+        // Mirror Force answers an opposing attack; even MST destroying its source does not negate it.
+        do {
+            var game = try state([109, 9], [10])
+            try mainPhase(&game)
+            try game.summon(player: 0, cardID: hand(game, player: 0, definition: 109))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 10))
+            try finishTurn(&game); try mainPhase(&game); try advance(&game)
+            try game.attack(player: 0, attackerID: game.players[0].field[0].id)
+            precondition(DuelAI.chooseAction(state: game, player: 1) == nil)
+            try game.pass(player: 0)
+            let mirror = game.players[1].traps[0].id
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            precondition(action == .activateSpell(cardID: mirror, targetID: nil, targetPlayer: nil, position: .attack))
+            try game.apply(action: action, player: 1)
+            try game.activateSpell(player: 0, cardID: hand(game, player: 0, definition: 9),
+                                   targetID: mirror, targetPlayer: 1)
+            conserved(game); try settle(&game)
+            precondition(game.players[0].field.isEmpty && game.players[1].lp == 8000)
+            precondition(game.players[1].graveyard.contains { $0.id == mirror })
+            conserved(game)
+        }
+
+        // Judgment responds before the opposing summon succeeds; no AI privilege bypasses the cost/window.
+        do {
+            var game = try state([109], [4])
+            try finishTurn(&game); try mainPhase(&game)
+            try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 4))
+            try finishTurn(&game); try mainPhase(&game)
+            let monster = hand(game, player: 0, definition: 109)
+            try game.summon(player: 0, cardID: monster)
+            precondition(game.pendingSummon != nil && game.players[0].field.isEmpty)
+            conserved(game)
+            let action = DuelAI.chooseAction(state: game, player: 1)!
+            precondition(action == .counter(trapID: game.players[1].traps[0].id))
+            try game.apply(action: action, player: 1); try settle(&game)
+            precondition(game.players[1].lp == 4000 && game.players[0].field.isEmpty)
+            precondition(game.players[0].graveyard.contains { $0.id == monster })
+            conserved(game)
+        }
+
+        // Speed 2 MST cannot answer speed 3, and hand MST cannot activate during the opponent's turn.
+        do {
+            var game = try state([1, 4, 4], [9])
+            try mainPhase(&game)
+            for _ in 0..<2 {
+                try game.setTrap(player: 0, cardID: hand(game, player: 0, definition: 4))
+                try settle(&game)
+            }
+            try finishTurn(&game); try mainPhase(&game)
+            try game.setTrap(player: 1, cardID: hand(game, player: 1, definition: 9))
+            try finishTurn(&game); try mainPhase(&game)
+            try game.activateSpell(player: 0, cardID: hand(game, player: 0, definition: 1))
+            try game.pass(player: 1)
+            try game.activateCounter(player: 0, trapID: game.players[0].traps[0].id)
+            precondition(!game.players[0].traps.isEmpty)
+            precondition(DuelAI.chooseAction(state: game, player: 1) == .pass)
+            try settle(&game); conserved(game)
+        }
+        do {
+            var game = try state([4], [9])
+            try mainPhase(&game)
+            try game.setTrap(player: 0, cardID: hand(game, player: 0, definition: 4))
+            try settle(&game)
+            try game.nextPhase(player: 0)
+            precondition(game.decisionPlayer == 1)
+            precondition(DuelAI.chooseAction(state: game, player: 1) == .pass)
+            conserved(game)
+        }
+
         // Multiple full matches: every decision uses production apply, makes legal progress, and conserves cards.
         // The UI has a separate 160-action continuation budget; this test also guards against strategy loops.
-        let pool = deck([1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 130, 131])
+        let pool = deck([1, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 9, 10, 130, 131])
         for seed in UInt64(1)...UInt64(12) {
             var game = try DuelState(definitions: definitions,
                                     decks: [shuffled(pool, seed: seed), shuffled(pool, seed: seed + 100)])

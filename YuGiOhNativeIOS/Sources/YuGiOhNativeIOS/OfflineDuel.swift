@@ -85,7 +85,7 @@ final class OfflineDuelEngine: ObservableObject {
     }
 
     func controller(_ state: DuelState) -> Int {
-        state.pendingSummonChoice?.player ?? (state.chain.isEmpty ? state.activePlayer : state.priorityPlayer)
+        state.decisionPlayer
     }
 
     func stopAI() {
@@ -147,9 +147,9 @@ struct OfflineDuelView: View {
                 Picker("Đối thủ", selection: $game.opponent) {
                     ForEach(OfflineDuelEngine.Opponent.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }.disabled(game.state != nil)
-                Text("Quái Normal và 8 lá hiệu ứng. Có hồi sinh bằng Monster Reborn, gọi quái từ Deck bằng Unexpected Dai, Raigeki và Dark Hole. Chưa hỗ trợ effect quái, triệu hồi từ Extra Deck hay phản hồi khi tấn công.")
+                Text("Quái Normal và 10 lá hiệu ứng. Có hồi sinh, gọi quái từ Deck, MST và Mirror Force; mỗi lần triệu hồi, khai báo tấn công hoặc đổi phase đều có bước phản hồi.")
                     .font(.footnote)
-                Text("Solemn Judgment hiện chỉ phủ nhận kích hoạt Phép/Bẫy, chưa phủ nhận triệu hồi.")
+                Text("Chưa hỗ trợ effect quái, triệu hồi từ Extra Deck hay toàn bộ các bước của Damage Step.")
                     .font(.footnote)
                 if let error = game.setupError {
                     Label(error, systemImage: "exclamationmark.triangle")
@@ -170,10 +170,15 @@ struct OfflineDuelView: View {
                     Section("Chain • giải quyết từ liên kết cuối") {
                         ForEach(state.chain) { link in
                             Text("Người \(link.player + 1): \(game.name(link.card))")
-                            if let targetID = link.targetCardID, let owner = link.targetOwner,
+                            if link.effect == .revive, let targetID = link.targetCardID, let owner = link.targetOwner,
                                let target = state.players[owner].graveyard.first(where: { $0.id == targetID }) {
                                 Text("Mục tiêu: \(game.name(target)) • Mộ Người \(owner + 1)").font(.caption)
                             }
+                            if let targetID = link.targetCardID, let owner = link.targetOwner,
+                               link.effect == .destroySpellTrap {
+                                Text("Mục tiêu: \(spellTrapName(state, owner: owner, id: targetID))").font(.caption)
+                            }
+                            if !link.sourceOnField { Text("Lá nguồn đã rời sân").font(.caption) }
                         }
                     }
                 }
@@ -234,14 +239,25 @@ struct OfflineDuelView: View {
                     }
                 }
             }
-        } else if !state.chain.isEmpty {
+        } else if state.hasResponseWindow {
             Section("Người \(controller + 1) phản hồi") {
-                Text("Hiệu ứng chưa được áp dụng. Hai người cùng bỏ qua liên tiếp sẽ giải quyết chain.")
+                Text(state.responseLabel)
+                Text("Hai người bỏ qua liên tiếp để tiếp tục. Mọi phản hồi vẫn phải đúng thời điểm và Spell Speed.")
                     .font(.footnote)
+                if let summon = state.pendingSummon {
+                    Text("Đang triệu hồi: \(game.name(summon.monster.card))").font(.headline)
+                }
+                if let attack = state.pendingAttack,
+                   let monster = state.players[attack.player].field.first(where: { $0.id == attack.attackerID }) {
+                    Text("Đang tấn công: \(game.name(monster.card))").font(.headline)
+                }
                 ForEach(state.players[controller].traps) { trap in
-                    Button("Phản hồi: \(game.name(trap.card))") {
-                        act { try $0.activateCounter(player: controller, trapID: trap.id) }
-                    }.disabled(trap.setTurn == state.turn)
+                    fastCardControls(trap.card, state: state, player: controller)
+                }
+                if controller == state.activePlayer {
+                    ForEach(state.players[controller].hand.filter { state.definition(of: $0).effect == .destroySpellTrap }) { card in
+                        fastCardControls(card, state: state, player: controller)
+                    }
                 }
                 Button("Không phản hồi") { act { try $0.pass(player: controller) } }
             }
@@ -275,8 +291,9 @@ struct OfflineDuelView: View {
                     Button("Triệu hồi") { act { try $0.summon(player: player, cardID: card.id, tributes: Array(tributes)) } }
                     Button("Úp phòng thủ") { act { try $0.summon(player: player, cardID: card.id, tributes: Array(tributes), set: true) } }
                 }.disabled(!isMain || state.normalSummonUsed)
-            } else if definition.effect == .judgment {
-                Button("Úp Bẫy") { act { try $0.setTrap(player: player, cardID: card.id) } }.disabled(!isMain)
+            } else if definition.effect == .judgment || definition.effect == .mirrorForce || definition.effect == .destroySpellTrap {
+                Button("Úp Phép/Bẫy") { act { try $0.setTrap(player: player, cardID: card.id) } }.disabled(!isMain)
+                if definition.effect == .destroySpellTrap { fastCardControls(card, state: state, player: player) }
             } else if definition.effect == .revive {
                 Menu("Monster Reborn • chọn mục tiêu") {
                     ForEach(0..<2, id: \.self) { owner in
@@ -305,7 +322,7 @@ struct OfflineDuelView: View {
 
     @ViewBuilder
     private func field(_ state: DuelState, player: Int) -> some View {
-        let canControl = visiblePlayer == player && state.activePlayer == player && state.chain.isEmpty && state.winner == nil
+        let canControl = visiblePlayer == player && state.activePlayer == player && !state.hasResponseWindow && !state.isResolving && state.winner == nil
         Section("Sân Người \(player + 1)") {
             if state.players[player].field.isEmpty { Text("Không có quái") }
             ForEach(state.players[player].field) { monster in
@@ -329,7 +346,10 @@ struct OfflineDuelView: View {
                 }.buttonStyle(.bordered).padding(.vertical, 4)
             }
             ForEach(Array(state.players[player].traps.enumerated()), id: \.element.id) { index, trap in
-                Text(visiblePlayer == player ? "Bẫy: \(game.name(trap.card))" : "Bẫy úp \(index + 1)")
+                Text(visiblePlayer == player ? "Phép/Bẫy: \(game.name(trap.card))" : "Phép/Bẫy úp \(index + 1)")
+                if canControl && state.definition(of: trap.card).effect == .destroySpellTrap {
+                    fastCardControls(trap.card, state: state, player: player)
+                }
             }
             DisclosureGroup("Mộ (\(state.players[player].graveyard.count))") {
                 ForEach(state.players[player].graveyard) { card in Text(game.name(card)) }
@@ -355,6 +375,58 @@ struct OfflineDuelView: View {
 
     private func monsterName(_ monster: DuelState.Monster, owner: Int) -> String {
         monster.faceDown && visiblePlayer != owner ? "Quái úp #\(monster.id)" : game.name(monster.card)
+    }
+
+    @ViewBuilder
+    private func fastCardControls(_ card: DuelState.CardInstance, state: DuelState, player: Int) -> some View {
+        let effect = state.definition(of: card).effect
+        if effect == .judgment {
+            Button("Solemn Judgment") { act { try $0.activateCounter(player: player, trapID: card.id) } }
+                .disabled(!legal(.counter(trapID: card.id), state: state, player: player))
+        } else if effect == .mirrorForce {
+            let action = DuelAction.activateSpell(cardID: card.id, targetID: nil, targetPlayer: nil, position: .attack)
+            Button("Mirror Force") { act { try $0.apply(action: action, player: player) } }
+                .disabled(!legal(action, state: state, player: player))
+        } else if effect == .destroySpellTrap {
+            Menu("MST • chọn Phép/Bẫy") {
+                ForEach(0..<2, id: \.self) { owner in
+                    ForEach(state.players[owner].traps.filter { $0.id != card.id }) { target in
+                        mstTarget(card, targetID: target.id, owner: owner, state: state, player: player)
+                    }
+                    ForEach(state.chain.filter { $0.player == owner && $0.sourceOnField && $0.card.id != card.id }) { link in
+                        mstTarget(card, targetID: link.card.id, owner: owner, state: state, player: player)
+                    }
+                }
+            }
+        }
+    }
+
+    private func mstTarget(_ card: DuelState.CardInstance, targetID: Int, owner: Int,
+                           state: DuelState, player: Int) -> some View {
+        let action = DuelAction.activateSpell(cardID: card.id, targetID: targetID, targetPlayer: owner, position: .attack)
+        return Button(spellTrapName(state, owner: owner, id: targetID)) {
+            act { try $0.apply(action: action, player: player) }
+        }.disabled(!legal(action, state: state, player: player))
+    }
+
+    private func spellTrapName(_ state: DuelState, owner: Int, id: Int) -> String {
+        if let source = state.chain.first(where: { $0.card.id == id }) {
+            let location = source.sourceOnField ? "Người \(owner + 1)" : "đã rời sân"
+            return "\(game.name(source.card)) • \(location)"
+        }
+        if let card = state.players.flatMap({ $0.graveyard }).first(where: { $0.id == id }) {
+            return "\(game.name(card)) • đã vào Mộ Người \(card.owner + 1)"
+        }
+        if visiblePlayer == owner, let trap = state.players[owner].traps.first(where: { $0.id == id }) {
+            return "\(game.name(trap.card)) • Người \(owner + 1)"
+        }
+        return "Phép/Bẫy úp #\(id) • Người \(owner + 1)"
+    }
+
+    private func legal(_ action: DuelAction, state: DuelState, player: Int) -> Bool {
+        var trial = state
+        do { try trial.apply(action: action, player: player); return true }
+        catch { return false }
     }
 
     private func act(_ action: (inout DuelState) throws -> Void) {
