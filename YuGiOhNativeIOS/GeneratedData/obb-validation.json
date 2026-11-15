@@ -2,10 +2,12 @@
   "ok": true,
   "errors": [],
   "warnings": [
+    "3 plist files are not strict XML; the game may use a permissive parser",
     "127 JPG names are not numeric"
   ],
   "counts": {
     "files": 10747,
+    "plistValid": 676,
     "propRecords": 7581,
     "genreRecords": 7581,
     "textRecords": 7581,
@@ -23,5 +25,19 @@
     "JNames": 7581,
     "RNames": 7581,
     "SNames": 7581
-  }
+  },
+  "plistErrors": [
+    {
+      "path": "assets/TempTutorial01_it.plist",
+      "error": "not well-formed (invalid token): line 304, column 59"
+    },
+    {
+      "path": "assets/LocalizationGlossary40.plist",
+      "error": "not well-formed (invalid token): line 17, column 36"
+    },
+    {
+      "path": "assets/LocalizationGlossary41.plist",
+      "error": "not well-formed (invalid token): line 27, column 83"
+    }
+  ]
 }

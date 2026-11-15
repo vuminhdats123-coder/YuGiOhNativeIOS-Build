@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json, struct, zipfile
+import argparse, json, struct, zipfile, plistlib
 from pathlib import Path
 
 def text_at(blob, offset):
@@ -15,6 +15,14 @@ def main():
     report={'ok':True,'errors':[],'warnings':[],'counts':{}}
     with zipfile.ZipFile(a.obb) as z:
         names=set(z.namelist()); infos=z.infolist(); report['counts']['files']=len(infos)
+        plist_errors=[]
+        for info in infos:
+            if info.filename.lower().endswith('.plist'):
+                try: plistlib.loads(z.read(info.filename))
+                except Exception as exc: plist_errors.append({'path':info.filename,'error':str(exc)})
+        report['counts']['plistValid']=sum(1 for info in infos if info.filename.lower().endswith('.plist'))-len(plist_errors)
+        if plist_errors: report['warnings'].append(f"{len(plist_errors)} plist files are not strict XML; the game may use a permissive parser")
+        report['plistErrors']=plist_errors
         def require(n):
             if 'assets/'+n not in names: report['errors'].append('missing assets/'+n); return b''
             return z.read('assets/'+n)
