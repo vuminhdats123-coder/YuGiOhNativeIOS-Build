@@ -31,6 +31,11 @@ def main():
             if data and len(data)%size: report['errors'].append(f'{label} size {len(data)} not divisible by {size}')
         prop_count=len(prop)//8; genre_count=len(genre)//8; idx_count=len(idx)//8-1
         report['counts'].update(propRecords=prop_count,genreRecords=genre_count,textRecords=idx_count,intIdEntries=len(intid)//2,jpg=sum(n.lower().endswith('.jpg') for n in names),ydc=sum(n.lower().endswith('.ydc') for n in names),plist=sum(n.lower().endswith('.plist') for n in names),mp3=sum(n.lower().endswith('.mp3') for n in names))
+        ydc_headers={}
+        for n in names:
+            if n.lower().endswith('.ydc'):
+                h=z.read(n)[:2].hex(); ydc_headers[h]=ydc_headers.get(h,0)+1
+        report['ydcHeaders']=ydc_headers
         if prop_count != genre_count: report['errors'].append('Prop/Genre record counts differ')
         if prop_count != idx_count: report['errors'].append('Prop/text record counts differ')
         if len(intid)//2 < prop_count: report['warnings'].append('IntID table shorter than Prop table')

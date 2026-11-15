@@ -39,5 +39,10 @@
       "path": "assets/LocalizationGlossary41.plist",
       "error": "not well-formed (invalid token): line 27, column 83"
     }
-  ]
+  ],
+  "ydcHeaders": {
+    "2358": 428,
+    "5171": 348,
+    "956e": 23
+  }
 }
