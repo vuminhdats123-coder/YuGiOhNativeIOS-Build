@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand effect-interaction coverage beyond 36 full host matches and 8 canonical-effect scenarios"
+    "Expand effect-interaction coverage beyond 36 full host matches, 8 canonical-effect and 10 Extra Deck scenarios"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -31,7 +31,8 @@
     "localResumeAnimationClockReset": true,
     "duelCloseAcknowledgementSynchronized": true,
     "restartHUDStateSynchronized": true,
-    "restartClosesIOSControls": true
+    "restartClosesIOSControls": true,
+    "sumPromptUIUpdatesSynchronized": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -42,8 +43,8 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 78,
-    "pythonTestsPassed": 77,
+    "pythonTestsRun": 79,
+    "pythonTestsPassed": 78,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
@@ -63,7 +64,10 @@
     "nativeLifecycleTestsExecuted": false,
     "windowsCoreEffectScenarios": 8,
     "windowsCoreEffectResponses": 112,
-    "nativeSessionLifecycleTestsExecuted": false
+    "nativeSessionLifecycleTestsExecuted": false,
+    "windowsCoreExtraDeckScenarios": 10,
+    "windowsCoreExtraDeckResponses": 106,
+    "extraDeckHumanUITestsExecuted": false
   },
   "limitations": [
     "Generic bounded AI, not a competitive deck-specific bot",

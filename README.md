@@ -54,6 +54,10 @@ engine thật chấp nhận cả 54 phản hồi; kết hợp với các ván tr
 phá huỷ/hồi sinh, vô hiệu phép, sát thương và Fusion; tất cả đạt với 112 phản hồi,
 không retry/lỗi Lua. Sửa nguồn bổ sung xử lý mất tín hiệu khi đóng ván và cập nhật
 HUD khi restart; các đường GUI này vẫn cần kiểm tra native.
+Thêm 10 [kịch bản Synchro/Xyz/Link](NativeClient/HOST_EXTRA_DECK_VALIDATION.md)
+đã đạt trên core Windows, gồm hiệu ứng sau triệu hồi, detach material, vô hiệu
+triệu hồi và Link Rating làm nguyên liệu. Đã sửa đồng bộ UI của prompt chọn tổng
+nguyên liệu; phần cảm ứng tương ứng chưa được chạy trên iPhone.
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong

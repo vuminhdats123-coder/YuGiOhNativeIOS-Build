@@ -115,6 +115,12 @@ bằng Polymerization. Cả hai phía chơi đều dùng AI production và scrip
 112 phản hồi được chấp nhận, không retry/lỗi Lua. Kiểm tra xác nhận LP, vị trí,
 lý do di chuyển và nguyên liệu; không tính các kịch bản này thành ván hoàn chỉnh.
 
+Bộ [kiểm tra Extra Deck](HOST_EXTRA_DECK_VALIDATION.md) bổ sung 10 kịch bản đạt:
+Synchro với hiệu ứng tăng ATK, Xyz tách material gây sát thương, Link trả cost
+phá thẻ, Solemn Judgment vô hiệu triệu hồi và dùng Link-2 làm nguyên liệu Link-3.
+106 phản hồi AI được core chấp nhận, không retry/lỗi; cả hai phía người chơi đều
+được thử. Các ca này xác nhận script/luật và lựa chọn AI, chưa kiểm chứng UI iOS.
+
 Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
 Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.
 Dừng/chơi lại có kiểm soát trạng thái; lỗi được hiện sau khi đóng bàn đấu để không
@@ -126,6 +132,11 @@ hiệu khiến lần mở trận tiếp theo bị kẹt. Restart đóng menu đi
 LP/tên/hình học bàn đấu dưới khóa render. Các ca thoát, shutdown, restart giữa
 animation và thắng rồi chơi tiếp nằm trong
 `overlays/offline-ai/tests/session_lifecycle_checks.md`; chưa chạy native.
+
+Phần mở/cập nhật UI của prompt chọn tổng nguyên liệu dùng cùng mutex với luồng
+vẽ, giữ quy tắc khóa hiện có khi replay catch-up. Ca hồi quy chọn nguyên liệu
+khi ảnh đang tải, đổi kích thước hoặc cuộn được ghi trong
+`overlays/ui-layout/tests/card_selection_interaction_checks.md`; chưa chạy native.
 
 ```powershell
 python -m unittest discover -s tests -v

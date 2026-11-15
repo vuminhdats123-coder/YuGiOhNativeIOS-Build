@@ -1,8 +1,8 @@
 {
-  "scope": "Real Windows OCG matches/card initialization/prompt and canonical effect scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
+  "scope": "Real Windows OCG matches/card initialization/prompt, canonical-effect and Extra Deck scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
   "python": {
-    "run": 78,
-    "passed": 77,
+    "run": 79,
+    "passed": 78,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
@@ -158,7 +158,9 @@
     "duelCloseAcknowledgementSourceReviewed": true,
     "restartHUDStateSourceReviewed": true,
     "restartClosesIOSControlsSourceReviewed": true,
-    "nativeSessionLifecycleTestsExecuted": false
+    "nativeSessionLifecycleTestsExecuted": false,
+    "sumPromptUIUpdatesSourceReviewed": true,
+    "extraDeckHumanUITestsExecuted": false
   },
   "windowsPromptScenarios": {
     "report": "host-prompt-validation.json",
@@ -205,5 +207,28 @@
     "harnessSHA256": "9eb057c02aa9d6d0cbad74ae6cfdbb8b8132e35c8e7437c3f98007114c2f303b",
     "nativeIOSExecuted": false,
     "limit": "Fixed small fields and selected canonical effects only; not all deck/effect combinations or iOS GUI behavior"
+  },
+  "windowsExtraDeckScenarios": {
+    "report": "host-extra-deck-validation.json",
+    "reportSHA256": "c853c98dfdafc101c66f5be74eb767ee79fea43192a18dd167514c0a3222d716",
+    "accepted": 10,
+    "responses": 106,
+    "materialToggleResponses": 20,
+    "retries": 0,
+    "scriptErrors": 0,
+    "interactions": [
+      "synchro_trigger",
+      "xyz_detach_damage",
+      "link_discard_destroy",
+      "synchro_summon_negation",
+      "link_rating_material"
+    ],
+    "finalStateLuaAssertionsVerified": true,
+    "fullMatchesClaimed": 0,
+    "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b",
+    "testLuaSHA256": "77d66b1a25ecb770a0b8376769b60cbf57cfadaae44bd09be490410328647cbd",
+    "harnessSHA256": "d5f24a2ab1c6253759dd6f8aa2784a4f1969bae3c615777a32c93326b0589b1a",
+    "nativeIOSExecuted": false,
+    "limit": "Selected canonical summons/effects on predefined fields, not all material restrictions, effect variants or human iOS selection"
   }
 }

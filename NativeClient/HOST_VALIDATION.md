@@ -92,13 +92,17 @@ runtime package's JS copy. That package copy has separately been refreshed to
 the same final `e05fd0ac…118d57b` version; this distinction matters when
 reproducing a run after editing the source.
 
-The thirteen Python harness tests cover packet framing/rejection, YDK sections and
+The fourteen Python harness tests cover packet framing/rejection, YDK sections and
 malformed decks, announce-card constraints, the pinned Python release, exact
-scenario completion markers, response validation, and required effect evidence.
+scenario completion markers, response validation, required effect evidence, and
+rejection of a successful-summon event in a summon-negation scenario.
 
 The separate [effect-scenario report](HOST_EFFECT_VALIDATION.md) adds eight
 bounded scenarios with canonical card scripts and final-state assertions. It
 does not add full matches to this report or establish iOS client behavior.
+The [Extra Deck report](HOST_EXTRA_DECK_VALIDATION.md) adds ten Synchro/Xyz/Link
+scenarios, including material costs, triggered effects and summon negation,
+under the same evidence boundary.
 
 ## Evidence boundary
 

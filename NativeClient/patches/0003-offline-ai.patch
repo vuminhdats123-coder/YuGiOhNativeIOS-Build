@@ -1,5 +1,5 @@
 diff --git a/gframe/duelclient.cpp b/gframe/duelclient.cpp
-index 05b5092..52cdd37 100644
+index 05b5092..a711ca6 100644
 --- a/gframe/duelclient.cpp
 +++ b/gframe/duelclient.cpp
 @@ -2317,6 +2317,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
@@ -10,7 +10,17 @@ index 05b5092..52cdd37 100644
  			return true;
  		}
  		int count = 0, filter = 0x1, startpos;
-@@ -3944,6 +3945,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
+@@ -2470,6 +2471,9 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
+ 		}
+ 		std::sort(mainGame->dField.selectsum_all.begin(), mainGame->dField.selectsum_all.end(), ClientCard::client_card_sort);
+ 		PerformQueuedPanelConfirmIfDifferent(mainGame->dField.selectsum_all);
++		// A sum prompt can create/repaint the card grid and its image/fade queues on the duel worker.
++		// Replay catch-up already owns the GUI mutex; use the existing conditional locking convention.
++		auto lock = LockIf();
+ 		std::wstring text = epro::format(L"{}({})", gDataManager->GetDesc(select_hint ? select_hint : 560, mainGame->dInfo.compat_mode), mainGame->dField.select_sumval);
+ 		select_hint = 0;
+ 		mainGame->wCardSelect->setText(text.data());
+@@ -3944,6 +3948,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
  		mainGame->wANCard->setText(gDataManager->GetDesc(select_hint ? select_hint : 564, mainGame->dInfo.compat_mode).data());
  		if(mainGame->dField.UpdateDeclarableList() == 0) {
  			DuelClient::SetResponseI(0);
