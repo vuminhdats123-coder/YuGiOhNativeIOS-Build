@@ -39,9 +39,9 @@ jobs:
       - name: Download verified game payload from the release asset
         env:
           GH_TOKEN: ${{ github.token }}
-          PAYLOAD_TAG: ${{ inputs.payload_release_tag }}
-          PAYLOAD_ASSET: ${{ inputs.payload_asset_name }}
-          DEPS_ASSET: ${{ inputs.dependencies_asset_name }}
+          PAYLOAD_TAG: ${{ inputs.payload_release_tag || 'ios-test-v12' }}
+          PAYLOAD_ASSET: ${{ inputs.payload_asset_name || 'edopro-game-v12.tar.zst' }}
+          DEPS_ASSET: ${{ inputs.dependencies_asset_name || 'vcpkg-20260914.tar.zst' }}
         run: |
           mkdir -p "$RUNNER_TEMP/payload"
           gh release download "$PAYLOAD_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$PAYLOAD_ASSET" --dir "$RUNNER_TEMP"
