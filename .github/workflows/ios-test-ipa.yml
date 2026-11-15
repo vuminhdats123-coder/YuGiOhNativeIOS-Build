@@ -106,7 +106,8 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
-          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/ipa/Payload" "$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa"
+          cd "$RUNNER_TEMP/ipa"
+          /usr/bin/zip -qry "$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa" Payload
 
       - name: Upload unsigned IPA and archive
         uses: actions/upload-artifact@v4
