@@ -70,6 +70,7 @@ jobs:
           echo "PAYLOAD_DIR=$PAYLOAD_DIR" >> "$GITHUB_ENV"
 
       - name: Generate Xcode project
+        working-directory: NativeClient/edopro
         env:
           VCPKG_ROOT: ${{ runner.temp }}/vcpkg/vcpkg-20260914
         run: |
