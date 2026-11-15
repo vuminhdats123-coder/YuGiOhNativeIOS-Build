@@ -94,7 +94,7 @@ public struct ContentView: View {
             .navigationTitle("Card Catalog")
             .searchable(text: $store.query, prompt: "Search cards")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { NavigationLink(destination: DeckListView()) { Label("Decks", systemImage: "rectangle.stack") } }
+                ToolbarItemGroup(placement: .topBarLeading) { NavigationLink(destination: DeckListView()) { Label("Decks", systemImage: "rectangle.stack") }; NavigationLink(destination: OfflineDuelView()) { Label("Duel", systemImage: "bolt.shield") } }
                 ToolbarItem(placement: .topBarTrailing) {
                     Picker("Type", selection: $store.selectedType) {
                         ForEach(types, id: \.self) { Text($0).tag($0) }
