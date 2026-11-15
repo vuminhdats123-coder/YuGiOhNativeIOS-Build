@@ -42,7 +42,6 @@ public struct CardCatalog {
     }
 }
 
-'
 private enum CardImageStore {
     static func image(named name: String) -> UIImage? {
         let path = Bundle.main.path(forResource: name.replacingOccurrences(of: ".jpg", with: ""), ofType: "jpg", inDirectory: "CardImages")
@@ -50,7 +49,7 @@ private enum CardImageStore {
     }
 }
 
-'public struct ContentView: View {
+public struct ContentView: View {
     @StateObject private var store = CardStore()
     private let types = ["All", "Effect Monster", "Normal Monster"]
 
@@ -95,6 +94,7 @@ private enum CardImageStore {
         }
     }
 }
+
 
 
 
