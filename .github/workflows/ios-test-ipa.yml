@@ -1,6 +1,8 @@
 name: Native EDOPro unsigned test IPA
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       payload_release_tag:
@@ -106,9 +108,8 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
-          export PATH="$(brew --prefix python)/bin:$PATH"
-          python3 --version
-          python3 -c 'from pathlib import Path; import os,zipfile; root=Path(os.environ["RUNNER_TEMP"])/"ipa"; out=Path(os.environ["RUNNER_TEMP"])/"YuGiOhNativeIOS-unsigned.ipa"; files=[p for p in (root/"Payload").rglob("*") if p.is_file()]; z=zipfile.ZipFile(out,"w",compression=zipfile.ZIP_STORED,allowZip64=True); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close(); print(f"Packaged {len(files)} files to {out} ({out.stat().st_size} bytes)",flush=True)'
+          /usr/bin/python3 --version
+          /usr/bin/python3 -c 'from pathlib import Path; import os,zipfile; root=Path(os.environ["RUNNER_TEMP"])/"ipa"; out=Path(os.environ["RUNNER_TEMP"])/"YuGiOhNativeIOS-unsigned.ipa"; files=[p for p in (root/"Payload").rglob("*") if p.is_file()]; z=zipfile.ZipFile(out,"w",compression=zipfile.ZIP_STORED,allowZip64=True); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close(); print(f"Packaged {len(files)} files to {out} ({out.stat().st_size} bytes)",flush=True)'
 
       - name: Upload unsigned IPA and archive
         uses: actions/upload-artifact@v4
@@ -118,3 +119,4 @@ jobs:
             ${{ runner.temp }}/YuGiOhNativeIOS-unsigned.ipa
             ${{ runner.temp }}/YuGiOhNativeIOS.xcarchive
           if-no-files-found: error
+
