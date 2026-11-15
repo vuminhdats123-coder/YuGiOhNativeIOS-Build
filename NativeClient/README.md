@@ -59,6 +59,12 @@ Mã iOS đã có bố cục ba vùng, LP/chân dung phải, grid chọn 5×3 và
 100 NPC được nối với 200 deck theo bảng APK; các deck khác dùng avatar trung tính.
 Chưa kiểm chứng font, hình ảnh hoặc tọa độ chạm trên iPhone.
 
+Đã sửa đường xử lý chạm/cuộn khi tooltip che lá bài và khi bảng chọn đang đổi
+kích thước trong animation. Kết quả bàn phím/hộp chọn UIKit được gắn với đúng
+widget đã mở, huỷ callback cũ khi đóng phiên, và kiểm tra lại nội dung trước khi
+áp dụng. Khi quay lại từ nền, đồng hồ animation offline được đặt lại; đồng hồ
+trận qua mạng vẫn giữ cách tính hiện có. Các sửa này mới được kiểm tra nguồn.
+
 Ảnh OBB là artwork hình vuông, không phải mặt lá bài đầy đủ. Compositor iOS mới
 dùng CoreGraphics/CoreText để vẽ khung, tên, thuộc tính, Level/Rank, type, mô tả,
 ATK/DEF, scale Pendulum và mũi tên Link. Ảnh thiếu được thay bằng ô thông báo và
@@ -97,6 +103,11 @@ hay phản hồi bị từ chối. Kiểm tra khởi tạo riêng đã chạy đ
 xạ và nạp 6.872 script runtime, không thiếu script bắt buộc. Đây là kiểm tra engine,
 script và logic quyết định dùng chung; chưa chạy client/JavaScriptCore trên iOS.
 Chi tiết và lệnh tái chạy ở [HOST_VALIDATION.md](HOST_VALIDATION.md).
+
+Sáu kịch bản bổ sung đã đưa tám nhóm prompt còn thiếu qua engine thật: 54 phản
+hồi được chấp nhận, không retry/lỗi Lua. Kết hợp với 36 ván trước, đã quan sát đủ
+21 nhóm prompt AI hỗ trợ. Đây là kiểm tra chấp nhận phản hồi, chưa bao phủ mọi
+biến thể/hiệu ứng; xem [HOST_PROMPT_VALIDATION.md](HOST_PROMPT_VALIDATION.md).
 
 Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
 Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.

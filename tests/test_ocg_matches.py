@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('ocg_matches',ROOT/'tools/run_ocg_matches.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
@@ -46,5 +47,38 @@ class MatchHarnessTests(unittest.TestCase):
     def test_python_pin_matches_known_release(self):
         self.assertEqual(m.PYTHON_SHA256,'084b9eb24cb848605c895d05b738fbc2572efc8b4c18c415a824065864a2b853')
         self.assertTrue(m.PYTHON_URL.startswith('https://www.python.org/ftp/python/3.12.10/'))
+    def test_scenario_marker_requires_exact_native_hint_and_owner(self):
+        payload=m.struct.pack('<BBQ',2,1,9000001)
+        self.assertTrue(m.scenario_completed(2,payload,1,9000001))
+        for message,data,player,marker in ((5,payload,1,9000001),(2,payload,0,9000001),
+                                         (2,payload,1,9000002),(2,payload[:-1],1,9000001),
+                                         (2,m.struct.pack('<BBQ',1,1,9000001),1,9000001)):
+            with self.subTest(message=message,data=data,player=player,marker=marker):
+                self.assertFalse(m.scenario_completed(message,data,player,marker))
+    def test_invalid_scenario_rejected_before_native_engine_access(self):
+        engine=m.Engine.__new__(m.Engine)
+        for kind,player in (('invalid',0),('choices',2),('choices',-1)):
+            with self.subTest(kind=kind,player=player),self.assertRaises(ValueError): engine.prompt_scenario(kind,player,1)
+    def test_answer_passes_only_declarable_codes_and_selecting_player(self):
+        engine=m.Engine.__new__(m.Engine);engine.cards={100:self.card(),101:self.card(alias=100)}
+        engine.positions=Mock(return_value={'0':1});node=Mock()
+        node.call.return_value={'handled':True,'response':[100,0,0,0]}
+        payload=b'\1\2'+m.struct.pack('<QQ',100,0x40000100<<32)
+        self.assertEqual(engine.answer(node,'duel',142,payload),b'd\0\0\0')
+        self.assertEqual(node.call.call_args.kwargs['declarable'],[100])
+        self.assertEqual(node.call.call_args.kwargs['botID'],1)
+        engine.positions.assert_called_once_with('duel',1)
+    def test_answer_rejects_invalid_player_and_truncated_announcement(self):
+        engine=m.Engine.__new__(m.Engine);node=Mock()
+        for message,payload in ((13,b''),(13,b'\2'),(142,b'\0'),(142,b'\0\1')):
+            with self.subTest(message=message,payload=payload),self.assertRaises(ValueError): engine.answer(node,None,message,payload)
+        node.call.assert_not_called()
+    def test_answer_requires_handled_nonempty_bounded_response(self):
+        engine=m.Engine.__new__(m.Engine);engine.positions=Mock(return_value={});node=Mock()
+        for result in ({'handled':False,'response':[1]}, {'handled':True,'response':[]},
+                       {'handled':True,'response':[0]*65537}):
+            node.call.return_value=result
+            with self.subTest(handled=result['handled'],length=len(result['response'])),self.assertRaises(ValueError):
+                engine.answer(node,None,13,b'\0')
 
 if __name__=='__main__':unittest.main()

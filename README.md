@@ -47,6 +47,9 @@ Mặt thẻ được ghép bằng CoreGraphics/CoreText từ tranh OBB và thôn
 có phương án hiển thị khi thiếu tranh. Kiểm tra bằng engine Windows đã hoàn tất
 36 ván và khởi tạo đủ 7.486 mã thẻ được ánh xạ, không lỗi script hoặc phản hồi bị
 từ chối. Xem [bằng chứng và giới hạn kiểm thử](NativeClient/HOST_VALIDATION.md).
+Sáu [kịch bản prompt bổ sung](NativeClient/HOST_PROMPT_VALIDATION.md) đã được
+engine thật chấp nhận cả 54 phản hồi; kết hợp với các ván trước, đã quan sát đủ
+21 nhóm prompt AI hỗ trợ. Chưa bao phủ mọi biến thể prompt hoặc hiệu ứng.
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong

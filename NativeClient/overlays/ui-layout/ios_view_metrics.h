@@ -10,5 +10,7 @@ struct IosViewMetrics {
 };
 // UIKit publishes this snapshot on its main queue; game/render threads only read the copy.
 IosViewMetrics getViewMetrics();
+// Call on the GUI/render thread before its elements are destroyed or rebuilt.
+void cancelNativeInput();
 }
 #endif

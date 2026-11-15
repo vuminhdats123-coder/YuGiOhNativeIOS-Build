@@ -7,7 +7,7 @@
   "fullGameReady": false,
   "remaining": [
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
-    "Run authored native layout/projection/grid/HUD and response/restart tests",
+    "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
     "Expand effect-interaction runtime coverage beyond the existing 36-match regression suite"
   ],
@@ -24,7 +24,11 @@
     "rightLifePointPortraitHUD": true,
     "cardSelectionGrid15": true,
     "uiSafeAreaSnapshots": true,
-    "duelControlPopover": true
+    "duelControlPopover": true,
+    "cardGridResizeAndPointerFixes": true,
+    "originBoundUIKitInput": true,
+    "nativeInputTeardownCancellation": true,
+    "localResumeAnimationClockReset": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -35,8 +39,8 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 72,
-    "pythonTestsPassed": 71,
+    "pythonTestsRun": 77,
+    "pythonTestsPassed": 76,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
@@ -48,7 +52,12 @@
     "cardGridNativeTestsExecuted": false,
     "hudNativeTestsExecuted": false,
     "portraitNPCsVerified": 100,
-    "portraitDeckMappingsVerified": 200
+    "portraitDeckMappingsVerified": 200,
+    "corePromptFamiliesRuntimeVerified": 21,
+    "windowsCorePromptScenarios": 6,
+    "windowsCoreScenarioResponses": 54,
+    "nativeInputGateTestsExecuted": false,
+    "nativeLifecycleTestsExecuted": false
   },
   "limitations": [
     "Generic bounded AI, not a competitive deck-specific bot",

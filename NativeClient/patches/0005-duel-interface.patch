@@ -1,5 +1,5 @@
 diff --git a/gframe/client_field.cpp b/gframe/client_field.cpp
-index 03648fb..d875aa2 100644
+index 03648fb..bc9e629 100644
 --- a/gframe/client_field.cpp
 +++ b/gframe/client_field.cpp
 @@ -84,6 +84,14 @@ void ClientField::Clear() {
@@ -17,7 +17,7 @@ index 03648fb..d875aa2 100644
  	summonable_cards.clear();
  	spsummonable_cards.clear();
  	msetable_cards.clear();
-@@ -359,222 +367,223 @@ void ClientField::ClearChainSelect() {
+@@ -359,222 +367,234 @@ void ClientField::ClearChainSelect() {
  	pzone_act[0] = pzone_act[1] = false;
  	conti_act = false;
  }
@@ -60,9 +60,16 @@ index 03648fb..d875aa2 100644
 +	mainGame->wCardSelect->setRelativePosition(panelRect);
 +	mainGame->wCardDisplay->setRelativePosition(panelRect);
 +	// An in-flight show/hide must finish at the resized rectangle without losing its response signal.
-+	for(auto& fade : mainGame->fadingList)
-+		if(fade.guiFading == mainGame->wCardSelect || fade.guiFading == mainGame->wCardDisplay)
-+			fade.fadingSize = panelRect;
++	for(auto& fade : mainGame->fadingList) {
++		if(fade.guiFading != mainGame->wCardSelect && fade.guiFading != mainGame->wCardDisplay) continue;
++		fade.fadingSize = panelRect;
++		fade.fadingUL = panelRect.UpperLeftCorner;
++		fade.fadingLR = panelRect.LowerRightCorner;
++		fade.fadingDest = {0, 0};
++		// Finish on the next draw tick, which restores images and delivers a pending hide response.
++		// Setting the frame directly to zero would skip that completion path.
++		if(fade.fadingFrame > 0.0f) fade.fadingFrame = std::min(fade.fadingFrame, 1.0f);
++	}
 +	mainGame->wCardSelect->setDraggable(false);
 +	mainGame->wCardDisplay->setDraggable(false);
 +	// Hidden panels may retain references from an old prompt; only repaint live visible lists.
@@ -164,6 +171,10 @@ index 03648fb..d875aa2 100644
 +#endif
 +}
 +void ClientField::RefreshCardList(bool display) {
++#if EDOPRO_IOS
++	// Slots are reused after scrolling, selection and resize; their previous card hint is no longer valid.
++	mainGame->stCardListTip->setVisible(false);
++#endif
 +	const auto& cards = display ? display_cards : selectable_cards;
 +	auto* window = display ? mainGame->wCardDisplay : mainGame->wCardSelect;
 +	auto* scroll = display ? mainGame->scrDisplayList : mainGame->scrCardList;

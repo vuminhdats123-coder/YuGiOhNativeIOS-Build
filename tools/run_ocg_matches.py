@@ -17,6 +17,12 @@ SCRIPT_ARCHIVE = ROOT / 'outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd
 AI_DIR = ROOT / 'NativeClient/overlays/offline-ai'
 PROMPTS = {10,11,12,13,14,15,16,18,19,20,21,22,23,24,25,26,132,140,141,142,143}
 MR5 = 0x800 | 0x2000 | 0x4000 | 0x8000 | 0x20000
+SCENARIO_SOURCE = ROOT / 'tests/fixtures/ocg_prompt_scenarios.lua'
+SCENARIO_PROMPTS = {
+    'choices': {13,14,19,22,24,25,132,140,141,142,143},
+    'attack_cost_order': {21},
+    'forced_chain': {16},
+}
 
 def sha(data): return hashlib.sha256(data).hexdigest()
 def packets(data):
@@ -27,6 +33,10 @@ def packets(data):
         if n < 1 or at + n > len(data): raise ValueError('Invalid core frame length')
         yield data[at], data[at+1:at+n]
         at += n
+
+def scenario_completed(message, payload, player, marker):
+    # HINT_MESSAGE = 2. The marker comes from resumed Lua, never from a fabricated packet.
+    return message == 2 and len(payload) == 10 and struct.unpack('<BBQ', payload) == (2, player, marker)
 
 def parse_deck(path):
     zones = {'main':[], 'extra':[], 'side':[]}; zone = 'main'
@@ -201,6 +211,19 @@ class Engine:
                 if flag==2: result[str(seq)]=struct.unpack_from('<I',b,at+4)[0]
                 at+=size
         return result
+    def answer(self,node,duel,message,payload):
+        if not payload or payload[0] not in (0,1): raise ValueError('Invalid selecting player')
+        codes=[]
+        if message==142:
+            if len(payload)<2 or len(payload)!=2+payload[1]*8: raise ValueError('Malformed announce-card request')
+            ops=struct.unpack_from('<'+'Q'*payload[1],payload,2)
+            codes=[code for code,c in sorted(self.cards.items()) if declarable(c,ops)]
+        result=node.call(op='decide',botID=payload[0],message=message,bytes=list(payload),
+                         declarable=codes,ownPositions=self.positions(duel,payload[0]))
+        if result.get('handled') is not True: raise ValueError('AI did not handle its prompt')
+        response=bytes(result['response'])
+        if not response or len(response)>65536: raise ValueError('Invalid AI response length')
+        return response
     def match(self,paths,seed,max_turns=120,max_steps=100000):
         self.errors=[];self.loaded=set();self.read_codes=set();self.missing=set()
         report={'decks':[p.name for p in paths],'deckHashes':[sha(p.read_bytes()) for p in paths],'seed':seed,'status':'running','turns':0,'winner':None,'winReason':None,'messages':{},'promptCounts':{},'responses':0,'retryCount':0}
@@ -233,13 +256,7 @@ class Engine:
                         report['winner'],report['winReason']=payload;report['status']='completed';break
                     if message in PROMPTS:
                         player=payload[0];prompts[message]+=1
-                        codes=[]
-                        if message==142:
-                            if len(payload)<2 or len(payload)!=2+payload[1]*8: raise ValueError('Malformed announce-card request')
-                            ops=struct.unpack_from('<'+'Q'*payload[1],payload,2)
-                            codes=[code for code,c in sorted(self.cards.items()) if declarable(c,ops)]
-                        result=node.call(op='decide',botID=player,message=message,bytes=list(payload),declarable=codes,ownPositions=self.positions(duel,player))
-                        response=bytes(result['response'])
+                        response=self.answer(node,duel,message,payload)
                         trace.append({'message':message,'player':player,'payload':list(payload),'response':list(response)})
                         if len(trace)>30: trace.pop(0)
                         self.dll.OCG_DuelSetResponse(duel,response,len(response));report['responses']+=1;responded=True
@@ -253,6 +270,55 @@ class Engine:
             if duel: self.dll.OCG_DestroyDuel(duel)
             if node: node.close()
         report.update(messages=dict(sorted(counts.items())),promptCounts=dict(sorted(prompts.items())),scriptsLoaded=sorted(self.loaded),missingScriptRequests=sorted(self.missing),cardsRead=len(self.read_codes),scriptErrors=self.errors,durationSeconds=round(time.monotonic()-started,3))
+        return report
+
+    def prompt_scenario(self,kind,player,seed):
+        if kind not in SCENARIO_PROMPTS or player not in (0,1): raise ValueError('Unknown prompt scenario')
+        self.errors=[];self.loaded=set();self.read_codes=set();self.missing=set()
+        report={'scenario':kind,'player':player,'seed':seed,'status':'running','retryCount':0,
+                'expectedPrompts':sorted(SCENARIO_PROMPTS[kind]),'responses':[], 'forcedChains':0}
+        duel=C.c_void_p();node=None;counts=collections.Counter();marker=9000000+seed
+        source=SCENARIO_SOURCE.read_bytes();entry=f'HostPromptScenario({player},"{kind}",{marker})'.encode()
+        report.update(testLuaSHA256=sha(source),entryScript=entry.decode(),completionMarker=marker)
+        started=time.monotonic()
+        try:
+            node=Node(self.metadata)
+            opts=Options((C.c_uint64*4)(seed,2,3,4),MR5,Player(8000,0,0),Player(8000,0,0),
+                         self.callbacks[0],None,self.callbacks[1],None,self.callbacks[2],None,self.callbacks[3],None,0)
+            if self.dll.OCG_CreateDuel(C.byref(duel),C.byref(opts)) or not duel: raise ValueError('Scenario duel creation failed')
+            for name in (b'constant.lua',b'utility.lua'):
+                if not self.read_script(None,duel,name): raise ValueError('Scenario base Lua failed')
+            for data,name in ((source,b'host-prompt-scenarios'),(entry,b'host-prompt-entry')):
+                if not self.dll.OCG_LoadScript(duel,data,len(data),name): raise ValueError('Scenario Lua load failed')
+            self.dll.OCG_StartDuel(duel)
+            for step in range(500):
+                status=self.dll.OCG_DuelProcess(duel);responded=False
+                for message,payload in self.messages(duel):
+                    counts[message]+=1
+                    if message==1: report['retryCount']+=1;raise ValueError('Core rejected scenario response')
+                    node.call(op='observe',message=message,bytes=list(payload))
+                    if scenario_completed(message,payload,player,marker):
+                        report['status']='accepted_completion_marker';break
+                    if message==5: raise ValueError('Duel ended before scenario completion; not counting it as a match')
+                    if message in PROMPTS:
+                        response=self.answer(node,duel,message,payload)
+                        report['responses'].append({'message':message,'player':payload[0],'payload':list(payload),'response':list(response)})
+                        if message==16 and len(payload)>2 and payload[2]: report['forcedChains']+=1
+                        self.dll.OCG_DuelSetResponse(duel,response,len(response));responded=True
+                if self.errors: raise ValueError('Scenario callback/script errors')
+                if report['status']=='accepted_completion_marker': break
+                if status==0: raise ValueError('Core ended without scenario marker')
+                if status==1 and not responded: raise ValueError('Core awaiting without a supported prompt')
+            else: raise ValueError('Scenario step limit reached')
+            missing=SCENARIO_PROMPTS[kind]-set(counts)
+            if missing: raise ValueError('Scenario did not issue expected prompts: '+str(sorted(missing)))
+            if kind=='forced_chain' and not report['forcedChains']: raise ValueError('No forced chain was exercised')
+        except Exception as error: report['status']='failed';report['error']=str(error)
+        finally:
+            if duel: self.dll.OCG_DestroyDuel(duel)
+            if node: node.close()
+        report.update(messages=dict(sorted(counts.items())),scriptErrors=self.errors,canonicalScriptsLoaded=sorted(self.loaded),
+                      durationSeconds=round(time.monotonic()-started,3),fullMatch=False)
         return report
 
     def initialize_pool(self):
@@ -284,8 +350,11 @@ class Engine:
         return {'status':'passed' if not self.errors and not required else 'failed','mappedUniqueCodes':len(codes),'batches':(len(codes)+31)//32,'cardsReadIncludingDependencies':len(self.read_codes),'canonicalRuntimeScriptsLoaded':len(self.loaded),'missingRequiredScripts':required,'missingNormalCardScripts':len(normal),'errors':batches,'auditSHA256':sha(audit_path.read_bytes()),'scope':'Card creation and initial_effect/base dependency execution only; does not exercise every effect activation.'}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v6');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--report',type=Path,default=ROOT/'NativeClient/host-validation.json');args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v6');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--report',type=Path);args=p.parse_args()
     if not 1<=args.matches<=100: p.error('--matches must be 1..100')
+    if args.prompt_scenarios and (args.suite or args.sample_decks or args.pool_check or args.deck_a or args.deck_b or args.matches!=1): p.error('--prompt-scenarios cannot be combined with match or pool options')
+    if args.seed<1: p.error('--seed must be positive')
+    if args.report is None: args.report=ROOT/'NativeClient'/('host-prompt-validation.json' if args.prompt_scenarios else 'host-validation.json')
     if not args.worker:
         exe=prepare_python(args.download_python)
         cmd=[str(exe),str(Path(__file__).resolve()),'--worker',*sys.argv[1:]]
@@ -294,7 +363,28 @@ def main():
         if result.returncode: raise SystemExit(result.returncode)
         return
     equivalence=source_equivalence();ai_hash=sha((AI_DIR/'offline_ai.js').read_bytes());host_hash=sha((AI_DIR/'offline_ai_host.js').read_bytes())
-    engine=Engine(args.runtime.resolve());files=sorted((args.runtime/'deck').glob('*.ydk'));paths=[Path(args.deck_a) if args.deck_a else files[0],Path(args.deck_b) if args.deck_b else files[1]]
+    engine=Engine(args.runtime.resolve())
+    if args.prompt_scenarios:
+        fixture_hash=sha(SCENARIO_SOURCE.read_bytes());scenarios=[]
+        for kind in SCENARIO_PROMPTS:
+            for player in (0,1):
+                result=engine.prompt_scenario(kind,player,args.seed+len(scenarios));scenarios.append(result)
+                print(json.dumps({k:result[k] for k in ('scenario','player','status','retryCount','forcedChains','durationSeconds')}),flush=True)
+        if fixture_hash!=sha(SCENARIO_SOURCE.read_bytes()) or ai_hash!=sha((AI_DIR/'offline_ai.js').read_bytes()) or host_hash!=sha((AI_DIR/'offline_ai_host.js').read_bytes()): raise ValueError('Scenario or AI changed during validation')
+        counts=collections.Counter(r['message'] for s in scenarios for r in s['responses'])
+        missing={21,22,24,25,132,140,141,142}-set(counts)
+        report={'schemaVersion':1,'scope':'Real OCG-generated prompts answered by production JavaScript; completion markers prove resumed Lua operations, not complete matches or iOS UI execution.',
+                'platform':'Windows x86 portable Python 3.12.10','pythonURL':PYTHON_URL,'pythonSHA256':PYTHON_SHA256,'pythonHashSource':PYTHON_SOURCE,
+                'coreBinary':engine.binary,'binarySourceRevision':SOURCE_REVISION,'iosCoreRevision':IOS_CORE_REVISION,'exactIOSRevisionBinary':False,
+                'coreSourceEquivalent':equivalence,'sourceEquivalenceNote':'Only 7 build/deploy files differ; C++/headers and Lua gitlink identical. Official binary provenance is not reproducible-build proof.',
+                'nativeAPIVersion':engine.version,'aiSHA256':ai_hash,'hostAdapterSHA256':host_hash,'testLuaSHA256':fixture_hash,
+                'scenariosAccepted':sum(s['status']=='accepted_completion_marker' for s in scenarios),'scenarios':scenarios,
+                'promptResponseCounts':dict(sorted(counts.items())),'previouslyUncoveredPromptIDs':[21,22,24,25,132,140,141,142],'missingTargetPrompts':sorted(missing),
+                'fullMatchesExecutedThisRun':0,'buildTriggered':False,'iosRuntimeVerified':False,'invocation':sys.argv[1:]}
+        args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+        if missing or any(s['status']!='accepted_completion_marker' for s in scenarios): raise SystemExit(1)
+        return
+    files=sorted((args.runtime/'deck').glob('*.ydk'));paths=[Path(args.deck_a) if args.deck_a else files[0],Path(args.deck_b) if args.deck_b else files[1]]
     cases=[]
     def sampled(count,seed):
         return [([files[i*len(files)//count],files[(i*len(files)//count+1)%len(files)]],seed+i) for i in range(count)]

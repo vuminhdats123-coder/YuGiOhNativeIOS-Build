@@ -1,8 +1,8 @@
 {
-  "scope": "Real Windows OCG matches/card initialization plus source/configuration, JS and resource-copy evidence; no iOS executable",
+  "scope": "Real Windows OCG matches/card initialization/prompt scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
   "python": {
-    "run": 72,
-    "passed": 71,
+    "run": 77,
+    "passed": 76,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
@@ -70,7 +70,7 @@
       "lua.xcodeproj": "7d627a301f8487a02d2325b4d114c2c6037d4effd378764d3df6bf3105ba3004",
       "ocgcore.xcodeproj": "1a0241720145bcca6c331324498b71a391dac38f1b2ab1285b1941866ff1383c",
       "ocgcoreshared.xcodeproj": "846c3028b35a329f9126d731357edc77d02fa3fa055190be40133dd4a5d103ad",
-      "ygopro.xcodeproj": "1195eac9ec242b35d418bb2f9f1c1599d668ffc377ad288af0f075e0d6be6d40"
+      "ygopro.xcodeproj": "c0c351e65b15618909320d6bb46ced08b7762c88762053512456e09520d0f95e"
     }
   },
   "dependencies": {
@@ -149,6 +149,36 @@
     "nativeGeometryTestsExecuted": false,
     "nativeTouchTestExecuted": false,
     "nativeScreenshotCaptured": false,
-    "nativeCompilerExecuted": false
+    "nativeCompilerExecuted": false,
+    "gridResizeAndPointerFixesSourceReviewed": true,
+    "originBoundUIKitInputSourceReviewed": true,
+    "nativeInputGateTestsExecuted": false,
+    "nativeLifecycleTestsExecuted": false,
+    "localResumeClockResetSourceReviewed": true
+  },
+  "windowsPromptScenarios": {
+    "report": "host-prompt-validation.json",
+    "reportSHA256": "1f8dcedb3f078d8ca075a6f5784f1fdbd48a7c4d196062aab3d76c974c8e288b",
+    "accepted": 6,
+    "responses": 54,
+    "retries": 0,
+    "scriptErrors": 0,
+    "forcedChainChoices": 4,
+    "additionalPromptIDs": [
+      21,
+      22,
+      24,
+      25,
+      132,
+      140,
+      141,
+      142
+    ],
+    "combinedObservedPromptFamilies": 21,
+    "fullMatchesClaimed": 0,
+    "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b",
+    "testLuaSHA256": "5569b3987af6bc65bea7620f4c7aa51e73ebe46954f8c7b8cd27a0544754176c",
+    "nativeIOSExecuted": false,
+    "limit": "Acceptance of covered operations only; not every prompt variant, ordering strategy or effect interaction"
   }
 }

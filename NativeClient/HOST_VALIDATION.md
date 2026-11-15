@@ -15,10 +15,12 @@ belong to cards without scripted effects; `c0.lua` is the engine's empty-card
 lookup. Initialization does not exercise every effect's activation/resolution.
 
 The actual matches exercised prompt IDs 10, 11, 12, 13, 14, 15, 16, 18, 19, 20,
-23, 26 and 143. The other implemented prompt families retain fixture/property
-coverage but were not observed in these games. The host announce-card filter is
-a translation of the pinned client's `DataManager::IsCardDeclarable`; it is
-covered by Python tests, not by an observed announce-card prompt in this sample.
+23, 26 and 143. The other eight implemented prompt families were not observed
+in these games. A later [prompt-scenario report](HOST_PROMPT_VALIDATION.md)
+exercises those eight, including announce-card, through the real core; together
+the reports cover all 21 handled families, not all prompt variants or effects.
+The host announce-card filter translates the pinned client's
+`DataManager::IsCardDeclarable` and also has Python checks.
 
 ## Exact inputs and provenance
 
@@ -90,8 +92,9 @@ runtime package's JS copy. That package copy has separately been refreshed to
 the same final `e05fd0ac…118d57b` version; this distinction matters when
 reproducing a run after editing the source.
 
-The seven Python harness tests cover packet framing/rejection, YDK sections and
-malformed decks, announce-card constraints, and the pinned Python release.
+The twelve Python harness tests cover packet framing/rejection, YDK sections and
+malformed decks, announce-card constraints, the pinned Python release, exact
+scenario completion markers, and response validation.
 
 ## Evidence boundary
 

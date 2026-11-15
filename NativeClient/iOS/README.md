@@ -14,10 +14,16 @@ C++ exceptions for the core's stack-unwinding contract.
 static core linkage and disabled code signing. CoreGraphics, CoreText, ImageIO
 and JavaScriptCore are linked alongside UIKit, Foundation and OpenGLES.
 All Objective-C sources keep manual reference counting, with balanced ownership
-for the modern text/picker handlers in `porting_ios.mm`. Engine changes still go through
-the existing queued callback mechanism. Irrlicht's own UIApplicationDelegate
-already forwards pause/resume to the client's Suspend/Resume; there is no new
-scene manifest that could bypass that startup path.
+for the modern text/picker handlers in `porting_ios.mm`. Each native dialog keeps
+one generation token and its originating widget; queued results are applied
+only while that widget is live, focused and unchanged. Cancel and Game teardown
+invalidate pending results and release the retained widget before its environment.
+At the pinned Irrlicht revision, `runIrrlicht` enters `irrlicht_main` on the UIKit
+main thread and the device loop pumps CFRunLoop; GUI/render callbacks share that
+thread, while duel/asset workers remain separate. Irrlicht's UIApplicationDelegate
+forwards pause/resume to the client's Suspend/Resume. The first resumed frame
+resets local animation elapsed time, except during a live network duel so its
+countdown retains the existing behavior. No scene manifest replaces this path.
 
 The Info.plist uses Xcode product/version substitutions and iOS's `UILaunchScreen`
 dictionary. It does not reference the upstream missing LaunchScreen storyboard,
@@ -96,5 +102,8 @@ The new duel layout reads UIKit safe-area/point dimensions on the main queue and
 publishes normalized snapshots to the render loop. Board projection, hit-testing,
 right-side HUD, card-info panel and the 5-by-3 selection grid use shared geometry.
 Native assertions in `overlays/ui-layout/tests` are authored but unexecuted.
+This includes `ios_input_gate_checks.cpp`; grid pointer/resize scenarios are in
+`card_selection_interaction_checks.md` and also remain unexecuted. Static review
+cannot prove UIKit presentation, background/resume or teardown behavior on-device.
 The resource phase can replace an older managed build-product package whose
 baseline manifest is valid; this does not enable migration of user Documents data.
