@@ -8,9 +8,15 @@ public struct Card: Identifiable, Hashable {
     public let attribute: String
     public let description: String
     public let imageName: String?
+    public let intID: Int?
+    public let prop: UInt32?
+    public let genre: UInt32?
+    public let pack: Int?
+    public let pass: UInt32?
+    public let link: UInt32?
 
-    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil) {
-        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName
+    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, prop: UInt32? = nil, genre: UInt32? = nil, pack: Int? = nil, pass: UInt32? = nil, link: UInt32? = nil) {
+        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.prop = prop; self.genre = genre; self.pack = pack; self.pass = pass; self.link = link
     }
 }
 
@@ -24,9 +30,12 @@ public struct CardCatalog {
         guard let url = Bundle.main.url(forResource: "cards_en", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let rows = try? JSONDecoder().decode([Row].self, from: data) else { return sample }
-        return rows.map { Card(id: $0.id, name: $0.name, type: "Card", attribute: "", description: $0.description, imageName: String(format: "%04d.jpg", $0.id)) }
+        let index = loadIndex()
+        return rows.map { row in let meta=index[row.sourceIndex]; return Card(id: row.id, name: row.name, type: "Card", attribute: "", description: row.description, imageName: String(format: "%04d.jpg", row.id), intID: meta?.intID, prop: meta?.prop, genre: meta?.genre, pack: meta?.pack, pass: meta?.pass, link: meta?.link) }
     }
-    private struct Row: Decodable { let id: Int; let name: String; let description: String }
+    private struct Row: Decodable { let sourceIndex: Int; let name: String; let description: String; var id: Int { sourceIndex + 1 } }
+    private struct IndexRow: Decodable { let sourceIndex: Int; let intID: Int?; let prop: UInt32?; let genre: UInt32?; let pack: Int?; let pass: UInt32?; let link: UInt32? }
+    private static func loadIndex() -> [Int: IndexRow] { guard let url=Bundle.main.url(forResource: "card-index", withExtension: "json"), let data=try? Data(contentsOf:url), let rows=try? JSONDecoder().decode([IndexRow].self,from:data) else { return [:] }; return Dictionary(uniqueKeysWithValues: rows.map { ($0.sourceIndex,$0) }) }
 }
 
 @MainActor public final class CardStore: ObservableObject {
@@ -88,6 +97,7 @@ public struct ContentView: View {
                         Label(card.type, systemImage: "rectangle.stack")
                         Label(card.attribute, systemImage: "circle.lefthalf.filled")
                         Text(card.description).font(.body)
+                        if let intID = card.intID { Text("IntID: \(intID) · Prop: \(card.prop ?? 0) · Genre: \(card.genre ?? 0)").font(.caption).foregroundStyle(.secondary) }
                     }.padding()
                 }.navigationTitle("Card Detail")
             }
