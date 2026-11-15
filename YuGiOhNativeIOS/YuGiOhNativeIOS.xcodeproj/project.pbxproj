@@ -15,7 +15,7 @@
   BBBBBBBBBBBBBBBBBBBBBBBB = {isa = PBXFileReference; lastKnownFileType = text.json; path = cards_en.json; sourceTree = "<group>";};
   CCCCCCCCCCCCCCCCCCCCCCCC = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YuGiOhNativeIOS.app; sourceTree = BUILT_PRODUCTS_DIR;};
   DDDDDDDDDDDDDDDDDDDDDDDD = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (EEEEEEEEEEEEEEEEEEEEEEEE,FFFFFFFFFFFFFFFFFFFFFFFF); runOnlyForDeploymentPostprocessing = 0;};
-  121212121212121212121212 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (131313131313131313131313,CDCDCDCDCDCDCDCDCDCDCDCD,ACACACACACACACACACACACAC); runOnlyForDeploymentPostprocessing = 0;};
+  121212121212121212121212 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (131313131313131313131313,CECECECECECECECECECECECE,ACACACACACACACACACACACAC); runOnlyForDeploymentPostprocessing = 0;};
   EEEEEEEEEEEEEEEEEEEEEEEE = {isa = PBXBuildFile; fileRef = 999999999999999999999999;};
   FFFFFFFFFFFFFFFFFFFFFFFF = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA;};
   131313131313131313131313 = {isa = PBXBuildFile; fileRef = BBBBBBBBBBBBBBBBBBBBBBBB;};
@@ -31,6 +31,7 @@
  };
  rootObject = 111111111111111111111111;
 }
+
 
 
 
