@@ -32,7 +32,7 @@ jobs:
           submodules: recursive
 
       - name: Install build tools
-        run: brew install premake zstd
+        run: brew install premake zstd python
 
       - name: Download verified game payload from the release asset
         env:
@@ -106,27 +106,9 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/YuGiOhNativeIOS.app"
-          export IPA_ROOT="$RUNNER_TEMP/ipa" IPA_OUTPUT="$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa"
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          import stat
-          import traceback
-          import zipfile
-          try:
-              root = Path(os.environ["IPA_ROOT"])
-              output = Path(os.environ["IPA_OUTPUT"])
-              count = 0
-              with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
-                  for path in sorted((root / "Payload").rglob("*")):
-                      if path.is_file() and not stat.S_ISLNK(path.lstat().st_mode):
-                          archive.write(path, path.relative_to(root).as_posix())
-                          count += 1
-              print(f"Packaged {count} files to {output} ({output.stat().st_size} bytes)", flush=True)
-          except BaseException:
-              traceback.print_exc()
-              raise
-          PY
+          export PATH="$(brew --prefix python)/bin:$PATH"
+          python3 --version
+          python3 -c 'from pathlib import Path; import os,zipfile; root=Path(os.environ["RUNNER_TEMP"])/"ipa"; out=Path(os.environ["RUNNER_TEMP"])/"YuGiOhNativeIOS-unsigned.ipa"; files=[p for p in (root/"Payload").rglob("*") if p.is_file()]; z=zipfile.ZipFile(out,"w",compression=zipfile.ZIP_STORED,allowZip64=True); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close(); print(f"Packaged {len(files)} files to {out} ({out.stat().st_size} bytes)",flush=True)'
 
       - name: Upload unsigned IPA and archive
         uses: actions/upload-artifact@v4
