@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ja</key>
+	<dict>
+		<key>D1</key>
+<string>罠カードは、魔法カードと同じくさまざまな効果でプレイヤーのデュエルをサポートします。</string>
+		<key>D2</key>
+<string>しかし、魔法カードとの大きな違いは相手ターンに効果を発動できる点です。</string>
+		<key>D3</key>
+<string>相手の行動にあわせて発動することで、その行為を妨害したりする効果が多いのが特徴です。</string>
+		<key>D4</key>
+<string>使用する際には一度、魔法＆罠カードゾーンにセットする必要があり、魔法カードとは違い、自分のターンでも手札から発動することはできません。</string>
+		<key>D5</key>
+<string>また、セットしたそのターンでは効果の発動はできません。</string>
+	</dict>
+	<key>en</key>
+	<dict>
+		<key>D1</key>
+<string>Like Spell Cards, Trap Cards have a variety of effects that can be very useful during a Duel.</string>
+		<key>D2</key>
+<string>However, unlike Spell Cards, Trap Cards can be activated during your opponent's turn.</string>
+		<key>D3</key>
+<string>Many Trap Card effects can be activated to disrupt your opponent's actions.</string>
+		<key>D4</key>
+<string>To use a Trap Card's effect, the Trap Card must first be Set in the Spell &amp; Trap Card Zone.</string>
+		<key>D5</key>
+<string>Unlike Spell Cards, Trap Cards cannot be activated from your hand, even during your own turn.</string>
+		<key>D6</key>
+<string>In addition, a Trap Card's effect cannot be activated during the turn it is Set on the field.</string>
+	</dict>
+	<key>de</key>
+	<dict>
+		<key>D1</key>
+<string>Genau wie Zauberkarten haben Fallenkarten verschiedene Effekte, die während eines Duells sehr nützlich sein können.</string>
+		<key>D2</key>
+<string>Aber im Gegensatz zu Zauberkarten können Fallenkarten aktiviert werden, während dein Gegner gerade seinen Spielzug macht.</string>
+		<key>D3</key>
+<string>Viele Effekte von Fallenkarten können aktiviert werden, um die Handlungen deines Gegners zu unterbrechen.</string>
+		<key>D4</key>
+<string>Um den Effekt einer Fallenkarte nutzen zu können, muss die Fallenkarte erst in der Zauber- Fallenkartenzone platziert sein.</string>
+		<key>D5</key>
+<string>Aber im Gegensatz zu Zauberkarten können Fallenkarten nicht aus deiner Hand heraus aktiviert werden, selbst wenn es dein eigener Spielzug ist.</string>
+		<key>D6</key>
+<string>Auch die Effekte von Fallenkarten können nicht in dem Spielzug aktiviert werden, in dem sie gesetzt worden sind.</string>
+	</dict>
+	<key>fr</key>
+	<dict>
+		<key>D1</key>
+<string>même que les Cartes Magie, les Cartes Piège possèdent des effets qui peuvent être très utiles pendant un Duel.</string>
+		<key>D2</key>
+<string>Contrairement aux Cartes Magie, les Cartes Piège sont activées pendant le tour de l'adversaire.</string>
+		<key>D3</key>
+<string>Plusieurs Cartes Piège peuvent être activées pour contrer ou annuler les actions adverses.</string>
+		<key>D4</key>
+<string>Pour utiliser une Carte Piège, celle-ci doit être Posée sur la zone Carte Magie Piège.</string>
+		<key>D5</key>
+<string>Elle ne peut pas être activée depuis la main, même pendant votre propre tour.</string>
+		<key>D6</key>
+<string>En plus, une Carte Piège ne peut pas être activée le même tour où elle a été Posée sur le Terrain.</string>
+	</dict>
+	<key>es</key>
+	<dict>
+		<key>D1</key>
+<string>forma similar a una Carta Mágica, las Cartas de Trampa tienen diversos efectos que pueden ser muy útiles durante un duelo.</string>
+		<key>D2</key>
+<string>Pero a diferencia de las Cartas Mágicas, una Trampa de Carta puede activarse durante el turno de tu oponente.</string>
+		<key>D3</key>
+<string>Para interrumpir las acciones de tu oponente pueden activarse muchos efectos de Carta de Trampa.</string>
+		<key>D4</key>
+<string>Para usar un efecto de Carta de Trampa, la Carta de Trampa debe Colocarse primero en la Zona de Cartas Mágicas y de Trampa.</string>
+		<key>D5</key>
+<string>Pero a diferencia de las Cartas Mágicas, una Trampa de Carta no puede activarse desde tu mano, incluso durante el turno de tu oponente.</string>
+		<key>D6</key>
+<string>Además, no se puede activar el efecto de la Carta de Trampa durante el turno en que es Colocada en el campo.</string>
+	</dict>
+	<key>it</key>
+	<dict>
+		<key>D1</key>
+<string>Các Lá Bài Bẫy tương tự như Bài Ma Pháp và có nhiều loại hiệu ứng khác nhau có thể rất hữu ích trong một Cuộc Đấu.</string>
+		<key>D2</key>
+<string>Không giống như Bài Ma Pháp, Bài Bẫy có thể được kích hoạt trong lượt của đối thủ.</string>
+		<key>D3</key>
+<string>Hiệu ứng của nhiều Bài Bẫy có thể được kích hoạt để làm gián đoạn hành động của đối thủ.</string>
+		<key>D4</key>
+<string>Để sử dụng hiệu ứng của một Bài Bẫy, nó phải được Đặt vào Vùng Bài Phép &amp; Bẫy.</string>
+		<key>D5</key>
+<string>Không giống như Bài Ma Pháp, Bài Bẫy không thể được kích hoạt từ tay của bạn, ngay cả trong lượt của bạn.</string>
+		<key>D6</key>
+<string>Ngoài ra, hiệu ứng của Bài Bẫy không thể được kích hoạt trong lượt nó được Đặt trên sân.</string>
+	</dict>
+</dict>
+</plist>

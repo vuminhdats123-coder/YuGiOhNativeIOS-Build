@@ -1,0 +1,1179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>New item</key>
+    <string>1</string>
+    <key>ACTIONS</key>
+    <dict>
+        <key>item 1</key>
+        <dict>
+            <key>UPDATE_PHASE</key>
+            <dict>
+                <key>PHASE</key>
+                <string>0</string>
+                <key>IS_PLAYER_TURN</key>
+                <string>1</string>
+            </dict>
+            <key>P_DECK_TMP_SIZE</key>
+            <string>50</string>
+            <key>OP_DECK_TMP_SIZE</key>
+            <string>40</string>
+            <key>PL_TURN</key>
+            <string>0</string>
+            <key>P_HANDLAYER_ENABLE</key>
+            <string>0</string>
+            <key>OP_HANDLAYER_ENABLE</key>
+            <string>0</string>
+            <key>FIELD_LAYER_ENABLE</key>
+            <string>0</string>
+            <key>MENU_LAYER_ENABLE</key>
+            <string>0</string>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>0</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.4, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Xin chào!
+Ta là IN4-M8!</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 2</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>0</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.4, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Hướng dẫn này sẽ giải thích về Giao diện Sân đấu và các loại thẻ bài hiện có.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 3</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>0</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.4, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Được rồi, bắt đầu bài học thôi!
+Hãy chú ý kỹ nhé!</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 4</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Quyết đấu là một trò chơi thẻ bài, nơi bạn sử dụng nhiều loại lá bài khác nhau để đối đầu với đối thủ.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 5</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Phần này sẽ hướng dẫn về Giao diện Sân đấu và các loại lá bài hiện có.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 6</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Màn hình Quyết đấu được chia thành hai phần: một bên là sân của bạn và bên còn lại của đối thủ. Cả hai bên đều giống hệt nhau, chỉ được đảo ngược lại để người chơi dễ quan sát.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 7</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {1030, 760}}</string>
+                <key>2</key>
+                <string>{{-512, 760}, {3072, 1024}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 280}, {665, 480}}</string>
+                <key>2</key>
+                <string>{{0, 760}, {2048, 768}}</string>
+                <key>3</key>
+                <string>{{800, 660}, {970, 100}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.25, 0.65}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Nửa dưới của màn hình chính là khu vực sân của bạn.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 8</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 760}}</string>
+                <key>2</key>
+                <string>{{-512, 760}, {880, 2048}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 770}}</string>
+                <key>2</key>
+                <string>{{0, 770}, {530, 500}}</string>
+                <key>3</key>
+                <string>{{802, 770}, {966, 105}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.32}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Nửa trên của màn hình chính là khu vực sân của đối thủ.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                    Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 9</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Mỗi bên sân đều có các khu vực cụ thể để đặt thẻ bài.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 10</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 440}}</string>
+                <key>2</key>
+                <string>{{-512, 650}, {3072, 1024}}</string>
+                <key>3</key>
+                <string>{{-512, 440}, {1265, 210}}</string>
+                <key>4</key>
+                <string>{{1800, 440}, {1024, 210}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 460}}</string>
+                <key>2</key>
+                <string>{{0, 460}, {825, 200}}</string>
+                <key>3</key>
+                <string>{{1748, 460}, {300, 200}}</string>
+                <key>4</key>
+                <string>{{0, 660}, {2048, 876}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.25, 0.65}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đầu tiên là ##2 Vùng Thẻ Quái Vật##0.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 11</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 440}}</string>
+                <key>2</key>
+                <string>{{-512, 650}, {3072, 1024}}</string>
+                <key>3</key>
+                <string>{{-512, 440}, {1265, 210}}</string>
+                <key>4</key>
+                <string>{{1800, 440}, {1024, 210}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 460}}</string>
+                <key>2</key>
+                <string>{{0, 460}, {825, 200}}</string>
+                <key>3</key>
+                <string>{{1748, 460}, {300, 200}}</string>
+                <key>4</key>
+                <string>{{0, 660}, {2048, 876}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.25, 0.65}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đây là nơi đặt các Quái Vật được Triệu hồi. Chỉ quái vật ở vùng này mới có thể tham gia chiến đấu.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 12</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 215}}</string>
+                <key>2</key>
+                <string>{{-512, 425}, {3072, 2024}}</string>
+                <key>3</key>
+                <string>{{-512, 215}, {1265, 210}}</string>
+                <key>4</key>
+                <string>{{1800, 215}, {1024, 210}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 270}}</string>
+                <key>2</key>
+                <string>{{0, 270}, {825, 200}}</string>
+                <key>3</key>
+                <string>{{1748, 270}, {300, 200}}</string>
+                <key>4</key>
+                <string>{{0, 470}, {2048, 1066}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.25, 0.65}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo là ##2 Vùng Thẻ Ma Pháp &amp; Bẫy##0.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 13</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 215}}</string>
+                <key>2</key>
+                <string>{{-512, 425}, {3072, 2024}}</string>
+                <key>3</key>
+                <string>{{-512, 215}, {1265, 210}}</string>
+                <key>4</key>
+                <string>{{1800, 215}, {1024, 210}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 270}}</string>
+                <key>2</key>
+                <string>{{0, 270}, {825, 200}}</string>
+                <key>3</key>
+                <string>{{1748, 270}, {300, 200}}</string>
+                <key>4</key>
+                <string>{{0, 470}, {2048, 1066}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.25, 0.65}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đây là nơi đặt các thẻ Ma Pháp và Bẫy khi bạn sử dụng chúng trong trận đấu.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 14</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {2390, 215}}</string>
+                <key>4</key>
+                <string>{{2030, 540}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 570}}</string>
+                <key>2</key>
+                <string>{{0, 570}, {1770, 200}}</string>
+                <key>3</key>
+                <string>{{1910, 570}, {138, 200}}</string>
+                <key>4</key>
+                <string>{{0, 770}, {2048, 766}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo là ##2 Mộ Bài ##0.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 15</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {2390, 215}}</string>
+                <key>4</key>
+                <string>{{2030, 540}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 570}}</string>
+                <key>2</key>
+                <string>{{0, 570}, {1770, 200}}</string>
+                <key>3</key>
+                <string>{{1910, 570}, {138, 200}}</string>
+                <key>4</key>
+                <string>{{0, 770}, {2048, 766}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Quái vật bị tiêu diệt và các thẻ Ma Pháp/Bẫy đã sử dụng sẽ được đặt tại đây. Cả hai người chơi đều có thể kiểm tra các lá bài trong Mộ.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 16</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 110}}</string>
+                <key>2</key>
+                <string>{{-512, 325}, {3072, 2048}}</string>
+                <key>3</key>
+                <string>{{-512, 110}, {2390, 215}}</string>
+                <key>4</key>
+                <string>{{2030, 110}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 160}}</string>
+                <key>2</key>
+                <string>{{0, 160}, {1770, 200}}</string>
+                <key>3</key>
+                <string>{{1910, 160}, {138, 200}}</string>
+                <key>4</key>
+                <string>{{0, 360}, {2048, 1176}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp đến là ##2 Khu vực Bộ Bài##0.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 17</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 110}}</string>
+                <key>2</key>
+                <string>{{-512, 325}, {3072, 2048}}</string>
+                <key>3</key>
+                <string>{{-512, 110}, {2390, 215}}</string>
+                <key>4</key>
+                <string>{{2030, 110}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 160}}</string>
+                <key>2</key>
+                <string>{{0, 160}, {1770, 200}}</string>
+                <key>3</key>
+                <string>{{1910, 160}, {138, 200}}</string>
+                <key>4</key>
+                <string>{{0, 360}, {2048, 1176}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Bạn sẽ đặt ##2Bộ Bài##0 của mình tại đây theo chiều úp xuống.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Ta là IN4-M8!</string>
+            </dict>
+        </dict>
+<key>item 18</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 110}}</string>
+                <key>2</key>
+                <string>{{-512, 325}, {3072, 2048}}</string>
+                <key>3</key>
+                <string>{{-512, 110}, {2390, 215}}</string>
+                <key>4</key>
+                <string>{{2030, 110}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 160}}</string>
+                <key>2</key>
+                <string>{{0, 160}, {1770, 200}}</string>
+                <key>3</key>
+                <string>{{1910, 160}, {138, 200}}</string>
+                <key>4</key>
+                <string>{{0, 360}, {2048, 1176}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Một ##2Bộ bài##0 là chồng bài bạn sử dụng trong trận đấu tay đôi. Trong trò chơi này, kích thước Bộ bài của bạn có thể nằm trong khoảng từ 40 đến 60 Bài. Bạn có thể tạo bộ bài bằng Trình chỉnh sửa bộ bài. Thêm Bài với nhiều hiệu ứng khác nhau.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 19</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {2550, 215}}</string>
+                <key>4</key>
+                <string>{{2190, 540}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 570}}</string>
+                <key>2</key>
+                <string>{{0, 570}, {1910, 200}}</string>
+                <key>3</key>
+                <string>{{0, 770}, {2048, 766}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, Khu Bài bị trục xuất.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 20</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {2550, 215}}</string>
+                <key>4</key>
+                <string>{{2190, 540}, {1024, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 570}}</string>
+                <key>2</key>
+                <string>{{0, 570}, {1910, 200}}</string>
+                <key>3</key>
+                <string>{{0, 770}, {2048, 766}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Các Bài bị trục xuất do ảnh hưởng của Bài khác được đặt ở đây. Các Bài được đặt ở đây thường không thể được sử dụng lại trong trận đấu tay đôi.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 21</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {1040, 215}}</string>
+                <key>4</key>
+                <string>{{680, 540}, {2048, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 580}}</string>
+                <key>2</key>
+                <string>{{0, 580}, {670, 180}}</string>
+                <key>3</key>
+                <string>{{795, 580}, {1253, 180}}</string>
+                <key>4</key>
+                <string>{{0, 760}, {2048, 776}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, Ma Pháp Môi Trường.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 22</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 540}}</string>
+                <key>2</key>
+                <string>{{-512, 755}, {3072, 820}}</string>
+                <key>3</key>
+                <string>{{-512, 540}, {1040, 215}}</string>
+                <key>4</key>
+                <string>{{680, 540}, {2048, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 580}}</string>
+                <key>2</key>
+                <string>{{0, 580}, {670, 180}}</string>
+                <key>3</key>
+                <string>{{795, 580}, {1253, 180}}</string>
+                <key>4</key>
+                <string>{{0, 760}, {2048, 776}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đây là nơi bạn đặt các Bài Ma Pháp Môi Trường, có các hiệu ứng đặc biệt. Để biết giải thích về các Bài Ma Pháp Môi Trường, hãy xem Chương 7, "Các Bài Bài Ma Pháp và Bẫy khác".</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 23</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 110}}</string>
+                <key>2</key>
+                <string>{{-512, 325}, {3072, 2048}}</string>
+                <key>3</key>
+                <string>{{-512, 110}, {1040, 215}}</string>
+                <key>4</key>
+                <string>{{680, 110}, {2048, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 170}}</string>
+                <key>2</key>
+                <string>{{0, 170}, {670, 180}}</string>
+                <key>3</key>
+                <string>{{795, 170}, {1253, 180}}</string>
+                <key>4</key>
+                <string>{{0, 350}, {2048, 1186}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, Khu vực Bộ bài Phụ.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 24</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 110}}</string>
+                <key>2</key>
+                <string>{{-512, 325}, {3072, 2048}}</string>
+                <key>3</key>
+                <string>{{-512, 110}, {1040, 215}}</string>
+                <key>4</key>
+                <string>{{680, 110}, {2048, 215}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 170}}</string>
+                <key>2</key>
+                <string>{{0, 170}, {670, 180}}</string>
+                <key>3</key>
+                <string>{{795, 170}, {1253, 180}}</string>
+                <key>4</key>
+                <string>{{0, 350}, {2048, 1186}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đây là nơi bạn đặt các Bài Quái Vật Fusion, Synchro và Xyz. Khi bạn muốn sử dụng Quái thú Dung hợp trong trận đấu tay đôi, bạn sẽ cần thêm nó vào Bộ bài Phụ của mình khi đang ở trong Trình chỉnh sửa Bộ bài. Để có một lời giải thích</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 25</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 340}}</string>
+                <key>2</key>
+                <string>{{-512, 340}, {1124, 195}}</string>
+                <key>3</key>
+                <string>{{745, 340}, {1065, 195}}</string>
+                <key>4</key>
+                <string>{{1943, 340}, {1262, 195}}</string>
+                <key>5</key>
+                <string>{{-512, 535}, {3072, 2048}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 370}}</string>
+                <key>2</key>
+                <string>{{0, 370}, {685, 190}}</string>
+                <key>3</key>
+                <string>{{825, 370}, {923, 190}}</string>
+                <key>4</key>
+                <string>{{1898, 370}, {150, 190}}</string>
+                <key>5</key>
+                <string>{{0, 560}, {2048, 976}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, các khu Con lắc.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+<key>item 26</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 340}}</string>
+                <key>2</key>
+                <string>{{-512, 340}, {1124, 195}}</string>
+                <key>3</key>
+                <string>{{745, 340}, {1065, 195}}</string>
+                <key>4</key>
+                <string>{{1943, 340}, {1262, 195}}</string>
+                <key>5</key>
+                <string>{{-512, 535}, {3072, 2048}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 370}}</string>
+                <key>2</key>
+                <string>{{0, 370}, {685, 190}}</string>
+                <key>3</key>
+                <string>{{825, 370}, {923, 190}}</string>
+                <key>4</key>
+                <string>{{1898, 370}, {150, 190}}</string>
+                <key>5</key>
+                <string>{{0, 560}, {2048, 976}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Có 2 Vùng Con lắc ở mỗi bên của sân.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 27</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{-512, 0}, {3072, 340}}</string>
+                <key>2</key>
+                <string>{{-512, 340}, {1124, 195}}</string>
+                <key>3</key>
+                <string>{{745, 340}, {1065, 195}}</string>
+                <key>4</key>
+                <string>{{1943, 340}, {1262, 195}}</string>
+                <key>5</key>
+                <string>{{-512, 535}, {3072, 2048}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 370}}</string>
+                <key>2</key>
+                <string>{{0, 370}, {685, 190}}</string>
+                <key>3</key>
+                <string>{{825, 370}, {923, 190}}</string>
+                <key>4</key>
+                <string>{{1898, 370}, {150, 190}}</string>
+                <key>5</key>
+                <string>{{0, 560}, {2048, 976}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.65, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Đây là nơi bạn đặt Quái Vật Con lắc từ tay mình làm Bài Ma Pháp trong Giai đoạn Chính 1 hoặc Giai đoạn Chính 2.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 28</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, chúng ta hãy xem xét các loại Bài khác nhau có sẵn.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 29</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Bài được sử dụng trong trận đấu có thể được chia thành ba loại chính dựa trên màu sắc của chúng. Đây là "Bài Quái Vật", "Bài Ma Pháp" và "Bài Bẫy".</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 30</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>EVENT_UPDATE_CARD_INFO</key>
+            <string>61603845</string>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Các Bài màu vàng, cam, tím, trắng, xanh lam và đen là Bài Quái Vật.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 31</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Bài Quái Vật được chia thành 6 loại dựa trên màu sắc của chúng. Bất kỳ Quái Vật nào trong số này đều có thể chiến đấu và tấn công đối thủ của bạn.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 32</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>EVENT_UPDATE_CARD_INFO</key>
+            <string>73584318</string>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Tiếp theo, chúng ta hãy nhìn vào "Bài Ma Pháp" màu xanh lá cây.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 33</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Bài Ma Pháp có thể giúp bạn với nhiều hiệu ứng khác nhau. Vì mỗi hiệu ứng khác nhau, hãy nhớ đọc từng Bài Ma Pháp mới mà bạn nhận được.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 34</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>EVENT_UPDATE_CARD_INFO</key>
+            <string>61603449</string>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Cuối cùng, chúng ta hãy nhìn vào "Cạm bẫy" màu tím.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 35</key>
+        <dict>
+            <key>DIM_LAYER_IPHONE</key>
+            <dict>
+                <key>1</key>
+                <string>{{350, 0}, {2048, 1075}}</string>
+                <key>2</key>
+                <string>{{200, 1075}, {2560, 512}}</string>
+            </dict>
+            <key>DIM_LAYER</key>
+            <dict>
+                <key>1</key>
+                <string>{{0, 0}, {2048, 285}}</string>
+                <key>2</key>
+                <string>{{550, 285}, {1498, 490}}</string>
+                <key>3</key>
+                <string>{{525, 775}, {1498, 85}}</string>
+                <key>4</key>
+                <string>{{0, 860}, {125, 376}}</string>
+                <key>5</key>
+                <string>{{400, 860}, {1648, 376}}</string>
+                <key>6</key>
+                <string>{{0, 1236}, {2048, 300}}</string>
+            </dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Bài Bẫy có khả năng gây bất ngờ cho đối thủ bằng cách phá vỡ các cuộc tấn công và chiến lược của họ. Hầu hết các Bài Bẫy được kích hoạt để đáp lại một hành động của đối thủ của bạn.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 36</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>1</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Hãy nhớ sự khác biệt giữa Bài Quái thú, Bài Ma Pháp, Bài Bẫy và những vị trí khác nhau trên sân được giải thích trong Chương này.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 37</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>0</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Điều đó kết thúc bài học của tôi về Các loại Bài và Vùng Bài.</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+        <key>item 38</key>
+        <dict>
+            <key>TUT_DIALOG</key>
+            <dict>
+                <key>DIALOG_TYPE</key>
+                <string>0</string>
+                <key>DIALOG_POSITION</key>
+                <string>{0.5, 0.5}</string>
+                <key>DIALOG_MESSAGE</key>
+                <string>Vậy thì, cho đến lần sau!
+Bị loại bỏ!</string>
+                <key>DIALOG_BUTTON</key>
+                <string>0
+                        Đây là IN4-M8!</string>
+            </dict>
+        </dict>
+    </dict>
+</dict>
+</plist>

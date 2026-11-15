@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ja</key>
+	<dict>
+		<key>D1</key>
+<string>どんなタイミングでも発動できる特殊な魔法カードです。</string>
+		<key>D2</key>
+<string>魔法＆罠カードゾーンにセットしておけば相手のターンでも発動ができますが、セットしたターンにそのカードを発動することはできません。</string>
+	</dict>
+	<key>en</key>
+	<dict>
+		<key>D1</key>
+<string>This special Spell Card can be activated at any time.</string>
+		<key>D2</key>
+<string>If you Set it in the Spell &amp; Trap Card Zone, you can even activate its effect during your opponent's turn.</string>
+		<key>D3</key>
+<string>However, you cannot activate the effect of this card during the turn it is Set.</string>
+		<key>D4</key>
+<string>Quick-Play Spells have this symbol next to their type.</string>
+	</dict>
+	<key>de</key>
+	<dict>
+		<key>D1</key>
+<string>iese besondere Zauberkarte kann jederzeit aktiviert werden.</string>
+		<key>D2</key>
+<string>Wenn du sie in deine Zauber- Fallenkartenzone setzt, kannst du ihren Effekt sogar während des Spielzugs deines Gegners aktivieren.</string>
+		<key>D3</key>
+<string>Du kannst ihren Effekt allerdings nicht in dem Spielzug aktivieren, in dem sie gesetzt wurde.</string>
+		<key>D4</key>
+<string>Schnellzauber haben dieses Symbol neben dem Typ.</string>
+	</dict>
+	<key>fr</key>
+	<dict>
+		<key>D1</key>
+<string>Carte Magie peut être activée à n'importe quel moment.</string>
+		<key>D2</key>
+<string>Si elle est déjà Posée sur la Zone Carte Magie Piège, il est possible de l'activer pendant le tour de l'adversaire.</string>
+		<key>D3</key>
+<string>Cependant, il n'est pas possible d'activer son effet le même tour ou elle a été Posée.</string>
+		<key>D4</key>
+<string>Les Cartes Magie Jeu-Rapide ont cette icône à côté de leur type.</string>
+	</dict>
+	<key>es</key>
+	<dict>
+		<key>D1</key>
+<string>Esta Carta Mágica especial puede activarse en cualquier momento.</string>
+		<key>D2</key>
+<string>Si la Colocas en la Zona de Cartas Mágicas y de Trampa, también puedes activar su efecto durante el turno de tu oponente.</string>
+		<key>D3</key>
+<string>Sin embargo, no puedes activar el efecto de esta carta durante el turno en que es Colocada.</string>
+		<key>D4</key>
+<string>Mágicas de Juego Rápido tienen este icono al lado de su tipo.</string>
+	</dict>
+	<key>it</key>
+	<dict>
+		<key>D1</key>
+<string>Lá Bài Phép đặc biệt này có thể được kích hoạt vào bất kỳ thời điểm nào.</string>
+		<key>D2</key>
+<string>Nếu bạn Đặt nó vào Vùng Bài Phép &amp; Bẫy, bạn thậm chí có thể kích hoạt hiệu ứng của nó trong lượt của đối thủ.</string>
+		<key>D3</key>
+<string>Tuy nhiên, bạn không thể kích hoạt hiệu ứng của lá bài này trong lượt nó được Đặt.</string>
+		<key>D4</key>
+<string>Phép Nhanh có biểu tượng này bên cạnh loại của chúng.</string>
+	</dict>
+</dict>
+</plist>
