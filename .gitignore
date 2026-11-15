@@ -3,3 +3,4 @@ com.konami.ygodgtest/
 .DS_Store
 build/
 DerivedData/
+__pycache__/

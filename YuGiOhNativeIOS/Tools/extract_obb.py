@@ -2,9 +2,13 @@
 """Extract OBB tables and produce a machine-readable inventory."""
 from pathlib import Path
 import argparse, json, zipfile, struct
+from verify_obb_data import text_at as read_text
 
 def text_at(blob, offset):
-    return blob[offset:].decode("utf-16le", "ignore").split("\x00", 1)[0].strip()
+    value = read_text(blob, offset)
+    if value is None:
+        raise ValueError(f"Invalid UTF-16 string offset: {offset}")
+    return value.strip()
 
 def clean(value): return " ".join(value.split())
 
@@ -16,21 +20,20 @@ def main():
         (a.out/"obb-manifest.json").write_text(json.dumps([{"path":i.filename,"bytes":i.file_size,"crc":f"{i.CRC:08x}"} for i in infos],ensure_ascii=False,indent=2),encoding="utf-8")
         tables=[]
         for n in names:
-            if not n.startswith("assets/CARD_"): continue
+            if not n.startswith("assets/CARD_") or not n.endswith(".bin"): continue
             info=z.getinfo(n); out_name=Path(n).name
             raw=z.read(n)
             (a.out/out_name).write_bytes(raw)
             row={"file":out_name,"bytes":info.file_size,"crc":f"{info.CRC:08x}","encoding":"binary"}
-            if out_name.startswith(("CARD_Name_","CARD_Desc_","CARD_Kana")) and len(raw)%2==0:
-                values=split_utf16(raw); row["encoding"]="utf-16le-null"; row["records"]=len(values); row["nonEmpty"]=sum(bool(clean(v)) for v in values)
-                (a.out/(out_name+".json")).write_text(json.dumps([clean(v) for v in values],ensure_ascii=False,separators=(",",":")),encoding="utf-8")
+            if out_name.startswith(("CARD_Name_", "CARD_Desc_")):
+                row["encoding"] = "utf-16le-offset-table"
             tables.append(row)
         offsets=struct.unpack("<%dI" % (len(z.read("assets/CARD_Indx_E.bin"))//4), z.read("assets/CARD_Indx_E.bin"))
         names_e=z.read("assets/CARD_Name_E.bin"); desc_e=z.read("assets/CARD_Desc_E.bin")
         cards=[]
         for i in range(len(offsets)//2 - 1):
-            name=clean(text_at(names_e, offsets[2*i]));
-            if name: cards.append({"id":i,"sourceIndex":i,"name":name,"description":clean(text_at(desc_e, offsets[2*i+1]))})
+            name=text_at(names_e, offsets[2*i])
+            if name: cards.append({"id":i,"sourceIndex":i,"name":name,"description":text_at(desc_e, offsets[2*i+1])})
         (a.out/"cards-en.json").write_text(json.dumps(cards,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
         if a.images:
             image_dir=a.out/"CardImages"; image_dir.mkdir(exist_ok=True)

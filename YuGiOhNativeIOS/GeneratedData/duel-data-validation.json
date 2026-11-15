@@ -1,0 +1,217 @@
+{
+  "valid": true,
+  "scope": "Raw OBB/card metadata/name mapping/YDC byte round trips/practice-deck data; not a game completion check",
+  "sourceOBBSHA256": "7ad6962f99ec019a57e2324f0dab23fbbdee81669ed2d2fb766706eaf05a756b",
+  "catalogCards": 7580,
+  "metadataRecordsIncludingEmpty": 7581,
+  "generatedAndResourceCatalogsEqual": true,
+  "allCatalogNamesAndDescriptionsMatchOBB": true,
+  "allPropGenrePasswordValuesMatchOBB": true,
+  "allIntIDMappingsMatchProp": true,
+  "ydcByteExactRoundTrips": 799,
+  "uniqueDeckKonamiIDs": 5215,
+  "sourceBackedDeckIDs": 5213,
+  "nameOnlyNotPlayable": [
+    {
+      "konamiID": 10855,
+      "name": "Number 94: Crystalzero",
+      "nativeDefinitionAvailable": false
+    },
+    {
+      "konamiID": 11766,
+      "name": "Number S39: Utopia the Lightning",
+      "nativeDefinitionAvailable": false
+    }
+  ],
+  "practiceDecks": [
+    {
+      "name": "Practice A - Dragons and Stone",
+      "cards": 40,
+      "uniqueCards": 17,
+      "maxCopies": 3,
+      "contents": [
+        {
+          "konamiID": 4008,
+          "name": "Mystical Elf",
+          "copies": 3
+        },
+        {
+          "konamiID": 4009,
+          "name": "Hitotsu-Me Giant",
+          "copies": 3
+        },
+        {
+          "konamiID": 4010,
+          "name": "Baby Dragon",
+          "copies": 3
+        },
+        {
+          "konamiID": 4012,
+          "name": "Feral Imp",
+          "copies": 3
+        },
+        {
+          "konamiID": 4013,
+          "name": "Winged Dragon, Guardian of the Fortress #1",
+          "copies": 3
+        },
+        {
+          "konamiID": 4016,
+          "name": "Blackland Fire Dragon",
+          "copies": 3
+        },
+        {
+          "konamiID": 4032,
+          "name": "Battle Ox",
+          "copies": 3
+        },
+        {
+          "konamiID": 4033,
+          "name": "Beaver Warrior",
+          "copies": 3
+        },
+        {
+          "konamiID": 4038,
+          "name": "Two-Headed King Rex",
+          "copies": 3
+        },
+        {
+          "konamiID": 4080,
+          "name": "Giant Soldier of Stone",
+          "copies": 3
+        },
+        {
+          "konamiID": 4045,
+          "name": "Curse of Dragon",
+          "copies": 1
+        },
+        {
+          "konamiID": 4028,
+          "name": "Summoned Skull",
+          "copies": 1
+        },
+        {
+          "konamiID": 4007,
+          "name": "Blue-Eyes White Dragon",
+          "copies": 1
+        },
+        {
+          "konamiID": 4844,
+          "name": "Pot of Greed",
+          "copies": 2
+        },
+        {
+          "konamiID": 4349,
+          "name": "Sparks",
+          "copies": 2
+        },
+        {
+          "konamiID": 4348,
+          "name": "Dian Keto the Cure Master",
+          "copies": 1
+        },
+        {
+          "konamiID": 4861,
+          "name": "Solemn Judgment",
+          "copies": 2
+        }
+      ]
+    },
+    {
+      "name": "Practice B - Warriors and Magic",
+      "cards": 40,
+      "uniqueCards": 17,
+      "maxCopies": 3,
+      "contents": [
+        {
+          "konamiID": 4011,
+          "name": "Ryu-Kishin",
+          "copies": 3
+        },
+        {
+          "konamiID": 4014,
+          "name": "Mushroom Man",
+          "copies": 3
+        },
+        {
+          "konamiID": 4019,
+          "name": "Tyhone",
+          "copies": 3
+        },
+        {
+          "konamiID": 4031,
+          "name": "Horn Imp",
+          "copies": 3
+        },
+        {
+          "konamiID": 4037,
+          "name": "Koumori Dragon",
+          "copies": 3
+        },
+        {
+          "konamiID": 4040,
+          "name": "Saggi the Dark Clown",
+          "copies": 3
+        },
+        {
+          "konamiID": 4047,
+          "name": "Celtic Guardian",
+          "copies": 3
+        },
+        {
+          "konamiID": 4050,
+          "name": "Rogue Doll",
+          "copies": 3
+        },
+        {
+          "konamiID": 4057,
+          "name": "Armored Lizard",
+          "copies": 3
+        },
+        {
+          "konamiID": 4084,
+          "name": "Axe Raider",
+          "copies": 3
+        },
+        {
+          "konamiID": 4020,
+          "name": "Battle Steer",
+          "copies": 1
+        },
+        {
+          "konamiID": 4039,
+          "name": "Judge Man",
+          "copies": 1
+        },
+        {
+          "konamiID": 4041,
+          "name": "Dark Magician",
+          "copies": 1
+        },
+        {
+          "konamiID": 4844,
+          "name": "Pot of Greed",
+          "copies": 2
+        },
+        {
+          "konamiID": 4349,
+          "name": "Sparks",
+          "copies": 2
+        },
+        {
+          "konamiID": 4348,
+          "name": "Dian Keto the Cure Master",
+          "copies": 1
+        },
+        {
+          "konamiID": 4861,
+          "name": "Solemn Judgment",
+          "copies": 2
+        }
+      ]
+    }
+  ],
+  "engineBehaviorTestsExecuted": false,
+  "iosBuildExecuted": false,
+  "portComplete": false
+}

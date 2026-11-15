@@ -68,7 +68,7 @@ public struct CardCatalog {
     public init(cards: [Card] = CardCatalog.load()) { self.cards = cards }
     public var filtered: [Card] {
         cards.filter { card in
-            (selectedType == "All" || card.type == selectedType) &&
+            (selectedType == "All" || card.kind == selectedType) &&
             (query.isEmpty || card.name.localizedCaseInsensitiveContains(query) || card.description.localizedCaseInsensitiveContains(query))
         }
     }
@@ -83,7 +83,7 @@ private enum CardImageStore {
 
 public struct ContentView: View {
     @StateObject private var store = CardStore()
-    private let types = ["All", "Effect Monster", "Normal Monster"]
+    private var types: [String] { ["All"] + Set(store.cards.compactMap(\.kind)).sorted() }
 
     public init() {}
     public var body: some View {

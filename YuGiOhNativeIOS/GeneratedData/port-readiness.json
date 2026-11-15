@@ -1,80 +1,36 @@
 {
-  "data": {
-    "obbValidation": true,
-    "obbErrors": [],
-    "plistWarnings": [
-      "3 plist files are not strict XML; the game may use a permissive parser",
-      "127 JPG names are not numeric"
-    ],
-    "deckCoverage": true,
-    "sortAllConsistent": true,
-    "relations": {
-      "namedCount": 301,
-      "namedNonEmpty": 280,
-      "sameRows": 40,
-      "links": 3627,
-      "sort": {
-        "E": {
-          "records": 7581,
-          "consistent": true
-        },
-        "F": {
-          "records": 7581,
-          "consistent": true
-        },
-        "G": {
-          "records": 7581,
-          "consistent": true
-        },
-        "I": {
-          "records": 7581,
-          "consistent": true
-        },
-        "J": {
-          "records": 7581,
-          "consistent": true
-        },
-        "R": {
-          "records": 7581,
-          "consistent": true
-        },
-        "S": {
-          "records": 7581,
-          "consistent": true
-        }
-      },
-      "kana": {
-        "E": 7581,
-        "F": 7581,
-        "G": 7581,
-        "I": 7581,
-        "J": 7581,
-        "R": 7581,
-        "S": 7581
-      },
-      "packRecords": 6450
-    },
-    "packStatus": "empty"
+  "offlineDataChecksPassed": true,
+  "catalogCards": 7580,
+  "ydcByteExactRoundTrips": 799,
+  "languagesValidated": {
+    "E": 7581,
+    "F": 7581,
+    "G": 7581,
+    "I": 7581,
+    "J": 7581,
+    "K": 7581,
+    "R": 7581,
+    "S": 7581
   },
-  "resources": {
-    "Resources/cards_en.json": true,
-    "Resources/card-index.json": true,
-    "GeneratedData/card-relations.json": true,
-    "GeneratedData/card-id-names.json": true,
-    "GeneratedData/ydc-decks.json": true,
-    "GeneratedData/plist-sanitized/TempTutorial01_it.plist": true,
-    "GeneratedData/card-kana-index.json": true,
-    "GeneratedData/card-pass.json": true,
-    "GeneratedData/card-pack-summary.json": true,
-    "GeneratedData/card-aux-tables.json": true,
-    "GeneratedData/relation-validation.json": true
-  },
-  "workflow": {
-    "manualOnly": true
-  },
-  "notPorted": [
-    "Cocos2d-x duel engine",
-    "Konami online services/server protocol",
-    "native Android lib and proprietary effect runtime"
+  "bundledImagesMatchSourceCRC": 7714,
+  "fixedPlistsParsed": 3,
+  "bundlePathsChecked": true,
+  "displayNameCoverage": 5215,
+  "sourceCardCoverage": 5213,
+  "missingSourceDefinitions": [
+    10855,
+    11766
+  ],
+  "manualBuildOnly": true,
+  "engineBehaviorTests": "authored; not executed",
+  "swiftCompiled": false,
+  "iosBuildExecuted": false,
+  "portComplete": false,
+  "remaining": [
+    "Run Swift behavioral self-checks when authorized",
+    "Validate UI on simulator/device when authorized",
+    "Effect monsters and special summoning",
+    "Summon/battle response windows",
+    "AI/campaign/online services"
   ]
 }

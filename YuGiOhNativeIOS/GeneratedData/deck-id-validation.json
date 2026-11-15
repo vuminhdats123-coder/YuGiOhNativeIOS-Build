@@ -4,9 +4,14 @@
   "mapped": 5215,
   "missing": [],
   "missingCount": 0,
+  "missingSourceCardData": [
+    10855,
+    11766
+  ],
   "fallbackNames": {
     "10855": "Number 94: Crystalzero",
     "11766": "Number S39: Utopia the Lightning"
   },
-  "fallbackSource": "public LOTD YDC converter card table"
+  "fallbackSource": "https://github.com/nzxth2/YGO_LOTD_LE_YDC_Converter/blob/master/src/cards.cpp",
+  "gameplayCoverageComplete": false
 }

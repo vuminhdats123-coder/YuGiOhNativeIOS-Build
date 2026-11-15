@@ -18,7 +18,9 @@ private enum DeckCatalog {
     }
     static func loadNames() -> [Int: String] {
         guard let url = Bundle.main.url(forResource: "card-id-names", withExtension: "json", subdirectory: "GeneratedData"), let data = try? Data(contentsOf: url), let values = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
-        return Dictionary(uniqueKeysWithValues: values.compactMap { Int($0.key).map { ($0, $0.description) } })
+        return Dictionary(uniqueKeysWithValues: values.compactMap { key, name in
+            Int(key).map { ($0, name) }
+        })
     }
 }
 
@@ -42,17 +44,17 @@ struct DeckListView: View {
                 List {
                     Section("Main (\(deck.main.count))") {
                         ForEach(Array(deck.main.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
+                            Text("\(row.offset + 1). \(label(row.element))")
                         }
                     }
                     Section("Extra (\(deck.extra.count))") {
                         ForEach(Array(deck.extra.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
+                            Text("\(row.offset + 1). \(label(row.element))")
                         }
                     }
                     Section("Side (\(deck.side.count))") {
                         ForEach(Array(deck.side.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1).  \(label(row.element)) \(row.element)")
+                            Text("\(row.offset + 1). \(label(row.element))")
                         }
                     }
                 }

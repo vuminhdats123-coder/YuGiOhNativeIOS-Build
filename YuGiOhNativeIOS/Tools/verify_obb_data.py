@@ -3,12 +3,15 @@ import argparse, json, struct, zipfile, plistlib
 from pathlib import Path
 
 def text_at(blob, offset):
-    if offset < 0 or offset >= len(blob): return None
-    end = blob.find(b'\x00\x00', offset)
-    if end < 0: end = len(blob)
-    end -= end % 2
-    try: return blob[offset:end].decode('utf-16le', 'strict')
-    except UnicodeDecodeError: return None
+    if offset < 0 or offset % 2 or offset >= len(blob) or len(blob) % 2:
+        return None
+    for end in range(offset, len(blob), 2):
+        if blob[end:end + 2] == b'\x00\x00':
+            try:
+                return blob[offset:end].decode('utf-16le', 'strict')
+            except UnicodeDecodeError:
+                return None
+    return None
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('obb',type=Path); ap.add_argument('--report',type=Path,default=Path('YuGiOhNativeIOS/GeneratedData/obb-validation.json')); a=ap.parse_args()
@@ -48,7 +51,7 @@ def main():
                 if i and word1 and (word1&0x3fff)==0: report['warnings'].append(f'Prop record {i} has zero Konami ID')
         if idx:
             offsets=struct.unpack('<%dI'%(len(idx)//4),idx); report['counts']['textOffsets']=len(offsets)
-            for lang in ['E','F','G','I','J','R','S']:
+            for lang in ['E','F','G','I','J','K','R','S']:
                 nb=require(f'CARD_Name_{lang}.bin'); db=require(f'CARD_Desc_{lang}.bin'); ib=require(f'CARD_Indx_{lang}.bin')
                 if not ib: continue
                 if len(ib)!=len(idx): report['warnings'].append(f'CARD_Indx_{lang} size differs from E')
