@@ -8,12 +8,15 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Build unsigned simulator app
-        run: xcodebuild -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphonesimulator -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO
-      - name: Package artifact
-        run: ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Release-iphonesimulator/YuGiOhNativeIOS.app YuGiOhNativeIOS-simulator.zip
+      - name: Archive unsigned iPhone app
+        run: xcodebuild archive -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphoneos -configuration Release -archivePath build/YuGiOhNativeIOS.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          mkdir -p ipa/Payload
+          cp -R build/YuGiOhNativeIOS.xcarchive/Products/Applications/YuGiOhNativeIOS.app ipa/Payload/
+          ditto -c -k --sequesterRsrc --keepParent ipa/Payload ipa/YuGiOhNativeIOS-unsigned.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: YuGiOhNativeIOS-simulator
-          path: YuGiOhNativeIOS-simulator.zip
-
+          name: YuGiOhNativeIOS-unsigned-ipa
+          path: ipa/YuGiOhNativeIOS-unsigned.ipa
