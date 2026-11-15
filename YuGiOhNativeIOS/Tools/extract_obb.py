@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Extract OBB tables and produce a machine-readable inventory."""
 from pathlib import Path
-import argparse, json, zipfile
+import argparse, json, zipfile, struct
 
-def split_utf16(blob):
-    return blob.decode("utf-16le", "ignore").split("\x00")
+def text_at(blob, offset):
+    return blob[offset:].decode("utf-16le", "ignore").split("\x00", 1)[0].strip()
 
 def clean(value): return " ".join(value.split())
 
@@ -25,8 +25,12 @@ def main():
                 values=split_utf16(raw); row["encoding"]="utf-16le-null"; row["records"]=len(values); row["nonEmpty"]=sum(bool(clean(v)) for v in values)
                 (a.out/(out_name+".json")).write_text(json.dumps([clean(v) for v in values],ensure_ascii=False,separators=(",",":")),encoding="utf-8")
             tables.append(row)
-        names_e=split_utf16(z.read("assets/CARD_Name_E.bin")); desc_e=split_utf16(z.read("assets/CARD_Desc_E.bin"))
-        cards=[{"sourceIndex":i,"name":clean(n),"description":clean(desc_e[i]) if i<len(desc_e) else ""} for i,n in enumerate(names_e) if clean(n)]
+        offsets=struct.unpack("<%dI" % (len(z.read("assets/CARD_Indx_E.bin"))//4), z.read("assets/CARD_Indx_E.bin"))
+        names_e=z.read("assets/CARD_Name_E.bin"); desc_e=z.read("assets/CARD_Desc_E.bin")
+        cards=[]
+        for i in range(len(offsets)//2 - 1):
+            name=clean(text_at(names_e, offsets[2*i]));
+            if name: cards.append({"id":i,"sourceIndex":i,"name":name,"description":clean(text_at(desc_e, offsets[2*i+1]))})
         (a.out/"cards-en.json").write_text(json.dumps(cards,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
         if a.images:
             image_dir=a.out/"CardImages"; image_dir.mkdir(exist_ok=True)
