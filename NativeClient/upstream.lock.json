@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "client": {
+    "repository": "https://github.com/edo9300/edopro.git",
+    "path": "NativeClient/edopro",
+    "commit": "d0f111d6f3e0d4ee529b88a869ae0a971954bae3",
+    "target": "ygopro",
+    "coreLinkage": "static",
+    "license": "AGPL-3.0-or-later"
+  },
+  "core": {
+    "repository": "https://github.com/edo9300/ygopro-core.git",
+    "path": "NativeClient/edopro/ocgcore",
+    "commit": "46779fbe40e6a9bd8967f5dc6a03f4eaa6550d57",
+    "api": "11.0",
+    "license": "AGPL-3.0-or-later"
+  },
+  "lua": {
+    "repository": "https://github.com/lua/lua.git",
+    "path": "NativeClient/edopro/ocgcore/lua/src",
+    "commit": "6e22fedb74cf0c9b6656e9fce8b7331db847c605",
+    "version": "5.4.8",
+    "compileAs": "C++ with exception support, per upstream core",
+    "license": "MIT"
+  },
+  "distribution": {
+    "repository": "https://github.com/ProjectIgnis/Distribution.git",
+    "path": "NativeClient/distribution",
+    "commit": "54a6e2395c532648ff762540e9615319fac4f51b"
+  },
+  "database": {
+    "repository": "https://github.com/ProjectIgnis/BabelCDB",
+    "commit": "6e21009855ed5f3b5966a24545bd0db393d44697",
+    "file": "cards.cdb",
+    "sha256": "cbc868862e257745a97e7139d791ae0a96c7a7c10ac4370bc67b200de60506b2"
+  },
+  "scripts": {
+    "repository": "https://github.com/ProjectIgnis/CardScripts",
+    "commit": "14f3b8905ff95a8f869fd6891aec4d6b580db1e1",
+    "archiveSHA256": "72e4cb87d41ed2a9d174bb631155e8d64c421af901a2528739cb376701312842",
+    "license": "AGPL-3.0-or-later"
+  },
+  "sourceOBB": {
+    "file": "com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb",
+    "sha256": "7ad6962f99ec019a57e2324f0dab23fbbdee81669ed2d2fb766706eaf05a756b"
+  },
+  "runtimeCompatibilityVerified": false
+}

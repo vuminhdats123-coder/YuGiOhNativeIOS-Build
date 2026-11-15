@@ -1,30 +1,21 @@
-name: iOS Build
+name: Native EDOPro readiness (build on hold)
 on:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  build:
-    runs-on: macos-15
+  preflight:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download card image bundle
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Check out pinned native sources
         run: |
-          gh release download assets-v1 --repo "$GITHUB_REPOSITORY" --pattern card-images.zip --dir "$RUNNER_TEMP"
-          mkdir -p YuGiOhNativeIOS/Resources
-          ditto -x -k "$RUNNER_TEMP/card-images.zip" YuGiOhNativeIOS/Resources
-      - name: Archive unsigned iPhone app
-        run: xcodebuild archive -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphoneos -configuration Release -archivePath build/YuGiOhNativeIOS.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
-      - name: Package unsigned IPA
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ipa/Payload
-          cp -R build/YuGiOhNativeIOS.xcarchive/Products/Applications/YuGiOhNativeIOS.app ipa/Payload/
-          ditto -c -k --sequesterRsrc --keepParent ipa/Payload ipa/YuGiOhNativeIOS-unsigned.ipa
-      - uses: actions/upload-artifact@v4
-        with:
-          name: YuGiOhNativeIOS-unsigned-ipa
-          path: ipa/YuGiOhNativeIOS-unsigned.ipa
+          git submodule update --init --depth 1 NativeClient/edopro NativeClient/distribution
+          git -C NativeClient/edopro submodule update --init --recursive --depth 1 ocgcore
+      - name: Apply reviewed iOS bootstrap patch
+        run: python tools/apply_native_patches.py
+      # Never publish another catalog/prototype IPA as the complete game.
+      - name: Require native game readiness
+        run: python tools/check_native_port.py --require-ready
 
 

@@ -1,0 +1,37 @@
+{
+  "status": "blocked_architecture",
+  "reason": "DLL architecture does not match this host process; no native load attempted.",
+  "sourceURL": "https://raw.githubusercontent.com/ProjectIgnis/bin/a2d0ff9f28a184a572d4c5ae60f57e2e8343c820/ocgcore.dll",
+  "binaryRepositoryRevision": "a2d0ff9f28a184a572d4c5ae60f57e2e8343c820",
+  "binarySourceRevision": "fd2a557167f9e0fe19b867c325e67a3b3f9dca11",
+  "iosCoreRevision": "46779fbe40e6a9bd8967f5dc6a03f4eaa6550d57",
+  "exactIOSRevisionBinary": false,
+  "provenanceNote": "Official bin commit labels fd2a557. Comparing it with 46779fbe changes build/deploy files only; this is not proof of the exact iOS build.",
+  "hashes": {
+    "size": 1881102,
+    "gitBlobSHA1": "7abbcd82940f22504c5dd8c59c848c5ff36f7db5",
+    "sha256": "cc066dfe50d0ad1fd47645634d058771b02292fec83b7ab1eb4f755e5f7f303b"
+  },
+  "pe": {
+    "machine": "0x014c",
+    "architecture": "x86",
+    "bits": 32,
+    "imports": [
+      "kernel32.dll",
+      "msvcrt.dll",
+      "msvcrt.dll"
+    ]
+  },
+  "host": {
+    "system": "Windows",
+    "machine": "AMD64",
+    "pointerBits": 64
+  },
+  "nativeLibraryLoaded": false,
+  "nativeAPIVersion": null,
+  "dependencyLoadChecked": false,
+  "duelCreated": false,
+  "cardScriptsExecuted": false,
+  "buildTriggered": false,
+  "iosRuntimeVerified": false
+}

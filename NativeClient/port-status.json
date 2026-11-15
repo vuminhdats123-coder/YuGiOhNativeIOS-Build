@@ -1,0 +1,16 @@
+{
+  "engine": "EDOPro native client with its pinned ocgcore",
+  "legacySwiftPrototypeIsProductionGame": false,
+  "buildAuthorized": false,
+  "implementationReady": false,
+  "runtimeVerified": false,
+  "fullGameReady": false,
+  "remaining": [
+    "Verify packaged database, script and OBB mappings against the pinned core at runtime",
+    "Complete offline duel entry and AI on iOS",
+    "Render OBB square artwork as complete card faces and supply absent artwork",
+    "Pin and prepare all iOS native dependency libraries",
+    "Compile and execute full matches only after the build hold is lifted",
+    "Verify touch UI, lifecycle and audio on an iPhone"
+  ]
+}

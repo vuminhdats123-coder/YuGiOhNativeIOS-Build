@@ -1,0 +1,6 @@
+[submodule "NativeClient/edopro"]
+	path = NativeClient/edopro
+	url = https://github.com/edo9300/edopro.git
+[submodule "NativeClient/distribution"]
+	path = NativeClient/distribution
+	url = https://github.com/ProjectIgnis/Distribution.git

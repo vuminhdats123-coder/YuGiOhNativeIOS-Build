@@ -1,0 +1,52 @@
+{
+  "scope": "Pinned source, exact applied bootstrap patch, coverage provenance, runtime manifest and required-resource hashes only",
+  "pins": {
+    "client": {
+      "expected": "d0f111d6f3e0d4ee529b88a869ae0a971954bae3",
+      "actual": "d0f111d6f3e0d4ee529b88a869ae0a971954bae3",
+      "matches": true
+    },
+    "core": {
+      "expected": "46779fbe40e6a9bd8967f5dc6a03f4eaa6550d57",
+      "actual": "46779fbe40e6a9bd8967f5dc6a03f4eaa6550d57",
+      "matches": true
+    },
+    "lua": {
+      "expected": "6e22fedb74cf0c9b6656e9fce8b7331db847c605",
+      "actual": "6e22fedb74cf0c9b6656e9fce8b7331db847c605",
+      "matches": true
+    },
+    "distribution": {
+      "expected": "54a6e2395c532648ff762540e9615319fac4f51b",
+      "actual": "54a6e2395c532648ff762540e9615319fac4f51b",
+      "matches": true
+    }
+  },
+  "files": {
+    "NativeClient/edopro/gframe/iOS/porting_ios.mm": true,
+    "NativeClient/edopro/gframe/duelclient.cpp": true,
+    "NativeClient/edopro/ocgcore/ocgapi.h": true,
+    "NativeClient/edopro/ocgcore/lua/src/lua.h": true,
+    "NativeClient/distribution/config/strings.conf": true,
+    "NativeClient/distribution/fonts/NotoSansJP-Regular.otf": true,
+    "NativeClient/patches/0001-bundled-game.patch": true
+  },
+  "errors": [],
+  "sourcePreparationValid": true,
+  "bootstrapPatchVerified": true,
+  "coverageAuditValid": true,
+  "runtimePackageValid": true,
+  "runtimePackageManifestPresent": true,
+  "fullPackageHashesVerified": false,
+  "buildHeld": true,
+  "runtimeVerified": false,
+  "fullGameReady": false,
+  "remaining": [
+    "Verify packaged database, script and OBB mappings against the pinned core at runtime",
+    "Complete offline duel entry and AI on iOS",
+    "Render OBB square artwork as complete card faces and supply absent artwork",
+    "Pin and prepare all iOS native dependency libraries",
+    "Compile and execute full matches only after the build hold is lifted",
+    "Verify touch UI, lifecycle and audio on an iPhone"
+  ]
+}

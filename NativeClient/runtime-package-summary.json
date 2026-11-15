@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "sourceOBBSHA256": "7ad6962f99ec019a57e2324f0dab23fbbdee81669ed2d2fb766706eaf05a756b",
+  "sourceCDBSHA256": "cbc868862e257745a97e7139d791ae0a96c7a7c10ac4370bc67b200de60506b2",
+  "sourceLockSHA256": "5783d71e9c0297c9af1fe69b7432e1d5a868b80e9d3a47ff7978d1418287f0dd",
+  "deckCount": 799,
+  "mappedDecks": 799,
+  "localDuelDecks": 651,
+  "unresolvedDecks": 0,
+  "sourceJPGs": 7714,
+  "passcodePictures": 7484,
+  "sourceMP3s": 134,
+  "mappedMusicFiles": 15,
+  "pictureFormat": "art-only from OBB",
+  "nativeCardFaceRenderingRequired": true,
+  "missingMappedPictures": [
+    56832966,
+    62070231
+  ],
+  "scriptFiles": 23005,
+  "buildExecuted": false,
+  "limitations": [
+    "No runtime verification",
+    "No banlist legality check",
+    "No offline iOS WindBot integration",
+    "Current database/errata may differ from original OBB effects; consult mapping audit"
+  ],
+  "packagePath": "outputs/edopro-game-v2",
+  "manifestSHA256": "c91b6bcc33860f502f3985808c707208b9c2e00406f977770a65fc600cc25a74",
+  "payloadFiles": 46057,
+  "payloadBytes": 420234221,
+  "vietnameseTexts": 7484,
+  "metadataModified": false,
+  "runtimeVerified": false
+}

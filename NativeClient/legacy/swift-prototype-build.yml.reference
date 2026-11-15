@@ -1,0 +1,28 @@
+name: iOS Build
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download card image bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download assets-v1 --repo "$GITHUB_REPOSITORY" --pattern card-images.zip --dir "$RUNNER_TEMP"
+          mkdir -p YuGiOhNativeIOS/Resources
+          ditto -x -k "$RUNNER_TEMP/card-images.zip" YuGiOhNativeIOS/Resources
+      - name: Archive unsigned iPhone app
+        run: xcodebuild archive -project YuGiOhNativeIOS/YuGiOhNativeIOS.xcodeproj -scheme YuGiOhNativeIOS -sdk iphoneos -configuration Release -archivePath build/YuGiOhNativeIOS.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ipa/Payload
+          cp -R build/YuGiOhNativeIOS.xcarchive/Products/Applications/YuGiOhNativeIOS.app ipa/Payload/
+          ditto -c -k --sequesterRsrc --keepParent ipa/Payload ipa/YuGiOhNativeIOS-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YuGiOhNativeIOS-unsigned-ipa
+          path: ipa/YuGiOhNativeIOS-unsigned.ipa

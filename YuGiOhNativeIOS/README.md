@@ -1,5 +1,9 @@
 # YuGiOhNativeIOS
 
+> Prototype tham chiếu đã được thay thế trong hướng phát triển chính.
+> Bản game đầy đủ đang chuyển sang client/core EDOPro tại `NativeClient/`;
+> không dùng IPA từ target Swift này để đánh giá độ hoàn thiện của game.
+
 Project native SwiftUI nội bộ, dùng dữ liệu tên và mô tả thẻ đã trích xuất từ OBB thành `Resources/cards_en.json` (7,580 mục). Có tìm kiếm, lọc và xem chi tiết offline.
 
 ## Duel offline và kiểm tra
@@ -29,6 +33,7 @@ Không đánh đồng các kiểm tra dữ liệu Python với kết quả chạ
 ## Build hiện đang hoãn
 
 Theo yêu cầu của người dùng: chưa build app, IPA hoặc chạy GitHub Actions cho tới khi được phép.
-Workflow chỉ có `workflow_dispatch`; push không tự build. Khi được phép, workflow macOS 15
-sẽ archive cho iPhone (`iphoneos`) và tạo artifact `YuGiOhNativeIOS-unsigned-ipa`.
-Không sử dụng certificate hoặc provisioning profile. IPA phải được ký trước khi cài.
+Workflow Swift cũ đã chuyển ra `NativeClient/legacy/` làm tham chiếu. Workflow đang
+hoạt động chỉ là preflight thủ công cho hướng EDOPro và không tạo IPA prototype.
+Xem tài liệu tại `NativeClient/` cho tiến độ client mới. Không sử dụng certificate
+hoặc provisioning profile trong bước chuẩn bị này.

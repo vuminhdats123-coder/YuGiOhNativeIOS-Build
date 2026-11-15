@@ -4,3 +4,7 @@ com.konami.ygodgtest/
 build/
 DerivedData/
 __pycache__/
+/outputs/
+/NativeClient/runtime/
+/NativeClient/staging/
+/card-images.zip
