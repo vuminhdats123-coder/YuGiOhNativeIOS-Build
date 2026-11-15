@@ -39,7 +39,19 @@ public struct CardCatalog {
             return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
         }
     }
-    private struct Row: Decodable { let sourceIndex: Int; let name: String; let description: String; var id: Int { sourceIndex + 1 } }
+    private struct Row: Decodable {
+        let sourceIndex: Int
+        let name: String
+        let description: String
+        var id: Int { sourceIndex + 1 }
+        enum CodingKeys: String, CodingKey { case sourceIndex, id, name, description }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            sourceIndex = try c.decodeIfPresent(Int.self, forKey: .sourceIndex) ?? (c.decode(Int.self, forKey: .id) - 1)
+            name = try c.decode(String.self, forKey: .name)
+            description = try c.decode(String.self, forKey: .description)
+        }
+    }
     private struct IndexRow: Decodable { let sourceIndex: Int; let intID: Int?; let propFirst: UInt32; let atk: Int?; let def: Int?; let kind: String?; let attribute: String?; let level: Int?; let race: String?; let genres: [String]; var konamiID: Int { Int(propFirst & 0x3FFF) } }
     private static func loadIndex() -> [Int: IndexRow] { guard let url=Bundle.main.url(forResource: "card-index", withExtension: "json"), let data=try? Data(contentsOf:url), let rows=try? JSONDecoder().decode([IndexRow].self,from:data) else { return [:] }; return Dictionary(uniqueKeysWithValues: rows.map { ($0.sourceIndex,$0) }) }
 }
