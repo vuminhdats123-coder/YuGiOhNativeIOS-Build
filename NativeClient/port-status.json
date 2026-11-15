@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Complete one full ROTA-to-Synchro sequence; verify native human iOS play and GitHub macOS build inputs"
+    "Broaden combo/effect coverage beyond current grounded profiles and verify native human iOS play"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -87,8 +87,8 @@
     "nativeObservationBoundaryTestsExecuted": false,
     "nativeTacticalBridgeExecuted": false,
     "visibleTacticalProfiles": 50,
-    "windowsCoreComboScenarios": 6,
-    "windowsCoreComboResponses": 80,
+    "windowsCoreComboScenarios": 8,
+    "windowsCoreComboResponses": 132,
     "windowsCoreExtraDeckCurrentScenarios": 10,
     "windowsCoreFullMatchesCurrent": 36,
     "currentRuntimePackage": "outputs/edopro-game-v11-final",

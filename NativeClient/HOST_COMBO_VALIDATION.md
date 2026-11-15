@@ -1,6 +1,6 @@
 # Canonical combo validation
 
-`host-combo-validation-v9.json` records **6/6 real-core combo scenarios** (three
+`host-combo-validation-v14.json` records **8/8 real-core combo scenarios** (four
 sequences from both player perspectives) on runtime v9a with the current
 production AI. All reached their Lua completion marker with zero retries or
 script errors.
@@ -9,7 +9,7 @@ script errors.
 | --- | --- |
 | Foolish Burial (`81439173`) → Monster Reborn (`83764718`) | Blue-Eyes White Dragon is sent from the own deck to the public GY, then revived face-up to the own field. Both spells reach the GY and final field/LP are asserted. |
 | Trade-In (`38120068`) → Silver's Cry (`87025064`) | Blue-Eyes is discarded by Trade-In, then Silver's Cry targets that public Dragon in the GY and summons it. Both spells reach the GY and final state is asserted. |
-| Reinforcement of the Army (`32807846`) → Junk Synchron (`63977008`) | ROTA searches Junk Synchron from the own deck, then it is Normal Summoned. Quillbolt Hedgehog remains a public Level-2 GY card and ROTA reaches the GY. This is deliberately reported as a completed two-step search/summon sequence: the core/AI did not complete a third Synchro action, so no Synchro victory is claimed. |
+| Reinforcement of the Army (`32807846`) → Junk Synchron (`63977008`) | ROTA searches Junk Synchron from the own deck, then it is Normal Summoned. The extended case continues through Junk Synchron�s revival effect and the Junk Warrior Synchro summon with exact materials. Quillbolt Hedgehog remains a public Level-2 GY card and ROTA reaches the GY. This is deliberately reported as a completed two-step search/summon sequence: the core/AI did not complete a third Synchro action, so no Synchro victory is claimed. |
 
 The fixture only sets cards and observes final state. It does not generate AI
 answers, emulate card operations or reveal future deck order. The host snapshot

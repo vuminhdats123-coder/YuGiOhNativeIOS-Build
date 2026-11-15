@@ -62,6 +62,7 @@ COMBO_SCENARIOS = {
     'foolish_reborn': {'messages': {50,70,74}, 'scripts': {'c81439173.lua','c83764718.lua'}},
     'tradein_silverscry': {'messages': {50,70,74}, 'scripts': {'c38120068.lua','c87025064.lua'}},
     'rota_junk_search_summon': {'messages': {50,60,61,70,74}, 'scripts': {'c32807846.lua','c63977008.lua'}},
+    'rota_junk_synchro': {'messages': {50,60,61,62,63,70,74}, 'scripts': {'c32807846.lua','c63977008.lua','c60800381.lua','proc_synchro.lua'}},
 }
 SCENARIO_SUITES = {
     'prompt': (SCENARIO_SOURCE, SCENARIO_PROMPTS, 'Prompt', 'host-prompt-validation.json'),
@@ -471,6 +472,7 @@ class Engine:
                         response=self.answer(node,duel,message,payload)
                         report['responses'].append({'message':message,'player':payload[0],'payload':list(payload),'response':list(response)})
                         if suite in ('tactical','combo'): report['responses'][-1]['board']=self.last_board
+                        if suite=='combo': report['responses'][-1]['board']=self.last_board
                         if message==16 and len(payload)>2 and payload[2]: report['forcedChains']+=1
                         self.dll.OCG_DuelSetResponse(duel,response,len(response));responded=True
                 if self.errors: raise ValueError('Scenario callback/script errors')

@@ -38,14 +38,23 @@ function HostComboScenario(player, kind, marker)
             assert(Duel.GetLP(player)==8000 and Duel.GetLP(1-player)==8000)
             complete()
         end)
-    elseif kind=="rota_junk_search_summon" then
+    elseif kind=="rota_junk_search_summon" or kind=="rota_junk_synchro" then
         local quill=add(23571046,player,LOCATION_GRAVE,0,POS_FACEUP_DEFENSE)
         local rota=add(32807846,player,LOCATION_HAND,0,POS_FACEDOWN_DEFENSE)
         local synchron=add(63977008,player,LOCATION_DECK,0,POS_FACEDOWN_DEFENSE)
-        observe(EVENT_SUMMON_SUCCESS,function(e,tp,eg)
-            assert(eg:IsContains(synchron))
-            assert(synchron:IsLocation(LOCATION_MZONE) and synchron:IsControler(player) and synchron:IsFaceup())
-            assert(rota:IsLocation(LOCATION_GRAVE) and quill:IsLocation(LOCATION_GRAVE))
+        local warrior=kind=="rota_junk_synchro" and add(60800381,player,LOCATION_EXTRA,0,POS_FACEDOWN_DEFENSE) or nil
+        observe(kind=="rota_junk_synchro" and EVENT_SPSUMMON_SUCCESS or EVENT_SUMMON_SUCCESS,function(e,tp,eg)
+            if kind=="rota_junk_synchro" then
+                if not eg:IsContains(warrior) then return end
+                assert(warrior:IsSummonType(SUMMON_TYPE_SYNCHRO) and warrior:IsLocation(LOCATION_MZONE) and warrior:IsFaceup())
+                local used=warrior:GetMaterial();assert(#used==2 and used:IsContains(synchron) and used:IsContains(quill))
+                assert(synchron:IsLocation(LOCATION_GRAVE) and quill:IsLocation(LOCATION_GRAVE))
+                assert(rota:IsLocation(LOCATION_GRAVE) and warrior:GetAttack()>=2300)
+            else
+                assert(eg:IsContains(synchron))
+                assert(synchron:IsLocation(LOCATION_MZONE) and synchron:IsControler(player) and synchron:IsFaceup())
+                assert(rota:IsLocation(LOCATION_GRAVE) and quill:IsLocation(LOCATION_GRAVE))
+            end
             complete()
         end)
     else error("Unknown host combo scenario") end

@@ -357,16 +357,16 @@
     "selfPrivateZones": "Own hand/Extra identities and public Graves are now supplied synchronously for bounded combo choices; no MainDeck/opponent private identities/deck order/seed"
   },
   "windowsComboScenarios": {
-    "report": "host-combo-validation-v11.json",
-    "reportSHA256": "c5bd752f57285efd9b16309b6f0422d458297a05d2253a65e5e56e47157be2f4",
-    "accepted": 6,
-    "responses": 80,
+    "report": "host-combo-validation-v14.json",
+    "reportSHA256": "e404ec78a41226a14cce6169d9c27c360604397ac978c03745663cac5da44e74",
+    "accepted": 8,
+    "responses": 132,
     "retries": 0,
     "scriptErrors": 0,
     "aiSHA256": "02ff13060ac2aa207f9bff900e1487b771bcc0cf0314dafee78b2f2153cf023a",
     "fullMatchesClaimed": 0,
     "nativeIOSExecuted": false,
-    "limit": "Three bounded sequences; full ROTA to Synchro not proven",
+    "limit": "Four bounded sequences; ROTA-to-Synchro now proven with exact materials and zone assertions",
     "harnessSHA256": "5e34014ad93b08f7629fe1485eb069c07b9ee2b086fdfea599e08e80acf24e9b"
   },
   "windowsExtraDeckCurrent": {

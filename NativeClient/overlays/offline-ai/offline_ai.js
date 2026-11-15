@@ -293,7 +293,7 @@
     function extraComboPlan(card) {
       const code=codeOf(card), tuner=hasCode(ownHand(),CARD.JUNK_SYNCHRON)||
         (board&&board.self.cards.some(c=>c.location===4&&c.code===CARD.JUNK_SYNCHRON)),
-        level2=bestGraveAny(c=>{const data=info(c)||c;const level=Number(data.level||c.level||0);return level>0&&level<=2;});
+        level2=bestGraveAny(c=>{const data=info(c)||c;const level=Number(data.level||c.level||0);return level>0&&level<=2;})||monsters(true).find(isLevel2);
       if (code===CARD.JUNK_WARRIOR) return {utility:tuner&&level2?4200:0,target:level2};
       if (code===CARD.SCRAP_WARRIOR||code===CARD.JUNK_GARDNA||code===CARD.JUNK_DESTROYER||code===CARD.JUNK_BERSERKER)
         return {utility:ownHand().some(isMonster)&&monsters(true).length<5?1500:0};
@@ -317,7 +317,8 @@
       case CARD.TRADE_IN:case CARD.SILVER_CRY:case CARD.ROTA:case CARD.MELODY:case CARD.FOOLISH_GOODS:case CARD.ONE_FOR_ONE:
         return comboPlan(card);
       case CARD.JUNK_SYNCHRON:
-        return {utility:bestGrave(isLevel2)&&ownExtra().some(c=>codeOf(c)===CARD.JUNK_WARRIOR)?3300:0,target:bestGrave(isLevel2)};
+        { const target=bestGraveAny(isLevel2)||monsters(true).find(isLevel2);
+          return {utility:target&&ownExtra().some(c=>codeOf(c)===CARD.JUNK_WARRIOR)?3300:0,target}; }
       case CARD.MST: {
         const targets=spells(false).filter(c=>!(same(c,lastChain)&&!(info(c)?.type&(0x20000|0x40000|0x80000))));
         targets.sort((a,b)=>value(b)-value(a)||a.sequence-b.sequence);
