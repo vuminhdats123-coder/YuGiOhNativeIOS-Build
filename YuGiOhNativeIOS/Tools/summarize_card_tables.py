@@ -16,6 +16,6 @@ def main():
    elif base.startswith(('CARD_Sort','CARD_Kana1_')): row['recordBytes']=2; row['records']=len(d)//2
    else: row['format']='raw-opaque'
    rows.append(row)
- rows=a.out.write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf8'); print('tables',len(rows))
+ a.out.write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf8'); print('tables',len(rows))
 if __name__=='__main__': main()
 
