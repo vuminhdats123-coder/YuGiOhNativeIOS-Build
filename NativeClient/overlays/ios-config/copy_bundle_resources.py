@@ -14,6 +14,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
+import unicodedata
 import uuid
 
 BASE_REQUIRED = {
@@ -44,7 +45,7 @@ def canonical_inventory_name(value: str) -> str:
         "Espa\u00c3\u00b1ol": "Espa\u00f1ol", "Fran\u00c3\u00a7ais": "Fran\u00e7ais", "Portugu\u00c3\u00aas": "Portugu\u00eas",
     }.items():
         value = value.replace(source, target)
-    return value
+    return unicodedata.normalize("NFC", value)
 
 
 def safe_relative(value: str) -> Path:
