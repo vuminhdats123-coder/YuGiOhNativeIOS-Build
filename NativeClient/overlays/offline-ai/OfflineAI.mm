@@ -47,7 +47,7 @@ bool readBytes(JSValue* value, std::vector<uint8_t>& out, std::string& error) {
 	}
 	return true;
 }
-NSDictionary* queriedCard(const Duel* duel, uint8_t controller, uint32_t location, uint32_t sequence) {
+NSDictionary* queriedCard(const ::Duel* duel, uint8_t controller, uint32_t location, uint32_t sequence) {
 	if(!duel) return nil;
 	constexpr uint32_t queryFlags = 0x1u | 0x2u | 0x8u | 0x10u | 0x20u | 0x100u | 0x200u | 0x80000u | 0x800000u;
 	OCG_QueryInfo query{queryFlags, controller, location, sequence, 0};
@@ -78,7 +78,7 @@ NSDictionary* queriedCard(const Duel* duel, uint8_t controller, uint32_t locatio
 	return @{@"code":@(code), @"location":@(location), @"sequence":@(sequence), @"position":@(position), @"type":@(type),
 		@"attack":@(attack), @"defense":@(defense), @"level":@(level), @"rank":@(rank), @"link":@(link), @"disabled":@((status & 1u) != 0)};
 }
-NSArray* queriedZone(const Duel* duel, uint8_t controller, uint32_t location, uint32_t count) {
+NSArray* queriedZone(const ::Duel* duel, uint8_t controller, uint32_t location, uint32_t count) {
 	NSMutableArray* result = [NSMutableArray array];
 	// Hand/Extra are bounded by deck rules; public Grave can grow through effects, so cap bridge work.
 	const uint32_t limit = std::min<uint32_t>(count, 256);
@@ -87,7 +87,7 @@ NSArray* queriedZone(const Duel* duel, uint8_t controller, uint32_t location, ui
 	}
 	return result;
 }
-NSDictionary* ownAndPublicZones(const Duel* duel) {
+NSDictionary* ownAndPublicZones(const ::Duel* duel) {
 	if(!duel) return @{};
 	NSMutableDictionary* result = [NSMutableDictionary dictionary];
 	const auto count = [&](uint8_t controller, uint32_t location) { return duel->DuelQueryCount(controller, location); };
@@ -166,7 +166,7 @@ bool FilterForHuman(uint8_t message, const uint8_t* data, size_t size, std::vect
 		return !visible || readBytes(result, filtered, error);
 	}
 }
-bool Respond(const Duel* duel, uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error) {
+bool Respond(const ::Duel* duel, uint8_t message, const uint8_t* data, size_t size, std::vector<uint8_t>& response, std::string& error) {
 	if(!Handles(message) || size == 0 || !data || data[0] != 1) { error = "AI must respond only to player 1 prompts."; return false; }
 	// Despite its historical name, selector redaction is relative to the prompt's selecting player.
 	// Keep legal search/public identities and wire indices; conceal opposing hidden identities.
