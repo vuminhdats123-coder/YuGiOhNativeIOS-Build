@@ -42,7 +42,15 @@ public struct CardCatalog {
     }
 }
 
-public struct ContentView: View {
+'
+private enum CardImageStore {
+    static func image(named name: String) -> UIImage? {
+        let path = Bundle.main.path(forResource: name.replacingOccurrences(of: ".jpg", with: ""), ofType: "jpg", inDirectory: "CardImages")
+        return path.flatMap { UIImage(contentsOfFile: $0) }
+    }
+}
+
+'public struct ContentView: View {
     @StateObject private var store = CardStore()
     private let types = ["All", "Effect Monster", "Normal Monster"]
 
@@ -71,7 +79,7 @@ public struct ContentView: View {
             .navigationDestination(for: Card.self) { card in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        if let imageName = card.imageName, let image = UIImage(named: imageName) {
+                        if let imageName = card.imageName, let image = CardImageStore.image(named: imageName) {
                             Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 320).clipShape(RoundedRectangle(cornerRadius: 16))
                         } else {
                             RoundedRectangle(cornerRadius: 16).fill(.orange.gradient).frame(height: 220)
@@ -87,5 +95,6 @@ public struct ContentView: View {
         }
     }
 }
+
 
 
