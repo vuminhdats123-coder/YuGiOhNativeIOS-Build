@@ -2,9 +2,11 @@
   "decks": 799,
   "usedKonamiIds": 5215,
   "mapped": 5213,
-  "missing": [
-    10855,
-    11766
-  ],
-  "missingCount": 2
+  "missing": [],
+  "missingCount": 0,
+  "fallbackNames": {
+    "10855": "Number 94: Crystalzero",
+    "11766": "Number S39: Utopia the Lightning"
+  },
+  "fallbackSource": "public LOTD YDC converter card table"
 }
