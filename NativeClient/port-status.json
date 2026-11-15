@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Verify native human iOS play and continue broadening combo/effect coverage beyond current profiles"
+    "Complete one full ROTA-to-Synchro sequence; verify native human iOS play and GitHub macOS build inputs"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -91,8 +91,8 @@
     "windowsCoreComboResponses": 80,
     "windowsCoreExtraDeckCurrentScenarios": 10,
     "windowsCoreFullMatchesCurrent": 36,
-    "currentRuntimePackage": "outputs/edopro-game-v9a",
-    "currentRuntimeManifestSHA256": "87ae2963d22ce9be2daaab4b59c18b27ca46f79f861a63f80bc4c299b3006fbf",
+    "currentRuntimePackage": "outputs/edopro-game-v11-final",
+    "currentRuntimeManifestSHA256": "pending",
     "aiSHA256": "02ff13060ac2aa207f9bff900e1487b771bcc0cf0314dafee78b2f2153cf023a"
   },
   "limitations": [

@@ -111,7 +111,7 @@
     "exactIOSBinary": false,
     "coreSourceEquivalent": true,
     "aiSHA256": "02ff13060ac2aa207f9bff900e1487b771bcc0cf0314dafee78b2f2153cf023a",
-    "reportSHA256": "f62a232be6ec7383ed09e598b125caac4985faa26c115ec50e26fc23cb741951",
+    "reportSHA256": "eefe3e839406a8d9934f294690b0ebb76461436fb112699a41e6365be5f55295",
     "poolInitializationReport": "host-validation.json",
     "poolInitializationRerun": false,
     "poolDatabaseAndLuaUnchanged": true
@@ -357,8 +357,8 @@
     "selfPrivateZones": "Own hand/Extra identities and public Graves are now supplied synchronously for bounded combo choices; no MainDeck/opponent private identities/deck order/seed"
   },
   "windowsComboScenarios": {
-    "report": "host-combo-validation-v9.json",
-    "reportSHA256": "cc2230eb7a8ca8952ac0dcf3bd192ae6f8fa319a48f1682f9f9380041d0e3067",
+    "report": "host-combo-validation-v11.json",
+    "reportSHA256": "c5bd752f57285efd9b16309b6f0422d458297a05d2253a65e5e56e47157be2f4",
     "accepted": 6,
     "responses": 80,
     "retries": 0,
@@ -370,8 +370,8 @@
     "harnessSHA256": "5e34014ad93b08f7629fe1485eb069c07b9ee2b086fdfea599e08e80acf24e9b"
   },
   "windowsExtraDeckCurrent": {
-    "report": "host-extra-deck-validation-v9-final.json",
-    "reportSHA256": "1344e0874e0a65323e662f8ea232b5576c5d384c674349f5b27f513e15ac5c0f",
+    "report": "host-extra-deck-validation-v11.json",
+    "reportSHA256": "42ab7b06dafe3bdce744fadafe6af3ce3a956a7455b502b445000f0e9e384fc2",
     "accepted": 10,
     "total": 10,
     "failedCases": [],
@@ -381,7 +381,7 @@
     "historicalFullSuite": "host-extra-deck-validation.json",
     "nativeIOSExecuted": false
   },
-  "runtimePackagePending": "outputs/edopro-game-v9a payload manifest must be refreshed with final AI before release",
+  "runtimePackagePending": "outputs/edopro-game-v11-final local preparation; package must be refreshed to current AI before any build",
   "resourceCopyV9a": {
     "fixture": "outputs/resource-copy-check-v9a/ResourceCopyFixture.app",
     "copyReport": "outputs/resource-copy-v9a.json",
