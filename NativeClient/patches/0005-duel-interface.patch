@@ -1,5 +1,5 @@
 diff --git a/gframe/client_field.cpp b/gframe/client_field.cpp
-index 03648fb..b6f8ba5 100644
+index 03648fb..144649d 100644
 --- a/gframe/client_field.cpp
 +++ b/gframe/client_field.cpp
 @@ -21,6 +21,7 @@
@@ -73,7 +73,7 @@ index 03648fb..b6f8ba5 100644
 +		fade.fadingSize = panelRect;
 +		fade.fadingUL = panelRect.UpperLeftCorner;
 +		fade.fadingLR = panelRect.LowerRightCorner;
-+		fade.fadingDest = {0, 0};
++		fade.fadingDest = irr::core::vector2di(0, 0);
 +		// Finish on the next draw tick, which restores images and delivers a pending hide response.
 +		// Setting the frame directly to zero would skip that completion path.
 +		if(fade.fadingFrame > 0.0f) fade.fadingFrame = std::min(fade.fadingFrame, 1.0f);
