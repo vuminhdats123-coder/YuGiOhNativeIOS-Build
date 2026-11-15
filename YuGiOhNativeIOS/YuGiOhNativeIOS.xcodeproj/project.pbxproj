@@ -5,19 +5,21 @@
  objects = {
   111111111111111111111111 /* Project object */ = {isa = PBXProject; attributes = {LastUpgradeCheck = 1600;}; buildConfigurationList = 222222222222222222222222 /* Project configs */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; mainGroup = 333333333333333333333333; productRefGroup = 444444444444444444444444; projectDirPath = ""; projectRoot = ""; targets = (555555555555555555555555); };
   333333333333333333333333 = {isa = PBXGroup; children = (666666666666666666666666,777777777777777777777777,888888888888888888888888); sourceTree = "<group>";};
-  666666666666666666666666 = {isa = PBXGroup; children = (999999999999999999999999,AAAAAAAAAAAAAAAAAAAAAAAA); name = Sources; path = Sources/YuGiOhNativeIOS; sourceTree = "<group>";};
+  666666666666666666666666 = {isa = PBXGroup; children = (999999999999999999999999,AAAAAAAAAAAAAAAAAAAAAAAA,DEDEDEDEDEDEDEDEDEDEDEDE); name = Sources; path = Sources/YuGiOhNativeIOS; sourceTree = "<group>";};
   777777777777777777777777 = {isa = PBXGroup; children = (BBBBBBBBBBBBBBBBBBBBBBBB,CDCDCDCDCDCDCDCDCDCDCDCD,ABABABABABABABABABABABAB); name = Resources; path = Resources; sourceTree = "<group>";};
   888888888888888888888888 = {isa = PBXGroup; children = (CCCCCCCCCCCCCCCCCCCCCCCC); name = Products; sourceTree = "<group>";};
   999999999999999999999999 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YuGiOhNativeIOS.swift; sourceTree = "<group>";};
+  DEDEDEDEDEDEDEDEDEDEDEDE = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPropDecoder.swift; sourceTree = "<group>";};
   AAAAAAAAAAAAAAAAAAAAAAAA = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>";};
   CDCDCDCDCDCDCDCDCDCDCDCD = {isa = PBXFileReference; lastKnownFileType = text.json; path = card-index.json; sourceTree = "<group>";};
   ABABABABABABABABABABABAB = {isa = PBXFileReference; lastKnownFileType = folder; path = CardImages; sourceTree = "<group>";};
   BBBBBBBBBBBBBBBBBBBBBBBB = {isa = PBXFileReference; lastKnownFileType = text.json; path = cards_en.json; sourceTree = "<group>";};
   CCCCCCCCCCCCCCCCCCCCCCCC = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YuGiOhNativeIOS.app; sourceTree = BUILT_PRODUCTS_DIR;};
-  DDDDDDDDDDDDDDDDDDDDDDDD = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (EEEEEEEEEEEEEEEEEEEEEEEE,FFFFFFFFFFFFFFFFFFFFFFFF); runOnlyForDeploymentPostprocessing = 0;};
+  DDDDDDDDDDDDDDDDDDDDDDDD = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (EEEEEEEEEEEEEEEEEEEEEEEE,FFFFFFFFFFFFFFFFFFFFFFFF,EFEFEFEFEFEFEFEFEFEFEFEFE); runOnlyForDeploymentPostprocessing = 0;};
   121212121212121212121212 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (131313131313131313131313,CECECECECECECECECECECECE,ACACACACACACACACACACACAC); runOnlyForDeploymentPostprocessing = 0;};
   EEEEEEEEEEEEEEEEEEEEEEEE = {isa = PBXBuildFile; fileRef = 999999999999999999999999;};
   FFFFFFFFFFFFFFFFFFFFFFFF = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAAA;};
+  EFEFEFEFEFEFEFEFEFEFEFEFE = {isa = PBXBuildFile; fileRef = DEDEDEDEDEDEDEDEDEDEDEDE;};
   131313131313131313131313 = {isa = PBXBuildFile; fileRef = BBBBBBBBBBBBBBBBBBBBBBBB;};
   CECECECECECECECECECECECE = {isa = PBXBuildFile; fileRef = CDCDCDCDCDCDCDCDCDCDCDCD;};
   ACACACACACACACACACACACAC = {isa = PBXBuildFile; fileRef = ABABABABABABABABABABABAB;};

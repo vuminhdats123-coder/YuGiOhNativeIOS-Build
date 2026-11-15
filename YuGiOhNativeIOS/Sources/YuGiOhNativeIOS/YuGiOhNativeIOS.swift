@@ -97,7 +97,8 @@ public struct ContentView: View {
                         Label(card.type, systemImage: "rectangle.stack")
                         Label(card.attribute, systemImage: "circle.lefthalf.filled")
                         Text(card.description).font(.body)
-                        if let intID = card.intID { Text("IntID: \(intID) � Prop: \(card.prop ?? 0) � Genre: \(card.genre ?? 0)").font(.caption).foregroundStyle(.secondary) }
+                        if let intID = card.intID { Text("IntID: \(intID) ï¿½ Prop: \(card.prop ?? 0) ï¿½ Genre: \(card.genre ?? 0)").font(.caption).foregroundStyle(.secondary) }
+                            if let prop = card.prop { Text(CardPropDecoder.labels(prop).joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }
                     }.padding()
                 }.navigationTitle("Card Detail")
             }
