@@ -11,6 +11,8 @@ public struct Card: Identifiable, Hashable {
     public let intID: Int?
     public let konamiID: Int?
     public let password: UInt32?
+    public let englishReading: String?
+    public let japaneseReading: String?
     public let atk: Int?
     public let def: Int?
     public let kind: String?
@@ -19,8 +21,8 @@ public struct Card: Identifiable, Hashable {
     public let level: Int?
     public let genres: [String]
 
-    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, konamiID: Int? = nil, password: UInt32? = nil, atk: Int? = nil, def: Int? = nil, kind: String? = nil, attributeName: String? = nil, race: String? = nil, level: Int? = nil, genres: [String] = []) {
-        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.konamiID = konamiID; self.password = password; self.atk = atk; self.def = def; self.kind = kind; self.attributeName = attributeName; self.race = race; self.level = level; self.genres = genres
+    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, konamiID: Int? = nil, password: UInt32? = nil, englishReading: String? = nil, japaneseReading: String? = nil, atk: Int? = nil, def: Int? = nil, kind: String? = nil, attributeName: String? = nil, race: String? = nil, level: Int? = nil, genres: [String] = []) {
+        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.konamiID = konamiID; self.password = password; self.englishReading = englishReading; self.japaneseReading = japaneseReading; self.atk = atk; self.def = def; self.kind = kind; self.attributeName = attributeName; self.race = race; self.level = level; self.genres = genres
     }
 }
 
@@ -37,8 +39,9 @@ public struct CardCatalog {
         let index = loadIndex()
         return rows.map { row in
             let meta = index[row.sourceIndex]
+            let kana = CardKanaStore.reading(for: row.sourceIndex)
             let imageName = meta.map { String(format: "%04d.jpg", $0.konamiID) }
-            return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, konamiID: meta?.konamiID, password: meta?.password, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
+            return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, konamiID: meta?.konamiID, password: meta?.password, englishReading: kana?.english, japaneseReading: kana?.japanese, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
         }
     }
     private struct Row: Decodable {
@@ -129,6 +132,8 @@ private struct CardDetailView: View {
                 Label(card.attributeName ?? card.attribute, systemImage: "circle.lefthalf.filled")
                 if let race = card.race { Text("Race: \(race)") }
                 if let password = card.password { Text("Password: \(password)").font(.caption).foregroundStyle(.secondary) }
+                if let reading = card.englishReading, !reading.isEmpty { Text("Reading: \(reading)").font(.caption).foregroundStyle(.secondary) }
+                if let reading = card.japaneseReading, !reading.isEmpty { Text("Japanese reading: \(reading)").font(.caption).foregroundStyle(.secondary) }
                 if let level = card.level { Text("Level: \(level) | ATK: \(card.atk.map(String.init) ?? "?") | DEF: \(card.def.map(String.init) ?? "?")") }
                 Text(card.description).font(.body)
                 if !card.genres.isEmpty { Text(card.genres.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary) }

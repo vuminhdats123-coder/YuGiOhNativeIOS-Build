@@ -33,3 +33,13 @@ enum CardPackStore {
         return try? JSONDecoder().decode(CardPackSummary.self, from: data)
     }()
 }
+
+
+struct CardKanaReading: Decodable { let sourceIndex: Int; let english: String; let japanese: String }
+enum CardKanaStore {
+    static let readings: [Int: CardKanaReading] = {
+        guard let url = Bundle.main.url(forResource: "card-kana-index", withExtension: "json", subdirectory: "GeneratedData"), let data = try? Data(contentsOf: url), let rows = try? JSONDecoder().decode([CardKanaReading].self, from: data) else { return [:] }
+        return Dictionary(uniqueKeysWithValues: rows.map { ($0.sourceIndex, $0) })
+    }()
+    static func reading(for sourceIndex: Int) -> CardKanaReading? { readings[sourceIndex] }
+}
