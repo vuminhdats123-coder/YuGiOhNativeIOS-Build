@@ -16,10 +16,16 @@ private enum DeckCatalog {
               let decks = try? JSONDecoder().decode([Deck].self, from: data) else { return [] }
         return decks
     }
+    static func loadNames() -> [Int: String] {
+        guard let url = Bundle.main.url(forResource: "card-id-names", withExtension: "json", subdirectory: "GeneratedData"), let data = try? Data(contentsOf: url), let values = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
+        return Dictionary(uniqueKeysWithValues: values.compactMap { Int($0.key).map { ($0, $0.description) } })
+    }
 }
 
 struct DeckListView: View {
     private let decks = DeckCatalog.load()
+    private let names = DeckCatalog.loadNames()
+    private func label(_ id: Int) -> String { names[id].map { "\($0) (Konami ID \(id))" } ?? "Unknown card (Konami ID \(id))" }
     var body: some View {
         List(decks) { deck in
             NavigationLink(value: deck.id) {
@@ -36,17 +42,17 @@ struct DeckListView: View {
                 List {
                     Section("Main (\(deck.main.count))") {
                         ForEach(Array(deck.main.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1). Internal card ID \(row.element)")
+                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
                         }
                     }
                     Section("Extra (\(deck.extra.count))") {
                         ForEach(Array(deck.extra.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1). Internal card ID \(row.element)")
+                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
                         }
                     }
                     Section("Side (\(deck.side.count))") {
                         ForEach(Array(deck.side.enumerated()), id: \.offset) { row in
-                            Text("\(row.offset + 1). Internal card ID \(row.element)")
+                            Text("\(row.offset + 1).  \(label($0.element)) \(row.element)")
                         }
                     }
                 }
