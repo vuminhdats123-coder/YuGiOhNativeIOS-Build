@@ -33,7 +33,11 @@ public struct CardCatalog {
               let data = try? Data(contentsOf: url),
               let rows = try? JSONDecoder().decode([Row].self, from: data) else { return sample }
         let index = loadIndex()
-        return rows.map { row in let meta=index[row.sourceIndex]; return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: meta?.konamiID.map { String(format: "%04d.jpg", $0) }, intID: meta?.intID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? []) }
+        return rows.map { row in
+            let meta = index[row.sourceIndex]
+            let imageName = meta.map { String(format: "%04d.jpg", $0.konamiID) }
+            return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
+        }
     }
     private struct Row: Decodable { let sourceIndex: Int; let name: String; let description: String; var id: Int { sourceIndex + 1 } }
     private struct IndexRow: Decodable { let sourceIndex: Int; let intID: Int?; let propFirst: UInt32; let atk: Int?; let def: Int?; let kind: String?; let attribute: String?; let level: Int?; let race: String?; let genres: [String]; var konamiID: Int { Int(propFirst & 0x3FFF) } }
