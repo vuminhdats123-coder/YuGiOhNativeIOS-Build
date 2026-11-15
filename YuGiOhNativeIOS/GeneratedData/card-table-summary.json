@@ -1,0 +1,487 @@
+[
+  {
+    "file": "CARD_Desc_E.bin",
+    "bytes": 3345748,
+    "nonZeroBytes": 1662150,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_F.bin",
+    "bytes": 3936340,
+    "nonZeroBytes": 1957531,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_G.bin",
+    "bytes": 4177168,
+    "nonZeroBytes": 2090102,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_I.bin",
+    "bytes": 3544648,
+    "nonZeroBytes": 2023234,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_J.bin",
+    "bytes": 1673456,
+    "nonZeroBytes": 1645435,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_K.bin",
+    "bytes": 1882852,
+    "nonZeroBytes": 1534032,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_R.bin",
+    "bytes": 3550352,
+    "nonZeroBytes": 3024917,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Desc_S.bin",
+    "bytes": 3820704,
+    "nonZeroBytes": 1899574,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Genre.bin",
+    "bytes": 60648,
+    "nonZeroBytes": 14483,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_E.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 42846,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_F.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 43070,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_G.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 43122,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_I.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 42931,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_J.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 40875,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_K.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 40578,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_R.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 42755,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Indx_S.bin",
+    "bytes": 60656,
+    "nonZeroBytes": 43134,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_IntID.bin",
+    "bytes": 17066,
+    "nonZeroBytes": 14876,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana.bin",
+    "bytes": 2038,
+    "nonZeroBytes": 2036,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana1_E.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7580,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_F.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7591,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_G.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7583,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_I.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7580,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_J.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15160,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_K.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14341,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_R.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15160,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana1_S.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7580,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Kana2.bin",
+    "bytes": 2038,
+    "nonZeroBytes": 2036,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_E.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_F.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7593,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_G.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_I.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_J.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15160,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_K.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14267,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_R.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15160,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana2_S.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_E.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_F.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7583,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_G.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7582,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_I.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_J.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15142,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_K.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 12913,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_R.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 15142,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Kana3_S.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 7579,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Link.bin",
+    "bytes": 14508,
+    "nonZeroBytes": 12325,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Name_E.bin",
+    "bytes": 288072,
+    "nonZeroBytes": 132690,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_F.bin",
+    "bytes": 332620,
+    "nonZeroBytes": 154982,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_G.bin",
+    "bytes": 322584,
+    "nonZeroBytes": 150054,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_I.bin",
+    "bytes": 288072,
+    "nonZeroBytes": 132690,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_J.bin",
+    "bytes": 154784,
+    "nonZeroBytes": 131063,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_K.bin",
+    "bytes": 139364,
+    "nonZeroBytes": 104251,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_R.bin",
+    "bytes": 272680,
+    "nonZeroBytes": 223673,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Name_S.bin",
+    "bytes": 333156,
+    "nonZeroBytes": 155172,
+    "encoding": "utf-16le-offset-table"
+  },
+  {
+    "file": "CARD_Named.bin",
+    "bytes": 8728,
+    "nonZeroBytes": 8381,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Pack.bin",
+    "bytes": 12900,
+    "nonZeroBytes": 0,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Pass.bin",
+    "bytes": 30324,
+    "nonZeroBytes": 28540,
+    "recordBytes": 4,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Prop.bin",
+    "bytes": 60648,
+    "nonZeroBytes": 47419,
+    "recordBytes": 8,
+    "records": 7581
+  },
+  {
+    "file": "CARD_PwCost.bin",
+    "bytes": 2038,
+    "nonZeroBytes": 1694,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Same.bin",
+    "bytes": 240,
+    "nonZeroBytes": 184,
+    "format": "raw-opaque"
+  },
+  {
+    "file": "CARD_Sort2_E.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_F.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_G.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_I.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_J.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_K.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_R.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort2_S.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_E.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_F.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_G.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_I.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_J.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_K.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_R.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  },
+  {
+    "file": "CARD_Sort_S.bin",
+    "bytes": 15162,
+    "nonZeroBytes": 14876,
+    "recordBytes": 2,
+    "records": 7581
+  }
+]
