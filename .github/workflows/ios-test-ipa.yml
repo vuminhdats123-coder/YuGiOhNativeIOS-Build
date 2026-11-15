@@ -109,15 +109,23 @@ jobs:
           export IPA_ROOT="$RUNNER_TEMP/ipa" IPA_OUTPUT="$RUNNER_TEMP/YuGiOhNativeIOS-unsigned.ipa"
           python3 - <<'PY'
           from pathlib import Path
-          import zipfile
           import os
-          root = Path(os.environ["IPA_ROOT"])
-          output = Path(os.environ["IPA_OUTPUT"])
-          with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
-              for path in sorted((root / "Payload").rglob("*")):
-                  if path.is_file():
-                      archive.write(path, path.relative_to(root).as_posix())
-          print(output, output.stat().st_size)
+          import stat
+          import traceback
+          import zipfile
+          try:
+              root = Path(os.environ["IPA_ROOT"])
+              output = Path(os.environ["IPA_OUTPUT"])
+              count = 0
+              with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
+                  for path in sorted((root / "Payload").rglob("*")):
+                      if path.is_file() and not stat.S_ISLNK(path.lstat().st_mode):
+                          archive.write(path, path.relative_to(root).as_posix())
+                          count += 1
+              print(f"Packaged {count} files to {output} ({output.stat().st_size} bytes)", flush=True)
+          except BaseException:
+              traceback.print_exc()
+              raise
           PY
 
       - name: Upload unsigned IPA and archive
