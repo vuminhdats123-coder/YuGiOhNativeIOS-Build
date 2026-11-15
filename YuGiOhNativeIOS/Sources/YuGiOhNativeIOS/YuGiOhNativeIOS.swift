@@ -9,14 +9,16 @@ public struct Card: Identifiable, Hashable {
     public let description: String
     public let imageName: String?
     public let intID: Int?
-    public let prop: UInt32?
-    public let genre: UInt32?
-    public let pack: Int?
-    public let pass: UInt32?
-    public let link: UInt32?
+    public let atk: Int?
+    public let def: Int?
+    public let kind: String?
+    public let attributeName: String?
+    public let race: String?
+    public let level: Int?
+    public let genres: [String]
 
-    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, prop: UInt32? = nil, genre: UInt32? = nil, pack: Int? = nil, pass: UInt32? = nil, link: UInt32? = nil) {
-        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.prop = prop; self.genre = genre; self.pack = pack; self.pass = pass; self.link = link
+    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, atk: Int? = nil, def: Int? = nil, kind: String? = nil, attributeName: String? = nil, race: String? = nil, level: Int? = nil, genres: [String] = []) {
+        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.atk = atk; self.def = def; self.kind = kind; self.attributeName = attributeName; self.race = race; self.level = level; self.genres = genres
     }
 }
 
@@ -31,10 +33,10 @@ public struct CardCatalog {
               let data = try? Data(contentsOf: url),
               let rows = try? JSONDecoder().decode([Row].self, from: data) else { return sample }
         let index = loadIndex()
-        return rows.map { row in let meta=index[row.sourceIndex]; return Card(id: row.id, name: row.name, type: "Card", attribute: "", description: row.description, imageName: String(format: "%04d.jpg", row.id), intID: meta?.intID, prop: meta?.prop, genre: meta?.genre, pack: meta?.pack, pass: meta?.pass, link: meta?.link) }
+        return rows.map { row in let meta=index[row.sourceIndex]; return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: meta?.konamiID.map { String(format: "%04d.jpg", $0) }, intID: meta?.intID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? []) }
     }
-    private struct Row: Decodable { let sourceIndex: Int; let name: String; let description: String; var id: Int { sourceIndex + 1 } }
-    private struct IndexRow: Decodable { let sourceIndex: Int; let intID: Int?; let prop: UInt32?; let genre: UInt32?; let pack: Int?; let pass: UInt32?; let link: UInt32? }
+    private struct Row: Decodable { let sourceIndex: Int; let intID: Int?; let konamiID: Int?; let name: String; let description: String; var id: Int { sourceIndex + 1 } }
+    private struct IndexRow: Decodable { let sourceIndex: Int; let intID: Int?; let atk: Int?; let def: Int?; let kind: String?; let attribute: String?; let level: Int?; let race: String?; let genres: [String] }
     private static func loadIndex() -> [Int: IndexRow] { guard let url=Bundle.main.url(forResource: "card-index", withExtension: "json"), let data=try? Data(contentsOf:url), let rows=try? JSONDecoder().decode([IndexRow].self,from:data) else { return [:] }; return Dictionary(uniqueKeysWithValues: rows.map { ($0.sourceIndex,$0) }) }
 }
 
