@@ -7,3 +7,20 @@ enum CardPropDecoder {
     static let genres = ["Recover LP","Damage LP","Help Draw","Special Summon","Negate Effect","Search Deck","Recover from Graveyard","Increase/Decrease ATK/DEF","Change Battle Position","Set Control","Destroy Monster","Destroy Spell Card","Destroy Hand","Destroy Deck","Remove Card","Return Card","Piercing","Direct Attack","Attack Multiple Times","Cannot Be Destroyed","Limit Attack","Cannot Normal Summon","Flip Effect Monster","Toon Monster","Spirit Monster","Union Monster","Gemini Monster","LV Monster","Original","Fusion Material Monster","Ritual","Token","Counter","Gamble","Attribute-related","Type-related","Tuner","Synchro Monster","Send to Graveyard","Normal Monster","LIGHT","DARK","EARTH","WATER","FIRE","WIND","Xyz Monster","Level Modifier","Pendulum","Link Monster","DIVINE","New Card","Game Original","Card Variation"]
     static func genres(_ mask: UInt64) -> [String] { genres.indices.compactMap { mask & (UInt64(1) << UInt64($0)) != 0 ? genres[$0] : nil } }
 }
+
+
+struct CardRelation: Decodable {
+    let archetypes: [Int]
+    let links: [Link]
+    let same: Same?
+    struct Link: Decodable { let target: Int; let kind: String }
+    struct Same: Decodable { let target: Int; let mode: String }
+}
+
+enum CardRelationStore {
+    static let index: [String: CardRelation] = {
+        guard let url = Bundle.main.url(forResource: "card-relation-index", withExtension: "json", subdirectory: "GeneratedData"), let data = try? Data(contentsOf: url), let value = try? JSONDecoder().decode([String: CardRelation].self, from: data) else { return [:] }
+        return value
+    }()
+    static func relation(for konamiID: Int?) -> CardRelation? { konamiID.flatMap { index[String($0)] } }
+}

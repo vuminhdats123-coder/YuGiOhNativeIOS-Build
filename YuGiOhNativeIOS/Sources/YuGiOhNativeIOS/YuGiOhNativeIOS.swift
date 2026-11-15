@@ -9,6 +9,7 @@ public struct Card: Identifiable, Hashable {
     public let description: String
     public let imageName: String?
     public let intID: Int?
+    public let konamiID: Int?
     public let atk: Int?
     public let def: Int?
     public let kind: String?
@@ -17,8 +18,8 @@ public struct Card: Identifiable, Hashable {
     public let level: Int?
     public let genres: [String]
 
-    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, atk: Int? = nil, def: Int? = nil, kind: String? = nil, attributeName: String? = nil, race: String? = nil, level: Int? = nil, genres: [String] = []) {
-        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.atk = atk; self.def = def; self.kind = kind; self.attributeName = attributeName; self.race = race; self.level = level; self.genres = genres
+    public init(id: Int, name: String, type: String, attribute: String, description: String, imageName: String? = nil, intID: Int? = nil, konamiID: Int? = nil, atk: Int? = nil, def: Int? = nil, kind: String? = nil, attributeName: String? = nil, race: String? = nil, level: Int? = nil, genres: [String] = []) {
+        self.id = id; self.name = name; self.type = type; self.attribute = attribute; self.description = description; self.imageName = imageName; self.intID = intID; self.konamiID = konamiID; self.atk = atk; self.def = def; self.kind = kind; self.attributeName = attributeName; self.race = race; self.level = level; self.genres = genres
     }
 }
 
@@ -36,7 +37,7 @@ public struct CardCatalog {
         return rows.map { row in
             let meta = index[row.sourceIndex]
             let imageName = meta.map { String(format: "%04d.jpg", $0.konamiID) }
-            return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
+            return Card(id: row.id, name: row.name, type: meta?.race ?? "Card", attribute: meta?.attribute ?? "", description: row.description, imageName: imageName, intID: meta?.intID, konamiID: meta?.konamiID, atk: meta?.atk, def: meta?.def, kind: meta?.kind, attributeName: meta?.attribute, race: meta?.race, level: meta?.level, genres: meta?.genres ?? [])
         }
     }
     private struct Row: Decodable {
