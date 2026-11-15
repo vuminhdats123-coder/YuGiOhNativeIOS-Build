@@ -1,5 +1,9 @@
 # Canonical card-effect scenarios on the real core
 
+This historical report used the previous AI and fixtures that implicitly ORed
+MR3 options into MR5. Current fixtures pass rule=0 and verify effective rules.
+Their v7 regression passed; see [the correction and new evidence](HOST_RITUAL_PENDULUM_VALIDATION.md).
+
 `host-effect-validation.json` records **8/8 successful bounded scenarios**: four
 interactions, each exercised from both player perspectives. The official
 precompiled Windows x86 OCG core accepted **112 production-AI responses**, with
@@ -39,7 +43,7 @@ From the repository root on Windows:
 
 ```powershell
 python tests/test_ocg_matches.py
-python tools/run_ocg_matches.py --effect-scenarios --seed 301
+python tools/run_ocg_matches.py --effect-scenarios --seed 301 --report outputs/ocg-reference/effect-current.json
 ```
 
 The runner relaunches under the existing hash-verified 32-bit portable Python and

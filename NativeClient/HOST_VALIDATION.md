@@ -1,5 +1,9 @@
 # Native core validation on Windows (2026-11-15)
 
+This is the historical pre-Pendulum-fix report. The current AI was separately
+rerun for all 36 matches; see [v7 validation](HOST_VALIDATION_V7.md). Its database
+and Lua are unchanged, so the initialization evidence below remains applicable.
+
 `host-validation.json` records **36 completed real OCG matches, 444 turns and
 16,290 engine responses**, with zero `MSG_RETRY` responses and zero script errors.
 35 matches ended by LP; one ended by deck-out (SuperQuant vs U.A., seed 111,
@@ -55,10 +59,11 @@ The host announce-card filter translates the pinned client's
 ## Reproduce without building
 
 From the repository root on Windows, with existing Node and a prepared runtime
-package (now v6 by default), first obtain the verified DLL and the source commit object
+package (now v7 by default), first obtain the verified DLL and the source commit object
 needed by a shallow checkout. The recorded 36-match run used v3; later packages
-add UI textures, NPC portraits and their reports. Database, Lua, decks and AI bytes
-are unchanged. Those host games do not execute the newly changed client UI paths.
+add UI textures, NPC portraits and their reports. Database, Lua and decks remain
+unchanged; v7 changes the AI's group-summon choice. These historical games do not
+execute the newly changed client UI paths or the v7 AI.
 
 ```powershell
 python tools/smoke_ocg_host.py --download --report outputs/ocg-reference/host-smoke-preflight.json
@@ -74,7 +79,7 @@ expected. The fetch adds commit objects only and does not change the checked-out
 source. Then run the isolated 32-bit validation:
 
 ```powershell
-python tools/run_ocg_matches.py --download-python --suite --pool-check
+python tools/run_ocg_matches.py --download-python --suite --pool-check --report outputs/ocg-reference/full-suite-current.json
 python -m unittest discover -s tests -p test_ocg_matches.py -v
 node NativeClient/overlays/offline-ai/offline_ai.test.js
 ```
@@ -92,10 +97,11 @@ runtime package's JS copy. That package copy has separately been refreshed to
 the same final `e05fd0ac…118d57b` version; this distinction matters when
 reproducing a run after editing the source.
 
-The fourteen Python harness tests cover packet framing/rejection, YDK sections and
+The fifteen Python harness tests cover packet framing/rejection, YDK sections and
 malformed decks, announce-card constraints, the pinned Python release, exact
 scenario completion markers, response validation, required effect evidence, and
-rejection of a successful-summon event in a summon-negation scenario.
+rejection of a successful-summon event in a summon-negation scenario, and exact
+effective-rule verification.
 
 The separate [effect-scenario report](HOST_EFFECT_VALIDATION.md) adds eight
 bounded scenarios with canonical card scripts and final-state assertions. It

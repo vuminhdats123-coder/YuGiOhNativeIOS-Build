@@ -28,8 +28,8 @@ làm migration trước khi phát hành bản nâng cấp cho người dùng.
 
 `tools/prepare_edopro_assets.py` nhận OBB, CDB, CardScripts ZIP, Distribution và
 báo cáo `ocg-coverage.json`; xuất thư mục dữ liệu mới với `package-manifest.json`.
-Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v6`: 46.163 file,
-424.855.313 byte chưa tính manifest, gồm AI, texture UI gốc và 101 ảnh chân dung.
+Nó không biên dịch game. Gói đã chuẩn bị tại `outputs/edopro-game-v7`: 46.163 file,
+424.855.797 byte chưa tính manifest, gồm AI, texture UI gốc và 101 ảnh chân dung.
 Xem [runtime-package-summary.json](runtime-package-summary.json)
 để đối chiếu checksum và số lượng. Gói hiện nằm trên máy này, không được đưa vào Git.
 
@@ -39,7 +39,7 @@ APK gốc để kiểm tra nguồn bảng NPC; dùng `--apk` nếu đã đổi t
 
 ```powershell
 python -m pip install -r tools/requirements-assets.txt
-python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v6
+python tools/prepare_edopro_assets.py --obb com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb --cdb outputs/ocg-reference/BabelCDB-6e21009855ed5f3b5966a24545bd0db393d44697-cards.cdb --scripts outputs/ocg-reference/CardScripts-14f3b8905ff95a8f869fd6891aec4d6b580db1e1.zip --base-assets NativeClient/distribution --audit YuGiOhNativeIOS/GeneratedData/ocg-coverage.json --source-lock NativeClient/upstream.lock.json --include-vi --out outputs/edopro-game-v7
 ```
 
 799 deck đã đổi ID đầy đủ. 651 deck đạt kiểm tra kích thước, vị trí Main/Extra và
@@ -49,7 +49,7 @@ trong `reports/decks.json`. Đây chưa phải kiểm tra banlist hay chứng mi
 đã đặt vào thư mục BGM. Locale tùy chọn có 7.484 mô tả tiếng Việt, chỉ bảng `texts`.
 
 Xcode đã có bước copy toàn bộ thư mục thành `Bundle/game`, kiểm tra từng SHA256
-và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload v6 trong một thư mục
+và giữ nguyên cấu trúc. Bước copy đã chạy với toàn bộ payload v7 trong một thư mục
 fixture: 46.163 file và 17 icon được chép đúng, kiểm tra từng hash. Fixture chỉ có
 tài nguyên, không có executable và không phải một ứng dụng cài được.
 
@@ -98,7 +98,7 @@ Node cho 21 nhóm prompt, chain, nguyên liệu, thông tin ẩn và đầu vào
 gửi lại vô hạn. Đây là AI heuristic cơ bản có giới hạn tìm kiếm; lưu replay offline đang tắt.
 
 Đã kiểm chứng engine thật trên Windows bằng DLL upstream có nguồn C++/Lua tương
-đương pin của dự án: 36 ván hoàn tất, 444 lượt, 16.290 phản hồi, không có lỗi Lua
+đương pin của dự án: 36 ván với AI v7 hoàn tất, 437 lượt, 16.160 phản hồi, không có lỗi Lua
 hay phản hồi bị từ chối. Kiểm tra khởi tạo riêng đã chạy đủ 7.486 mã thẻ được ánh
 xạ và nạp 6.872 script runtime, không thiếu script bắt buộc. Đây là kiểm tra engine,
 script và logic quyết định dùng chung; chưa chạy client/JavaScriptCore trên iOS.
@@ -121,6 +121,13 @@ phá thẻ, Solemn Judgment vô hiệu triệu hồi và dùng Link-2 làm nguy�
 106 phản hồi AI được core chấp nhận, không retry/lỗi; cả hai phía người chơi đều
 được thử. Các ca này xác nhận script/luật và lựa chọn AI, chưa kiểm chứng UI iOS.
 
+AI v7 sửa việc kết thúc chọn Pendulum sau lá đầu tiên. Bộ
+[Ritual/Pendulum](HOST_RITUAL_PENDULUM_VALIDATION.md) đạt 12/12 ca, 128 phản hồi;
+các ca cũ được chạy lại với cờ luật thực tế đã xác nhận, đạt 24/24 ca. Gói v7 chỉ
+thay file AI so với v6. [36 ván hồi quy v7](HOST_VALIDATION_V7.md) cũng hoàn tất,
+không retry/lỗi Lua. Các báo cáo scenario cũ dùng fixture trộn cờ MR3/MR5 đã được
+ghi rõ giới hạn; kết quả mới dùng fixture đã sửa.
+
 Phản hồi GUI hiện đi qua `DuelResponseMailbox` rồi được luồng duel gửi vào core.
 Hàng đợi giữ phản hồi đến sớm, ưu tiên yêu cầu dừng và tránh gọi core từ GUI.
 Dừng/chơi lại có kiểm soát trạng thái; lỗi được hiện sau khi đóng bàn đấu để không
@@ -137,6 +144,11 @@ Phần mở/cập nhật UI của prompt chọn tổng nguyên liệu dùng cùn
 vẽ, giữ quy tắc khóa hiện có khi replay catch-up. Ca hồi quy chọn nguyên liệu
 khi ảnh đang tải, đổi kích thước hoặc cuộn được ghi trong
 `overlays/ui-layout/tests/card_selection_interaction_checks.md`; chưa chạy native.
+
+Logic Ritual chọn tổng lớn hơn hoặc bằng đã sửa trường hợp hai nguyên liệu có
+giá trị thay thế 1/4 bị bỏ sót khi tổng yêu cầu là 8. Helper dùng cùng điều kiện
+chấp nhận của core cho đóng góp không âm; native assertions đã viết nhưng chưa
+biên dịch/chạy. High-half âm vẫn nằm ngoài miền hỗ trợ của helper này.
 
 ```powershell
 python -m unittest discover -s tests -v

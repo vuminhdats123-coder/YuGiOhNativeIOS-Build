@@ -1,15 +1,15 @@
 {
-  "scope": "Real Windows OCG matches/card initialization/prompt, canonical-effect and Extra Deck scenarios plus source/configuration, JS and resource-copy evidence; no iOS executable",
+  "scope": "Current v7 AI: 36 real Windows OCG matches, 12 Ritual/Pendulum and 24 corrected scenario regressions; source/config and full resource-copy checks, no iOS executable",
   "python": {
-    "run": 79,
-    "passed": 78,
+    "run": 80,
+    "passed": 79,
     "skipped": 1,
     "skipReason": "Windows host does not permit creating symlinks"
   },
   "javascript": {
     "promptFamilies": 21,
     "testsPassed": true,
-    "scriptSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b",
+    "scriptSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
     "engineWasNotExecuted": false
   },
   "renderer": {
@@ -70,7 +70,7 @@
       "lua.xcodeproj": "7d627a301f8487a02d2325b4d114c2c6037d4effd378764d3df6bf3105ba3004",
       "ocgcore.xcodeproj": "1a0241720145bcca6c331324498b71a391dac38f1b2ab1285b1941866ff1383c",
       "ocgcoreshared.xcodeproj": "846c3028b35a329f9126d731357edc77d02fa3fa055190be40133dd4a5d103ad",
-      "ygopro.xcodeproj": "c0c351e65b15618909320d6bb46ced08b7762c88762053512456e09520d0f95e"
+      "ygopro.xcodeproj": "cdf80fc241eebdc45e69fb167a300dc28746211375d18593eb601db90d72b353"
     }
   },
   "dependencies": {
@@ -80,12 +80,13 @@
   },
   "resourceCopy": {
     "files": 46163,
-    "bytes": 424855313,
+    "bytes": 424855797,
     "icons": 17,
-    "manifestSHA256": "55167a5d615f58a7646cc343e0cfb455ca1a6460877f9ab16a47447f0d4f7191",
+    "manifestSHA256": "2670f116a9ccbb80fc016f1f5a527e4445f2639d978e627e3c04eb0b48a98e44",
     "allCopiedFileHashesVerified": true,
     "fixtureContainsNativeExecutable": false,
-    "packagePath": "outputs/edopro-game-v6"
+    "packagePath": "outputs/edopro-game-v7",
+    "fixturePath": "outputs/resource-copy-check-v7/ResourceCopyFixture.app"
   },
   "nativeCompilerExecuted": false,
   "nativeMatchExecuted": true,
@@ -93,17 +94,21 @@
   "actionsDispatched": false,
   "ipaCreated": false,
   "windowsCoreValidation": {
-    "report": "host-validation.json",
+    "report": "host-validation-v7.json",
     "matches": 36,
-    "turns": 444,
-    "responses": 16290,
+    "turns": 437,
+    "responses": 16160,
     "retries": 0,
     "scriptErrors": 0,
     "mappedCardsInitialized": 7486,
     "runtimeScriptsLoaded": 6872,
     "exactIOSBinary": false,
     "coreSourceEquivalent": true,
-    "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b"
+    "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
+    "reportSHA256": "ae6e0d07462a665e5ce4b060284bc4e91910f5baaffa5c01442f664ed101269e",
+    "poolInitializationReport": "host-validation.json",
+    "poolInitializationRerun": false,
+    "poolDatabaseAndLuaUnchanged": true
   },
   "nativeIOSMatchExecuted": false,
   "responseMailboxNativeTestsExecuted": false,
@@ -134,7 +139,9 @@
       "sourceELF_SHA256": "a5ea1adcb17102ab8488de04bab82715c72521950c1b6220e6d182501a3588a9"
     },
     "allNewImageHashesAndAlphaVerified": true,
-    "fullResourceCopyVerified": true
+    "fullResourceCopyVerified": true,
+    "historical": true,
+    "currentPackageUIIdentical": true
   },
   "touchMenuNativeTestsExecuted": false,
   "duelUI": {
@@ -160,7 +167,9 @@
     "restartClosesIOSControlsSourceReviewed": true,
     "nativeSessionLifecycleTestsExecuted": false,
     "sumPromptUIUpdatesSourceReviewed": true,
-    "extraDeckHumanUITestsExecuted": false
+    "extraDeckHumanUITestsExecuted": false,
+    "ritualAlternateContributionsSourceReviewed": true,
+    "ritualSumNativeTestsExecuted": false
   },
   "windowsPromptScenarios": {
     "report": "host-prompt-validation.json",
@@ -185,7 +194,10 @@
     "aiSHA256": "e05fd0ac206d61ecb4e1d5fefd94c44adde9718cfce6d85df4a57478f118d57b",
     "testLuaSHA256": "5569b3987af6bc65bea7620f4c7aa51e73ebe46954f8c7b8cd27a0544754176c",
     "nativeIOSExecuted": false,
-    "limit": "Acceptance of covered operations only; not every prompt variant, ordering strategy or effect interaction"
+    "limit": "Acceptance of covered operations only; not every prompt variant, ordering strategy or effect interaction",
+    "historical": true,
+    "currentAI": false,
+    "effectiveRulesQualification": "Historical fixture implicitly ORed MR3 options into MR5; superseded by v7 regression"
   },
   "windowsEffectScenarios": {
     "report": "host-effect-validation.json",
@@ -206,7 +218,10 @@
     "testLuaSHA256": "fcb4387e702bf3f14e0f8c12fe24a4f322925e62759d07d713daaf3f7e515f9c",
     "harnessSHA256": "9eb057c02aa9d6d0cbad74ae6cfdbb8b8132e35c8e7437c3f98007114c2f303b",
     "nativeIOSExecuted": false,
-    "limit": "Fixed small fields and selected canonical effects only; not all deck/effect combinations or iOS GUI behavior"
+    "limit": "Fixed small fields and selected canonical effects only; not all deck/effect combinations or iOS GUI behavior",
+    "historical": true,
+    "currentAI": false,
+    "effectiveRulesQualification": "Historical fixture implicitly ORed MR3 options into MR5; superseded by v7 regression"
   },
   "windowsExtraDeckScenarios": {
     "report": "host-extra-deck-validation.json",
@@ -229,6 +244,56 @@
     "testLuaSHA256": "77d66b1a25ecb770a0b8376769b60cbf57cfadaae44bd09be490410328647cbd",
     "harnessSHA256": "d5f24a2ab1c6253759dd6f8aa2784a4f1969bae3c615777a32c93326b0589b1a",
     "nativeIOSExecuted": false,
-    "limit": "Selected canonical summons/effects on predefined fields, not all material restrictions, effect variants or human iOS selection"
+    "limit": "Selected canonical summons/effects on predefined fields, not all material restrictions, effect variants or human iOS selection",
+    "historical": true,
+    "currentAI": false,
+    "effectiveRulesQualification": "Historical fixture implicitly ORed MR3 options into MR5; superseded by v7 regression"
+  },
+  "runtimePackageDelta": {
+    "changedFiles": [
+      "offline-ai/offline_ai.js"
+    ],
+    "files": 46163,
+    "bytes": 424855797,
+    "manifestSHA256": "2670f116a9ccbb80fc016f1f5a527e4445f2639d978e627e3c04eb0b48a98e44",
+    "previousPackage": "outputs/edopro-game-v6",
+    "currentPackage": "outputs/edopro-game-v7",
+    "databaseLuaDecksImagesAudioUnchanged": true
+  },
+  "windowsRitualPendulumScenarios": {
+    "report": "host-ritual-pendulum-validation.json",
+    "reportSHA256": "9ce75af2a0c9b025d8b64875a6780e3b6cee08b9f74e9602947fe3c9dbd5c604",
+    "accepted": 12,
+    "responses": 128,
+    "retries": 0,
+    "scriptErrors": 0,
+    "interactions": [
+      "ritual_exact_level",
+      "ritual_greater_level",
+      "pendulum_mixed_scale_bounds",
+      "pendulum_extra_unlinked",
+      "pendulum_extra_linked",
+      "pendulum_destroy_return"
+    ],
+    "finalStateLuaAssertionsVerified": true,
+    "effectiveRulesVerified": true,
+    "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
+    "fullMatchesClaimed": 0,
+    "nativeIOSExecuted": false,
+    "baselineFailureReport": "host-ritual-pendulum-baseline.json"
+  },
+  "windowsScenarioRegressionV7": {
+    "report": "host-scenario-regression-v7.json",
+    "reportSHA256": "170d56e7cb7cb20718e635248aeeeec15e30575e05f09f1e5df2c45fd8844933",
+    "accepted": 24,
+    "responses": 272,
+    "retries": 0,
+    "scriptErrors": 0,
+    "effectiveRuleOptionsCounts": {
+      "190464": 20,
+      "190466": 4
+    },
+    "aiSHA256": "ea8ca399e292ff98719e2231465c97ac53caf15d4a062b64b4fd0cf1529b168e",
+    "nativeIOSExecuted": false
   }
 }

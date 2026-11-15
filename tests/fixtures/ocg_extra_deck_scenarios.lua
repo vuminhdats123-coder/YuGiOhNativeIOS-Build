@@ -1,6 +1,6 @@
 -- Test setup and observation only. Summon procedures and card effects are canonical scripts.
 function HostExtraDeckScenario(player, kind, marker)
-    Debug.ReloadFieldBegin(DUEL_MODE_MR5)
+    Debug.ReloadFieldBegin(DUEL_MODE_MR5, 0)
     Debug.SetPlayerInfo(0, 8000, 0, 0)
     Debug.SetPlayerInfo(1, 8000, 0, 0)
     for p = 0, 1 do

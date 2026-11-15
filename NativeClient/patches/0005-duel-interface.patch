@@ -1,8 +1,16 @@
 diff --git a/gframe/client_field.cpp b/gframe/client_field.cpp
-index 03648fb..bc9e629 100644
+index 03648fb..b6f8ba5 100644
 --- a/gframe/client_field.cpp
 +++ b/gframe/client_field.cpp
-@@ -84,6 +84,14 @@ void ClientField::Clear() {
+@@ -21,6 +21,7 @@
+ #include "CGUITTFont/CGUITTFont.h"
+ #include "custom_skin_enum.h"
+ #include "fmt.h"
++#include "sum_selection.h"
+ 
+ namespace ygo {
+ 
+@@ -84,6 +85,14 @@ void ClientField::Clear() {
  	chains.clear();
  	activatable_cards.clear();
  	queued_panel_confirm_cards.clear();
@@ -17,7 +25,7 @@ index 03648fb..bc9e629 100644
  	summonable_cards.clear();
  	spsummonable_cards.clear();
  	msetable_cards.clear();
-@@ -359,222 +367,234 @@ void ClientField::ClearChainSelect() {
+@@ -359,222 +368,234 @@ void ClientField::ClearChainSelect() {
  	pzone_act[0] = pzone_act[1] = false;
  	conti_act = false;
  }
@@ -455,8 +463,107 @@ index 03648fb..bc9e629 100644
  	mainGame->PopupElement(mainGame->wCardDisplay);
  }
  void ClientField::ShowSelectOption(uint64_t select_hint, bool should_lock) {
+@@ -1064,66 +1085,19 @@ bool ClientField::CheckSelectSum() {
+ 		}
+ 		return ret;
+ 	} else {
+-		int mm = -1, mx = -1;
+-		uint32_t max = 0, sumc = 0;
+-		bool ret = false;
+-		for (auto sit = selected_cards.begin(); sit != selected_cards.end(); ++sit) {
+-			int op1 = (*sit)->opParam & 0xffff;
+-			int op2 = (*sit)->opParam >> 16;
+-			int opmin = (op2 > 0 && op1 > op2) ? op2 : op1;
+-			int opmax = op2 > op1 ? op2 : op1;
+-			if (mm == -1 || opmin < mm)
+-				mm = opmin;
+-			if (mx == -1 || opmax < mx)
+-				mx = opmax;
+-			sumc += opmin;
+-			max += opmax;
+-		}
+-		if (select_sumval <= sumc) {
+-			for (auto& card : must_select_cards) {
+-				auto it = std::find(selected_cards.begin(), selected_cards.end(), card);
+-				if (it != selected_cards.end())
+-					selected_cards.erase(it);
+-			}
+-			return true;
+-		}
+-		if (select_sumval <= max && select_sumval > max - mx)
+-			ret = true;
+-		for(auto sit = selable.begin(); sit != selable.end(); ++sit) {
+-			uint16_t op1 = (*sit)->opParam & 0xffff;
+-			uint16_t op2 = ((*sit)->opParam >> 16) & 0xffff;
+-			uint16_t m = op1;
+-			uint32_t sums = sumc;
+-			sums += m;
+-			int ms = mm;
+-			if (ms == -1 || m < ms)
+-				ms = m;
+-			if (sums >= select_sumval) {
+-				if (sums - ms < select_sumval)
+-					selectsum_cards.insert(*sit);
+-			} else {
+-				std::set<ClientCard*> left(selable);
+-				left.erase(*sit);
+-				if (check_min(left, left.begin(), select_sumval - sums, select_sumval - sums + ms - 1))
+-					selectsum_cards.insert(*sit);
+-			}
+-			if (op2 == 0)
+-				continue;
+-			m = op2;
+-			sums = sumc;
+-			sums += m;
+-			ms = mm;
+-			if (ms == -1 || m < ms)
+-				ms = m;
+-			if (sums >= select_sumval) {
+-				if (sums - ms < select_sumval)
+-					selectsum_cards.insert(*sit);
+-			} else {
+-				std::set<ClientCard*> left(selable);
+-				left.erase(*sit);
+-				if (check_min(left, left.begin(), select_sumval - sums, select_sumval - sums + ms - 1))
+-					selectsum_cards.insert(*sit);
+-			}
++		sumselection::GreaterSum selected;
++		for(const auto* card : selected_cards) selected.Add(card->opParam);
++		const bool ret = selected.IsComplete(select_sumval);
++		std::vector<uint32_t> remaining;
++		remaining.reserve(selable.size());
++		for(auto* candidate : selable) {
++			auto fixed = selected;
++			fixed.Add(candidate->opParam);
++			remaining.clear();
++			for(const auto* card : selable)
++				if(card != candidate) remaining.push_back(card->opParam);
++			if(sumselection::CanCompleteGreater(fixed, remaining, select_sumval))
++				selectsum_cards.insert(candidate);
+ 		}
+ 		selectable_cards.clear();
+ 		std::sort(must_select_cards.begin(), must_select_cards.end(), ClientCard::client_card_sort);
+@@ -1162,18 +1136,6 @@ void ClientField::ShowSelectRace(uint64_t race) {
+ 		}
+ 	}
+ }
+-bool ClientField::check_min(const std::set<ClientCard*>& left, std::set<ClientCard*>::const_iterator index, int min, int max) {
+-	if (index == left.end())
+-		return false;
+-	int op1 = (*index)->opParam & 0xffff;
+-	int op2 = (*index)->opParam >> 16;
+-	int m = (op2 > 0 && op1 > op2) ? op2 : op1;
+-	if (m >= min && m <= max)
+-		return true;
+-	++index;
+-	return (min > m && check_min(left, index, min - m, max - m))
+-	        || check_min(left, index, min, max);
+-}
+ bool ClientField::check_sel_sum_s(const std::set<ClientCard*>& left, size_t index, int acc) {
+ 	if (acc < 0)
+ 		return false;
 diff --git a/gframe/client_field.h b/gframe/client_field.h
-index 3729dad..88a0a1a 100644
+index 3729dad..553c0fa 100644
 --- a/gframe/client_field.h
 +++ b/gframe/client_field.h
 @@ -87,6 +87,8 @@ public:
@@ -482,6 +589,14 @@ index 3729dad..88a0a1a 100644
  	void ShowSelectOption(uint64_t select_hint = 0, bool should_lock = true);
  	void ReplaySwap();
  	void RefreshAllCards();
+@@ -115,7 +124,6 @@ public:
+ 	bool ShowSelectSum();
+ 	bool CheckSelectSum();
+ 	void ShowSelectRace(uint64_t race);
+-	bool check_min(const std::set<ClientCard*>& left, std::set<ClientCard*>::const_iterator index, int min, int max);
+ 	bool check_sel_sum_s(const std::set<ClientCard*>& left, size_t index, int acc);
+ 	void check_sel_sum_t(const std::set<ClientCard*>& left, int acc);
+ 	bool check_sum(std::set<ClientCard*>::const_iterator index, std::set<ClientCard*>::const_iterator end, int acc, uint32_t count);
 diff --git a/gframe/drawing.cpp b/gframe/drawing.cpp
 index 918406c..6320cbd 100644
 --- a/gframe/drawing.cpp

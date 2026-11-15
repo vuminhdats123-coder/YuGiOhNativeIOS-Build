@@ -9,7 +9,7 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand effect-interaction coverage beyond 36 full host matches, 8 canonical-effect and 10 Extra Deck scenarios"
+    "Expand coverage beyond the current 36 full host matches and 36 bounded scenarios; verify native human selection"
   ],
   "sourceFeaturesImplemented": {
     "twoDeckOfflineEntry": true,
@@ -32,7 +32,9 @@
     "duelCloseAcknowledgementSynchronized": true,
     "restartHUDStateSynchronized": true,
     "restartClosesIOSControls": true,
-    "sumPromptUIUpdatesSynchronized": true
+    "sumPromptUIUpdatesSynchronized": true,
+    "multiplePendulumSummonSelection": true,
+    "ritualAlternateContributionSelection": true
   },
   "verification": {
     "javascriptPromptFamilies": 21,
@@ -43,8 +45,8 @@
     "xcodeProjectGenerated": true,
     "generatedProjectStructureChecked": true,
     "fullResourceCopyVerified": true,
-    "pythonTestsRun": 79,
-    "pythonTestsPassed": 78,
+    "pythonTestsRun": 80,
+    "pythonTestsPassed": 79,
     "pythonTestsSkipped": 1,
     "nativeIOSMatchExecuted": false,
     "windowsCoreMatches": 36,
@@ -67,12 +69,18 @@
     "nativeSessionLifecycleTestsExecuted": false,
     "windowsCoreExtraDeckScenarios": 10,
     "windowsCoreExtraDeckResponses": 106,
-    "extraDeckHumanUITestsExecuted": false
+    "extraDeckHumanUITestsExecuted": false,
+    "windowsCoreRitualPendulumScenarios": 12,
+    "windowsCoreRitualPendulumResponses": 128,
+    "currentAIScenarioRegressionCases": 24,
+    "effectiveScenarioRulesVerified": true,
+    "ritualSumNativeTestsExecuted": false
   },
   "limitations": [
     "Generic bounded AI, not a competitive deck-specific bot",
     "Offline replay saving is disabled",
     "Legacy Vietnamese text can differ from current effect scripts",
-    "Installed package upgrades preserve user data by refusing automatic migration"
+    "Installed package upgrades preserve user data by refusing automatic migration",
+    "Negative packed Ritual contribution alternatives remain unsupported by the AI and native greater-sum helper"
   ]
 }

@@ -129,6 +129,36 @@ for(const player of [0,1]) for(let mask=1;mask<16;mask++) {
   assert([1,2,4,8].includes(position) && (position&mask)===position,`invalid position ${mask}`);
 }
 
+// Pendulum procedures repeat HINTMSG_SPSUMMON for each legal group addition.
+// MSG26 min/max=1 describe the toggle, not the final summon group's size.
+for(const player of [0,1]) {
+  const group=ai.create({},player), hand=card(100,player,2,0,8), extra=card(200,player,64,0,4);
+  const hand2=card(300,player,2,1,8), toggle=[...u(1),...u(0)];
+  const prompt=(finishable,choices,chosen)=>[player,Number(finishable),1,...u(1),...u(1),...list(choices),...list(chosen)];
+  const summon=(finishable,choices,chosen)=>{
+    group.observe(2,hint(509,player));
+    return group.decide(26,prompt(finishable,choices,chosen)).response;
+  };
+  assert.deepEqual(summon(false,[hand,extra,hand2],[]),toggle);
+  assert.deepEqual(summon(true,[extra,hand2],[hand]),toggle,`mixed Pendulum player ${player}`);
+  assert.deepEqual(summon(true,[hand2],[hand,extra]),toggle);
+  assert.deepEqual(summon(true,[],[hand,extra,hand2]),u(-1));
+  // A consumed hint cannot affect another picker; other players' hints are ignored.
+  assert.deepEqual(group.decide(26,prompt(true,[extra],[hand])).response,u(-1));
+  group.observe(2,hint(509,1-player));
+  assert.deepEqual(group.decide(26,prompt(true,[extra],[hand])).response,u(-1));
+  for(const otherHint of [500,511,512,513,533,549,999]) {
+    group.observe(2,hint(otherHint,player));
+    assert.deepEqual(group.decide(26,prompt(true,[extra],[hand])).response,u(-1));
+  }
+  // Do not extend material/hidden-opponent pickers merely because they share MSG26.
+  for(const ineligible of [card(100,1-player,2,0,8),card(100,player,64,0,8),card(100,player,4,0,1)]) {
+    assert.deepEqual(summon(true,[ineligible],[hand]),u(-1));
+    assert.deepEqual(summon(true,[extra,ineligible],[hand]),u(-1));
+    assert.deepEqual(summon(true,[extra],[hand,ineligible]),u(-1));
+  }
+}
+
 // Exhaustive small-domain oracle: validate against the engine's mathematical
 // constraints, not the production solver's DP/DFS implementation.
 const smallContributions=Array.from({length:20},()=>({value:1}));

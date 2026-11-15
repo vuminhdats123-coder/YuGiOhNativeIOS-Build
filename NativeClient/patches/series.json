@@ -17,6 +17,7 @@
     {"source": "overlays/ui-layout/duel_layout.h", "target": "gframe/duel_layout.h"},
     {"source": "overlays/ui-layout/duel_hud_layout.h", "target": "gframe/duel_hud_layout.h"},
     {"source": "overlays/ui-layout/card_selection_layout.h", "target": "gframe/card_selection_layout.h"},
+    {"source": "overlays/ui-layout/sum_selection.h", "target": "gframe/sum_selection.h"},
     {"source": "overlays/ui-layout/ios_view_metrics.h", "target": "gframe/iOS/ios_view_metrics.h"},
     {"source": "overlays/ui-layout/ios_input_gate.h", "target": "gframe/iOS/ios_input_gate.h"},
     {"source": "overlays/offline-ai/OfflineAI.mm", "target": "gframe/iOS/OfflineAI.mm"},

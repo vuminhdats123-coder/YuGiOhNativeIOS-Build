@@ -1,5 +1,9 @@
 # Real-core Synchro, Xyz and Link validation
 
+This historical report used the previous AI and fixtures that implicitly ORed
+MR3 options into MR5. Current fixtures pass rule=0 and verify effective rules.
+Their v7 regression passed; see [the correction and new evidence](HOST_RITUAL_PENDULUM_VALIDATION.md).
+
 `host-extra-deck-validation.json` records **10/10 successful bounded scenarios**:
 five interactions, each executed from both player perspectives. The verified
 precompiled Windows x86 OCG core accepted **106 production-AI responses**,
@@ -47,7 +51,7 @@ From the repository root on Windows:
 
 ```powershell
 python tests/test_ocg_matches.py
-python tools/run_ocg_matches.py --extra-deck-scenarios --seed 401
+python tools/run_ocg_matches.py --extra-deck-scenarios --seed 401 --report outputs/ocg-reference/extra-deck-current.json
 ```
 
 The dedicated flag writes `NativeClient/host-extra-deck-validation.json` by

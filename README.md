@@ -58,11 +58,15 @@ Thêm 10 [kịch bản Synchro/Xyz/Link](NativeClient/HOST_EXTRA_DECK_VALIDATION
 đã đạt trên core Windows, gồm hiệu ứng sau triệu hồi, detach material, vô hiệu
 triệu hồi và Link Rating làm nguyên liệu. Đã sửa đồng bộ UI của prompt chọn tổng
 nguyên liệu; phần cảm ứng tương ứng chưa được chạy trên iPhone.
+AI v7 bổ sung chọn nhiều Pendulum cùng lúc. [12 ca Ritual/Pendulum](NativeClient/HOST_RITUAL_PENDULUM_VALIDATION.md),
+24 ca hồi quy scenario và [36 ván với AI mới](NativeClient/HOST_VALIDATION_V7.md)
+đều đạt. Đã sửa fixture để xác nhận cờ luật MR5 thực tế và sửa logic chọn nguyên
+liệu Ritual có giá trị Level thay thế; kiểm tra C++/giao diện vẫn đang hoãn.
 Ứng dụng, hình ảnh và thao tác trên iPhone vẫn chưa được chạy/kiểm chứng.
 
 Tham chiếu giao diện từ video người dùng và phạm vi áp dụng được ghi trong
 [DUEL_GENERATION_UI_REFERENCE.md](docs/DUEL_GENERATION_UI_REFERENCE.md).
-Payload v6 giữ ảnh gốc và chân dung NPC đã đối chiếu. Mã iOS đã có bàn đấu giữa,
+Payload v7 giữ ảnh gốc và chân dung NPC đã đối chiếu. Mã iOS đã có bàn đấu giữa,
 thông tin thẻ trái, LP/chân dung phải, bảng chọn 5×3 và vùng an toàn UIKit.
 Thanh phase được đặt dưới tay bài để giữ ô Extra của MR5. Đây là triển khai
 nguồn; giao diện và cảm ứng trên iPhone vẫn chưa được chạy/kiểm chứng.

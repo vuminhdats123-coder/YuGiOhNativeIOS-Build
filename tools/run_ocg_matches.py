@@ -38,6 +38,21 @@ EXTRA_DECK_SCENARIOS = {
     'synchro_summon_negation': {'messages': {50,62,70,74,100}, 'forbiddenMessages': {63}, 'scripts': {'c60800381.lua','c41420027.lua','proc_synchro.lua'}},
     'link_rating_material': {'messages': {50,62,63}, 'scripts': {'c1861629.lua','c2857636.lua','proc_link.lua'}},
 }
+RITUAL_PENDULUM_SCENARIO_SOURCE = ROOT / 'tests/fixtures/ocg_ritual_pendulum_scenarios.lua'
+RITUAL_PENDULUM_SCENARIOS = {
+    'ritual_exact_level': {'messages': {50,62,63,74}, 'scripts': {'c46159582.lua','c45222299.lua','proc_ritual.lua'}},
+    'ritual_greater_level': {'messages': {50,62,63,74}, 'scripts': {'c55761792.lua','proc_ritual.lua'}},
+    'pendulum_mixed_scale_bounds': {'messages': {62,63}, 'scripts': {'c15146890.lua','c51531505.lua','proc_pendulum.lua'}},
+    'pendulum_extra_unlinked': {'messages': {62,63}, 'scripts': {'proc_pendulum.lua'}},
+    'pendulum_extra_linked': {'messages': {62,63}, 'scripts': {'c1861629.lua','proc_pendulum.lua'}},
+    'pendulum_destroy_return': {'messages': {50,62,63,74}, 'scripts': {'c53129443.lua','proc_pendulum.lua'}},
+}
+SCENARIO_SUITES = {
+    'prompt': (SCENARIO_SOURCE, SCENARIO_PROMPTS, 'Prompt', 'host-prompt-validation.json'),
+    'effect': (EFFECT_SCENARIO_SOURCE, EFFECT_SCENARIOS, 'Effect', 'host-effect-validation.json'),
+    'extra-deck': (EXTRA_DECK_SCENARIO_SOURCE, EXTRA_DECK_SCENARIOS, 'ExtraDeck', 'host-extra-deck-validation.json'),
+    'ritual-pendulum': (RITUAL_PENDULUM_SCENARIO_SOURCE, RITUAL_PENDULUM_SCENARIOS, 'RitualPendulum', 'host-ritual-pendulum-validation.json'),
+}
 
 def sha(data): return hashlib.sha256(data).hexdigest()
 def packets(data):
@@ -60,6 +75,12 @@ def require_scenario_evidence(expected_messages, observed_messages, required_scr
     if missing: raise ValueError('Scenario did not execute required canonical scripts: '+str(sorted(missing)))
     forbidden=set(forbidden_messages)&set(observed_messages)
     if forbidden: raise ValueError('Scenario issued forbidden messages: '+str(sorted(forbidden)))
+
+def verify_scenario_rules(payload, expected):
+    if len(payload)<4: raise ValueError('Truncated reload-field rule options')
+    actual=struct.unpack_from('<I',payload)[0]
+    if actual!=expected: raise ValueError(f'Unexpected effective duel rules: {actual:#x}, expected {expected:#x}')
+    return actual
 
 def parse_deck(path):
     zones = {'main':[], 'extra':[], 'side':[]}; zone = 'main'
@@ -295,20 +316,22 @@ class Engine:
         report.update(messages=dict(sorted(counts.items())),promptCounts=dict(sorted(prompts.items())),scriptsLoaded=sorted(self.loaded),missingScriptRequests=sorted(self.missing),cardsRead=len(self.read_codes),scriptErrors=self.errors,durationSeconds=round(time.monotonic()-started,3))
         return report
 
-    def prompt_scenario(self,kind,player,seed,effect=False,extra_deck=False):
-        if effect and extra_deck: raise ValueError('Select one scenario suite')
-        definitions=EXTRA_DECK_SCENARIOS if extra_deck else EFFECT_SCENARIOS if effect else SCENARIO_PROMPTS
+    def prompt_scenario(self,kind,player,seed,suite='prompt'):
+        if suite not in SCENARIO_SUITES: raise ValueError('Unknown scenario suite')
+        source_path,definitions,entry_name,_=SCENARIO_SUITES[suite]
         if kind not in definitions or player not in (0,1): raise ValueError('Unknown scenario')
-        effect=effect or extra_deck
+        effect=suite!='prompt'
         expected=definitions[kind]['messages'] if effect else definitions[kind]
         required=definitions[kind]['scripts'] if effect else set()
         forbidden=definitions[kind].get('forbiddenMessages',set()) if effect else set()
         self.errors=[];self.loaded=set();self.read_codes=set();self.missing=set()
         report={'scenario':kind,'player':player,'seed':seed,'status':'running','retryCount':0,
                 'expectedMessages' if effect else 'expectedPrompts':sorted(expected),'responses':[], 'forcedChains':0}
+        expected_rules=MR5 | (2 if kind in ('attack_cost_order','effect_and_battle_damage') else 0)
+        report.update(expectedRuleOptions=expected_rules,effectiveRuleOptions=None)
         duel=C.c_void_p();node=None;counts=collections.Counter();marker=9000000+seed
-        source=(EXTRA_DECK_SCENARIO_SOURCE if extra_deck else EFFECT_SCENARIO_SOURCE if effect else SCENARIO_SOURCE).read_bytes()
-        entry=f'Host{"ExtraDeck" if extra_deck else "Effect" if effect else "Prompt"}Scenario({player},"{kind}",{marker})'.encode()
+        source=source_path.read_bytes()
+        entry=f'Host{entry_name}Scenario({player},"{kind}",{marker})'.encode()
         report.update(testLuaSHA256=sha(source),entryScript=entry.decode(),completionMarker=marker)
         if effect: report.update(requiredCanonicalScripts=sorted(required),events=[])
         if forbidden: report['forbiddenMessages']=sorted(forbidden)
@@ -327,6 +350,7 @@ class Engine:
                 status=self.dll.OCG_DuelProcess(duel);responded=False
                 for message,payload in self.messages(duel):
                     counts[message]+=1
+                    if message==162: report['effectiveRuleOptions']=verify_scenario_rules(payload,expected_rules)
                     if effect and message in {50,62,63,70,71,72,73,74,75,91,100,110,111,113,114}:
                         report['events'].append({'message':message,'payload':list(payload)})
                     if message==1: report['retryCount']+=1;raise ValueError('Core rejected scenario response')
@@ -344,7 +368,7 @@ class Engine:
                 if status==0: raise ValueError('Core ended without scenario marker')
                 if status==1 and not responded: raise ValueError('Core awaiting without a supported prompt')
             else: raise ValueError('Scenario step limit reached')
-            require_scenario_evidence(expected,counts,required,self.loaded,forbidden)
+            require_scenario_evidence(expected|{162},counts,required,self.loaded,forbidden)
             if kind=='forced_chain' and not report['forcedChains']: raise ValueError('No forced chain was exercised')
         except Exception as error: report['status']='failed';report['error']=str(error)
         finally:
@@ -384,15 +408,17 @@ class Engine:
         return {'status':'passed' if not self.errors and not required else 'failed','mappedUniqueCodes':len(codes),'batches':(len(codes)+31)//32,'cardsReadIncludingDependencies':len(self.read_codes),'canonicalRuntimeScriptsLoaded':len(self.loaded),'missingRequiredScripts':required,'missingNormalCardScripts':len(normal),'errors':batches,'auditSHA256':sha(audit_path.read_bytes()),'scope':'Card creation and initial_effect/base dependency execution only; does not exercise every effect activation.'}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v6');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--effect-scenarios',action='store_true',help='Bounded canonical card effect interactions with final-state assertions');p.add_argument('--report',type=Path)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--worker',action='store_true');p.add_argument('--download-python',action='store_true');p.add_argument('--runtime',type=Path,default=ROOT/'outputs/edopro-game-v7');p.add_argument('--deck-a');p.add_argument('--deck-b');p.add_argument('--seed',type=int,default=1);p.add_argument('--matches',type=int,default=1);p.add_argument('--sample-decks',action='store_true');p.add_argument('--suite',action='store_true',help='Fixed 36-match OBB regression suite');p.add_argument('--pool-check',action='store_true');p.add_argument('--prompt-scenarios',action='store_true',help='Bounded real-core prompt acceptance scenarios, not complete matches');p.add_argument('--effect-scenarios',action='store_true',help='Bounded canonical card effect interactions with final-state assertions');p.add_argument('--report',type=Path)
     p.add_argument('--extra-deck-scenarios',action='store_true',help='Canonical Synchro/Xyz/Link summons, effects and summon negation')
+    p.add_argument('--scenario-suite',choices=SCENARIO_SUITES,help='Named bounded scenario suite; legacy scenario flags remain aliases')
     args=p.parse_args()
     if not 1<=args.matches<=100: p.error('--matches must be 1..100')
-    scenarios_requested=args.prompt_scenarios or args.effect_scenarios or args.extra_deck_scenarios
-    if sum((args.prompt_scenarios,args.effect_scenarios,args.extra_deck_scenarios))>1: p.error('Select one scenario suite')
-    if scenarios_requested and (args.suite or args.sample_decks or args.pool_check or args.deck_a or args.deck_b or args.matches!=1): p.error('Scenario suites cannot be combined with match or pool options')
+    requested=([args.scenario_suite] if args.scenario_suite else [])+[name for name,flag in (('prompt',args.prompt_scenarios),('effect',args.effect_scenarios),('extra-deck',args.extra_deck_scenarios)) if flag]
+    if len(requested)>1: p.error('Select one scenario suite')
+    selected_suite=requested[0] if requested else None
+    if selected_suite and (args.suite or args.sample_decks or args.pool_check or args.deck_a or args.deck_b or args.matches!=1): p.error('Scenario suites cannot be combined with match or pool options')
     if args.seed<1: p.error('--seed must be positive')
-    if args.report is None: args.report=ROOT/'NativeClient'/('host-extra-deck-validation.json' if args.extra_deck_scenarios else 'host-effect-validation.json' if args.effect_scenarios else 'host-prompt-validation.json' if args.prompt_scenarios else 'host-validation.json')
+    if args.report is None: args.report=ROOT/'NativeClient'/(SCENARIO_SUITES[selected_suite][3] if selected_suite else 'host-validation.json')
     if not args.worker:
         exe=prepare_python(args.download_python)
         cmd=[str(exe),str(Path(__file__).resolve()),'--worker',*sys.argv[1:]]
@@ -402,17 +428,16 @@ def main():
         return
     equivalence=source_equivalence();ai_hash=sha((AI_DIR/'offline_ai.js').read_bytes());host_hash=sha((AI_DIR/'offline_ai_host.js').read_bytes())
     engine=Engine(args.runtime.resolve())
-    if scenarios_requested:
-        fixture=EXTRA_DECK_SCENARIO_SOURCE if args.extra_deck_scenarios else EFFECT_SCENARIO_SOURCE if args.effect_scenarios else SCENARIO_SOURCE
-        definitions=EXTRA_DECK_SCENARIOS if args.extra_deck_scenarios else EFFECT_SCENARIOS if args.effect_scenarios else SCENARIO_PROMPTS
+    if selected_suite:
+        fixture,definitions,_,_=SCENARIO_SUITES[selected_suite]
         fixture_hash=sha(fixture.read_bytes());harness_hash=sha(Path(__file__).read_bytes());scenarios=[]
         for kind in definitions:
             for player in (0,1):
-                result=engine.prompt_scenario(kind,player,args.seed+len(scenarios),effect=args.effect_scenarios,extra_deck=args.extra_deck_scenarios);scenarios.append(result)
+                result=engine.prompt_scenario(kind,player,args.seed+len(scenarios),suite=selected_suite);scenarios.append(result)
                 print(json.dumps({k:result[k] for k in ('scenario','player','status','retryCount','forcedChains','durationSeconds')}),flush=True)
         if fixture_hash!=sha(fixture.read_bytes()) or harness_hash!=sha(Path(__file__).read_bytes()) or ai_hash!=sha((AI_DIR/'offline_ai.js').read_bytes()) or host_hash!=sha((AI_DIR/'offline_ai_host.js').read_bytes()): raise ValueError('Scenario, harness or AI changed during validation')
         counts=collections.Counter(r['message'] for s in scenarios for r in s['responses'])
-        missing={21,22,24,25,132,140,141,142}-set(counts) if args.prompt_scenarios else set()
+        missing={21,22,24,25,132,140,141,142}-set(counts) if selected_suite=='prompt' else set()
         report={'schemaVersion':1,'scope':'Real OCG-generated prompts answered by production JavaScript; completion markers prove resumed Lua operations, not complete matches or iOS UI execution.',
                 'platform':'Windows x86 portable Python 3.12.10','pythonURL':PYTHON_URL,'pythonSHA256':PYTHON_SHA256,'pythonHashSource':PYTHON_SOURCE,
                 'coreBinary':engine.binary,'binarySourceRevision':SOURCE_REVISION,'iosCoreRevision':IOS_CORE_REVISION,'exactIOSRevisionBinary':False,
@@ -421,7 +446,7 @@ def main():
                 'scenariosAccepted':sum(s['status']=='accepted_completion_marker' for s in scenarios),'scenarios':scenarios,
                 'promptResponseCounts':dict(sorted(counts.items())),'previouslyUncoveredPromptIDs':[21,22,24,25,132,140,141,142],'missingTargetPrompts':sorted(missing),
                 'fullMatchesExecutedThisRun':0,'buildTriggered':False,'iosRuntimeVerified':False,'invocation':sys.argv[1:]}
-        if args.effect_scenarios or args.extra_deck_scenarios:
+        if selected_suite!='prompt':
             report.pop('previouslyUncoveredPromptIDs');report.pop('missingTargetPrompts')
             report.update(scope='Canonical card scripts executed by real OCG with production AI; observer Lua asserts final game state before completion markers. These are bounded scenarios, not full games or iOS UI execution.',
                           harnessSHA256=harness_hash,databaseSHA256=sha((engine.runtime/'cards.cdb').read_bytes()),

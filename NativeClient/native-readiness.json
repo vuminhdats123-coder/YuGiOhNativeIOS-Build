@@ -47,6 +47,6 @@
     "Verify native iOS compile/link and full GUI matches when the build hold permits it",
     "Run authored native layout/projection/grid/HUD, input lifetime and response/restart tests",
     "Verify rendering, font sizing, safe areas, touch, suspend/resume and audio on an iPhone",
-    "Expand effect-interaction coverage beyond 36 full host matches, 8 canonical-effect and 10 Extra Deck scenarios"
+    "Expand coverage beyond the current 36 full host matches and 36 bounded scenarios; verify native human selection"
   ]
 }

@@ -59,10 +59,18 @@ class MatchHarnessTests(unittest.TestCase):
         engine=m.Engine.__new__(m.Engine)
         for kind,player in (('invalid',0),('choices',2),('choices',-1)):
             with self.subTest(kind=kind,player=player),self.assertRaises(ValueError): engine.prompt_scenario(kind,player,1)
-        with self.assertRaises(ValueError): engine.prompt_scenario('choices',0,1,effect=True)
+        with self.assertRaises(ValueError): engine.prompt_scenario('choices',0,1,suite='effect')
         with self.assertRaises(ValueError): engine.prompt_scenario('fusion_summon',0,1)
-        with self.assertRaises(ValueError): engine.prompt_scenario('fusion_summon',0,1,extra_deck=True)
-        with self.assertRaises(ValueError): engine.prompt_scenario('synchro_trigger',0,1,effect=True,extra_deck=True)
+        with self.assertRaises(ValueError): engine.prompt_scenario('fusion_summon',0,1,suite='extra-deck')
+        with self.assertRaises(ValueError): engine.prompt_scenario('synchro_trigger',0,1,suite='unknown')
+        with self.assertRaises(ValueError): engine.prompt_scenario('choices',0,1,suite='ritual-pendulum')
+    def test_effective_rules_reject_implicit_mr3_bits_and_wrong_attack_override(self):
+        self.assertEqual(m.verify_scenario_rules(m.struct.pack('<I',m.MR5),m.MR5),m.MR5)
+        self.assertEqual(m.verify_scenario_rules(m.struct.pack('<I',m.MR5|2),m.MR5|2),m.MR5|2)
+        for actual,expected in ((m.MR5|0x1000,m.MR5),(m.MR5|2,m.MR5),(m.MR5,m.MR5|2)):
+            with self.subTest(actual=actual,expected=expected),self.assertRaisesRegex(ValueError,'effective duel rules'):
+                m.verify_scenario_rules(m.struct.pack('<I',actual),expected)
+        with self.assertRaisesRegex(ValueError,'Truncated'): m.verify_scenario_rules(b'\0\0\0',m.MR5)
     def test_scenario_evidence_requires_real_message_and_canonical_script(self):
         m.require_scenario_evidence({63,74},{50:3,63:1,74:1},{'c24094653.lua'},{'constant.lua','c24094653.lua'})
         with self.assertRaisesRegex(ValueError,'expected messages'):

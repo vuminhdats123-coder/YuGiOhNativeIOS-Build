@@ -227,7 +227,11 @@
           const finishable = r.u8(), cancelable = r.u8(); const min = r.count(), max = r.count();
           const select = r.list(() => r.card(true)), unselect = r.list(() => r.card(true)); r.end();
           if (min > max) fail('Invalid unselect bounds');
-          response = finishable || (cancelable && !select.length) ? integer(-1) :
+          // Group-summon procedures filter the remaining legal zones/cards on every toggle.
+          // MSG26 min/max do not cap the final group; preserve finish behavior for material pickers.
+          const ownSummonCard = c => c.controller === selfPlayer && (c.location === 2 || (c.location === 64 && (c.position & 5)));
+          const extendSummon = requestedHint === 509 && select.length > 0 && select.every(ownSummonCard) && unselect.every(ownSummonCard);
+          response = (finishable && !extendSummon) || (cancelable && !select.length) ? integer(-1) :
             select.length ? [...integer(1),...integer(0)] : unselect.length ? [...integer(1),...integer(select.length)] : fail('Empty forced selection');
         } else if (message === 16) {
           r.u8(); const forced = r.u8(); r.u32(); r.u32();

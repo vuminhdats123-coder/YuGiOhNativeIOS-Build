@@ -3,7 +3,7 @@
 function HostEffectScenario(player, kind, marker)
     local flags = DUEL_MODE_MR5
     if kind == "effect_and_battle_damage" then flags = flags | DUEL_ATTACK_FIRST_TURN end
-    Debug.ReloadFieldBegin(flags)
+    Debug.ReloadFieldBegin(flags, 0)
     Debug.SetPlayerInfo(0, 8000, 0, 0)
     Debug.SetPlayerInfo(1, 8000, 0, 0)
     for p = 0, 1 do
