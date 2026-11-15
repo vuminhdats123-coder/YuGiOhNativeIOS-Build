@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "platform": "iPhoneOS",
+  "architecture": "arm64",
+  "minimumIOS": "16.0",
+  "dependencies": {
+    "repository": "https://github.com/edo9300/edopro-vcpkg-cache",
+    "commit": "5905a0e9fb4c4263ab5e9199d59ffc6d7be3ca00",
+    "release": "20260914",
+    "assetID": 563117649,
+    "url": "https://github.com/edo9300/edopro-vcpkg-cache/releases/download/20260914/installed_aarch64-ios-cctools.7z",
+    "bytes": 24712449,
+    "sha256": "e4bb78cea762d674ff0499faa18870473e9a305d88e77ac812d35b2e3a7b9a89",
+    "localArchive": "outputs/ios-dependencies/installed_aarch64-ios-cctools-20260914.7z",
+    "localRoot": "outputs/ios-dependencies/vcpkg-20260914",
+    "triplet": "installed/arm64-ios",
+    "staticLibraries": 50,
+    "machOObjectMembers": 4468,
+    "observedObjectPlatform": "iPhoneOS",
+    "observedObjectArchitecture": "arm64",
+    "observedMinimumOS": "7.0.0",
+    "observedSDK": "16.1.0",
+    "sourceIrrlichtCommit": "5b93ec6a8bbfca61ae8a314386e4fa808dd81837",
+    "sourceIrrlichtRepository": "https://github.com/edo9300/irrlicht1-8-4",
+    "sourceRecipe": "ports/irrlicht-rectclip/portfile.cmake",
+    "linkOrRuntimeCompatibilityVerified": false
+  },
+  "premake": {
+    "version": "5.0.0",
+    "generator": "xcode4",
+    "repository": "https://github.com/premake/premake-core",
+    "macOSArm64ArchiveSHA256": "8952855a0d824f63ca22721f3f32ee947a4762c01008f9eddefeba133bafda0d"
+  },
+  "tools": {
+    "sdk": "Use the iPhoneOS SDK provided with an installed Apple Xcode; no repackaged SDK",
+    "python": "Python 3.9 or newer (resource phase and data checks only)",
+    "configuration": "Release or Debug; arm64 device archives only",
+    "signing": "Disabled; later user signing is separate from creating the unsigned app"
+  }
+}

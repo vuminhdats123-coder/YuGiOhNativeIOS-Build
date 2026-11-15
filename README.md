@@ -41,5 +41,13 @@ lưu làm tham chiếu ở `NativeClient/legacy/`; workflow hiện tại chỉ l
 và không tạo IPA. `NativeClient/port-status.json` giữ `fullGameReady=false` cho đến khi
 khởi tạo tài nguyên, đấu thật, offline AI và thao tác iPhone được kiểm chứng.
 
-Lõi duel đầy đủ không tự cung cấp AI trên iOS: WindBot upstream chưa chạy cục bộ ở
-nền tảng này. Đây là một hạng mục tích hợp bắt buộc, không được che bằng AI prototype.
+Mã nguồn hiện có menu chọn hai deck và đấu offline bằng OCG core. AI dùng mô-đun
+JavaScript chạy trong JavaScriptCore của iOS; cùng mô-đun được kiểm thử bằng Node.
+Mặt thẻ được ghép bằng CoreGraphics/CoreText từ tranh OBB và thông tin database,
+có phương án hiển thị khi thiếu tranh. Đây là phần triển khai nguồn: chưa có chứng
+cứ một trận hoàn chỉnh hoặc hình ảnh đúng trên thiết bị khi chưa biên dịch/chạy app.
+
+Recipe Xcode, dependency iPhoneOS đã kiểm tra và bước copy toàn bộ `Bundle/game`
+nằm trong [NativeClient/iOS/README.md](NativeClient/iOS/README.md). Project sinh
+trên Windows chỉ phục vụ kiểm tra cấu trúc; phải sinh lại trên runner macOS với
+đường dẫn của runner. Không đưa project có đường dẫn Windows vào build trên Mac.

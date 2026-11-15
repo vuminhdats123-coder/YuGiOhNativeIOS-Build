@@ -1,5 +1,5 @@
 {
-  "scope": "Pinned source, exact applied bootstrap patch, coverage provenance, runtime manifest and required-resource hashes only",
+  "scope": "Pinned source, exact applied patch series and native overlays, coverage provenance, runtime manifest and required-resource hashes only",
   "pins": {
     "client": {
       "expected": "d0f111d6f3e0d4ee529b88a869ae0a971954bae3",
@@ -34,19 +34,18 @@
   "errors": [],
   "sourcePreparationValid": true,
   "bootstrapPatchVerified": true,
+  "nativeIntegrationVerified": true,
   "coverageAuditValid": true,
   "runtimePackageValid": true,
+  "offlineAIScriptMatchesSource": true,
   "runtimePackageManifestPresent": true,
   "fullPackageHashesVerified": false,
   "buildHeld": true,
   "runtimeVerified": false,
   "fullGameReady": false,
   "remaining": [
-    "Verify packaged database, script and OBB mappings against the pinned core at runtime",
-    "Complete offline duel entry and AI on iOS",
-    "Render OBB square artwork as complete card faces and supply absent artwork",
-    "Pin and prepare all iOS native dependency libraries",
-    "Compile and execute full matches only after the build hold is lifted",
-    "Verify touch UI, lifecycle and audio on an iPhone"
+    "Verify native compile/link and full matches after source preparation is complete and build hold permits it",
+    "Verify native rendering, touch input, suspend/resume and audio on an iPhone",
+    "Validate complex AI selections against the running pinned OCG core"
   ]
 }

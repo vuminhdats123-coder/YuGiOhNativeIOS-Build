@@ -1,1 +1,2 @@
 NativeClient/patches/*.patch text eol=lf -whitespace
+NativeClient/overlays/**/*.js text eol=lf

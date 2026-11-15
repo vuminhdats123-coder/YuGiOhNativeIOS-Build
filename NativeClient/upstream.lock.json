@@ -44,5 +44,17 @@
     "file": "com.konami.ygodgtest/main.116.com.konami.ygodgtest.obb",
     "sha256": "7ad6962f99ec019a57e2324f0dab23fbbdee81669ed2d2fb766706eaf05a756b"
   },
-  "runtimeCompatibilityVerified": false
+  "runtimeCompatibilityVerified": false,
+  "premake": {
+    "version": "5.0.0",
+    "repository": "https://github.com/premake/premake-core",
+    "windows": {
+      "url": "https://github.com/premake/premake-core/releases/download/v5.0.0/premake-5.0.0-windows.zip",
+      "sha256": "15e63506eed5dfd526b96c8e957a7feff2be6cfe70f46e353bfe4813b82e2fdc"
+    },
+    "macos-arm64": {
+      "url": "https://github.com/premake/premake-core/releases/download/v5.0.0/premake-5.0.0-macosx.tar.gz",
+      "sha256": "8952855a0d824f63ca22721f3f32ee947a4762c01008f9eddefeba133bafda0d"
+    }
+  }
 }

@@ -1,0 +1,94 @@
+{
+  "scope": "Source/configuration, JavaScript protocol logic, data/layout and resource-copy evidence; no native executable",
+  "python": {
+    "run": 60,
+    "passed": 59,
+    "skipped": 1,
+    "skipReason": "Windows host does not permit creating symlinks"
+  },
+  "javascript": {
+    "promptFamilies": 21,
+    "testsPassed": true,
+    "scriptSHA256": "2e7bdcca545f2d60cac4879a8d795c8dac921af5b23fac0a26b32b5f9ad3f3d6",
+    "engineWasNotExecuted": true
+  },
+  "renderer": {
+    "layout": {
+      "width": 708.0,
+      "height": 1016.0,
+      "regions": 13,
+      "overlapChecks": "passed"
+    },
+    "sourceContract": "Queue ownership / CPU-only worker / locale snapshot / fallback wiring checked statically",
+    "data": {
+      "metadataCards": 14794,
+      "frameCategories": {
+        "Spell": 2897,
+        "EffectOrOther": 6356,
+        "Trap": 2082,
+        "Normal": 1023,
+        "Fusion": 609,
+        "Ritual": 156,
+        "Synchro": 553,
+        "Link": 498,
+        "Xyz": 620
+      },
+      "pendulumCards": 399,
+      "linkCards": 498,
+      "longestNameCharacters": 63,
+      "longestDescriptionCharacters": 1112,
+      "sourceJPGDimensions": {
+        "416x610": 1,
+        "256x256": 4,
+        "238x238": 7585,
+        "544x544": 120,
+        "176x256": 1,
+        "594x590": 1,
+        "2048x1536": 2
+      }
+    },
+    "nativeBitmapTestsExecuted": false,
+    "nativeCompileExecuted": false,
+    "visualDeviceVerification": false
+  },
+  "xcode": {
+    "generator": "Premake 5.0.0",
+    "generatedOn": "Windows",
+    "structuralReviewPassed": true,
+    "portableMacArtifact": false,
+    "sourceTargets": [
+      "ygopro",
+      "ocgcore",
+      "lua",
+      "clzma"
+    ],
+    "objectiveCppFiles": 4,
+    "luaCFilesCompiledAsCpp": 26,
+    "sharedSchemePresent": false,
+    "projectHashes": {
+      "clzma.xcodeproj": "07e40e89d141d428e62a5477ad2272d7d96524bb8e2e6a60af33459f5d412164",
+      "lua.xcodeproj": "7d627a301f8487a02d2325b4d114c2c6037d4effd378764d3df6bf3105ba3004",
+      "ocgcore.xcodeproj": "1a0241720145bcca6c331324498b71a391dac38f1b2ab1285b1941866ff1383c",
+      "ocgcoreshared.xcodeproj": "846c3028b35a329f9126d731357edc77d02fa3fa055190be40133dd4a5d103ad",
+      "ygopro.xcodeproj": "47d98f09c541bc5329985e818863356eb9a134910ab3f0a9909927cc7ae85131"
+    }
+  },
+  "dependencies": {
+    "staticLibraries": 50,
+    "iPhoneOSArm64Objects": 4468,
+    "loadedOrLinked": false
+  },
+  "resourceCopy": {
+    "files": 46058,
+    "bytes": 420250449,
+    "icons": 17,
+    "manifestSHA256": "c6e701e5a706831b9dbdaf1a5eb8b7c73ad90aafbcc9f94a5a804c3845e3a7f6",
+    "allCopiedFileHashesVerified": true,
+    "fixtureContainsNativeExecutable": false
+  },
+  "nativeCompilerExecuted": false,
+  "nativeMatchExecuted": false,
+  "nativeBitmapTestsExecuted": false,
+  "actionsDispatched": false,
+  "ipaCreated": false
+}

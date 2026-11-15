@@ -87,6 +87,19 @@ class RuntimePreparationTests(unittest.TestCase):
 
     def test_valid_required_resources(self):
         self.assertEqual(module.validate_runtime(self.runtime, self.lock), [])
+
+    def test_stale_packaged_ai_is_rejected_after_source_changes(self):
+        source = self.root / 'NativeClient/overlays/offline-ai/offline_ai.js'
+        source.parent.mkdir(parents=True)
+        source.write_bytes((self.runtime / 'offline-ai/offline_ai.js').read_bytes())
+        with patch.object(module, 'apply_native_integration', return_value='already-applied'):
+            report = module.inspect(self.runtime, self.root)
+            self.assertTrue(report['offlineAIScriptMatchesSource'])
+            self.assertTrue(report['runtimePackageValid'])
+            source.write_text('updated decision module', encoding='utf-8')
+            report = module.inspect(self.runtime, self.root)
+            self.assertFalse(report['offlineAIScriptMatchesSource'])
+            self.assertFalse(report['runtimePackageValid'])
         self.assertEqual(module.validate_coverage(self.coverage_path, self.lock), [])
 
     def test_missing_or_invalid_manifest_rejected(self):
@@ -133,7 +146,7 @@ class RuntimePreparationTests(unittest.TestCase):
         revisions = [SimpleNamespace(returncode=0, stdout=self.lock[component]['commit'])
                      for component in ('client', 'core', 'lua', 'distribution')]
         with patch.object(module.subprocess, 'run', side_effect=revisions), \
-             patch.object(module, 'apply_native_patch', side_effect=module.PatchError('Bootstrap patch has not been applied')):
+             patch.object(module, 'apply_native_integration', side_effect=module.PatchError('Bootstrap patch has not been applied')):
             report = module.inspect(self.runtime, self.root)
         self.assertFalse(report['sourcePreparationValid'])
         self.assertFalse(report['bootstrapPatchVerified'])
@@ -143,7 +156,7 @@ class RuntimePreparationTests(unittest.TestCase):
         report_path = self.root / 'result.json'
         with patch.object(module, 'ROOT', self.root), \
              patch.object(sys, 'argv', ['check_native_port.py', '--require-ready', '--runtime', str(self.root / 'absent'), '--report', str(report_path)]), \
-             patch.object(module, 'apply_native_patch', side_effect=FileNotFoundError('client missing')), \
+             patch.object(module, 'apply_native_integration', side_effect=FileNotFoundError('client missing')), \
              redirect_stdout(io.StringIO()):
             self.assertEqual(module.main(), 1)
         report = module.read_json(report_path)

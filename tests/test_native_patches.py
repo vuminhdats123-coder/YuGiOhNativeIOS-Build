@@ -1,5 +1,6 @@
 """Tests the Git patch applicator. Objective-C startup is inspected, not executed."""
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -97,6 +98,57 @@ class NativePatchTests(unittest.TestCase):
         with self.assertRaisesRegex(patches.PatchError, "only"):
             self.apply()
         self.assertEqual(self.target.read_text(encoding="utf-8"), self.original)
+
+    def integration_fixture(self):
+        native = self.root / "NativeClient"
+        (native / "patches").mkdir(parents=True)
+        (native / "overlays").mkdir()
+        (native / "patches/bootstrap.patch").write_bytes(self.patch.read_bytes())
+        (native / "overlays/helper.h").write_bytes(b"// native overlay\n")
+        manifest = {"schemaVersion": 1,
+                    "patches": [{"file": "patches/bootstrap.patch", "targets": [patches.TARGET]}],
+                    "overlays": [{"source": "overlays/helper.h", "target": "gframe/helper.h"}]}
+        series = native / "patches/series.json"
+        series.write_text(json.dumps(manifest), encoding="utf-8")
+        return series, manifest
+
+    def test_integration_materializes_and_checks_both_patch_and_overlay(self):
+        series, _ = self.integration_fixture()
+        options = dict(expected_revision=self.revision)
+        self.assertEqual(patches.apply_native_integration(self.repo, series, **options), "applied")
+        self.assertEqual((self.repo / "gframe/helper.h").read_bytes(), b"// native overlay\n")
+        self.assertEqual(patches.apply_native_integration(self.repo, series, check_only=True, **options), "already-applied")
+        (self.repo / "gframe/helper.h").write_text("user edit", encoding="utf-8")
+        with self.assertRaisesRegex(patches.PatchError, "beyond"):
+            patches.apply_native_integration(self.repo, series, **options)
+        self.assertEqual((self.repo / "gframe/helper.h").read_text(), "user edit")
+
+    def test_overlay_conflict_does_not_partially_apply_other_files(self):
+        series, _ = self.integration_fixture()
+        (self.repo / "gframe/helper.h").write_text("keep user content", encoding="utf-8")
+        with self.assertRaisesRegex(patches.PatchError, "beyond"):
+            patches.apply_native_integration(self.repo, series, expected_revision=self.revision)
+        self.assertEqual(self.target.read_text(encoding="utf-8"), self.original)
+
+    def test_overlay_cannot_replace_tracked_upstream_file(self):
+        series, manifest = self.integration_fixture()
+        manifest['overlays'][0]['target'] = "other.txt"
+        series.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(patches.PatchError, "tracked upstream"):
+            patches.apply_native_integration(self.repo, series, expected_revision=self.revision)
+        self.assertEqual((self.repo / "other.txt").read_text(), "keep\n")
+
+    def test_overlay_traversal_and_duplicate_targets_rejected(self):
+        series, manifest = self.integration_fixture()
+        manifest['overlays'][0]['target'] = "../escape.h"
+        series.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(patches.PatchError, "Unsafe"):
+            patches.apply_native_integration(self.repo, series, expected_revision=self.revision)
+        manifest['overlays'][0]['target'] = "gframe/helper.h"
+        manifest['overlays'].append(manifest['overlays'][0])
+        series.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(patches.PatchError, "Duplicate"):
+            patches.apply_native_integration(self.repo, series, expected_revision=self.revision)
 
 
 class BootstrapSourceContract(unittest.TestCase):

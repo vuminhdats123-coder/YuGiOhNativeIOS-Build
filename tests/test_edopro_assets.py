@@ -127,6 +127,20 @@ class AssetTests(unittest.TestCase):
         with self.assertRaises(FileExistsError): self.prepare()
         self.assertEqual(marker.read_text(), "unchanged")
 
+    def test_native_ai_module_is_bundled_verbatim_and_hashed(self):
+        decision = self.root / "offline_ai.js"
+        decision.write_bytes(b"'use strict'; globalThis.OfflineDuelAI = {};\n")
+        report = builder.prepare(self.obb, self.cdb, self.scripts, self.base, self.audit_path,
+                                 self.root / "native", offline_ai=decision)
+        bundled = self.root / "native/offline-ai/offline_ai.js"
+        self.assertTrue(report['offlineAIIncluded'])
+        self.assertEqual(bundled.read_bytes(), decision.read_bytes())
+        self.assertEqual(report['files']['offline-ai/offline_ai.js']['sha256'], builder.digest(decision))
+        with self.assertRaisesRegex(ValueError, "Missing offline AI"):
+            builder.prepare(self.obb, self.cdb, self.scripts, self.base, self.audit_path,
+                            self.root / "missing-ai", offline_ai=self.root / "missing.js")
+        self.assertFalse((self.root / "missing-ai").exists())
+
     def test_hash_mismatch_fails_before_output(self):
         self.audit["sources"]["OBB"]["sha256"] = "0" * 64; self.save_audit()
         with self.assertRaisesRegex(ValueError, "OBB hash"): self.prepare()

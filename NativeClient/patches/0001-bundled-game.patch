@@ -1,9 +1,219 @@
 diff --git a/gframe/iOS/porting_ios.mm b/gframe/iOS/porting_ios.mm
-index bfe00c1..f74076a 100644
+index bfe00c1..10eea27 100644
 --- a/gframe/iOS/porting_ios.mm
 +++ b/gframe/iOS/porting_ios.mm
-@@ -251,30 +251,135 @@ void showTextInputWindow(epro::stringview curtext) {
- 	}
+@@ -67,18 +67,7 @@ static void sendTextInputResult(NSString* nstext) {
+ }
+ 
+ 
+-@interface ActionCallbackDelegate : UIViewController<UITextFieldDelegate> {
+-}
+-@end
+-
+-@implementation ActionCallbackDelegate
+-- (void)textFieldDidEndEditing:(UITextField *)textField
+-{
+-	sendTextInputResult(textField.text);
+-}
+-@end
+-
+-@interface UiPickerDelegate : UIViewController<UIPickerViewDelegate, UIPickerViewDataSource> {
++@interface UiPickerDelegate : NSObject<UIPickerViewDelegate, UIPickerViewDataSource> {
+ }
+ @end
+ 
+@@ -91,11 +80,20 @@ static void sendTextInputResult(NSString* nstext) {
+ 
+ - (void)setElements:(NSMutableArray*)elems elements_size:(NSInteger)elsize
+ {
+-	elements = elems;
++	if(elements != elems) {
++		[elements release];
++		elements = [elems retain];
++	}
+ 	size = elsize;
+ 	selected = -1;
+ }
+ 
++- (void)dealloc
++{
++	[elements release];
++	[super dealloc];
++}
++
+ - (NSInteger)getSelected
+ {
+ 	return selected;
+@@ -119,41 +117,12 @@ static void sendTextInputResult(NSString* nstext) {
+ 
+ @end
+ 
+-@interface UiPickerViewDelegate : NSObject<UIAlertViewDelegate>
+-
+-@property (nonatomic, assign) UIPickerView* picker;
+-
+-@end
+-
+-@implementation UiPickerViewDelegate
+-
+-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+-{
+-	if (buttonIndex != 1)
+-		return;
+-	sendComboBoxResult([ _picker selectedRowInComponent:0 ]);
+-}
+-
+-@end
+-
+-@interface TextInputDelegate : NSObject<UIAlertViewDelegate>
+-
+-@end
+-
+-@implementation TextInputDelegate
+-
+-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+-{
+-	sendTextInputResult([alertView textFieldAtIndex:0].text);
+-}
+-
+-@end
+-
+ namespace porting {
+ 
+ namespace {
+ 
+ UIViewController* getRootViewController() {
++	if(!ios_exposed_data.exposed_data) return nil;
+ 	switch(porting::ios_exposed_data.device_type) {
+ 		case irr::EIDT_SDL2:
+ 		case irr::EIDT_SDL3: {
+@@ -170,111 +139,205 @@ UIViewController* getRootViewController() {
+ }
+ 
+ IosExposedVideoData ios_exposed_data{};
+-static auto alert_controller = NSClassFromString(@"UIAlertController");
+-static auto alert_action = NSClassFromString(@"UIAlertAction");
+-static auto uialert_view = NSClassFromString(@"UIAlertView");
+-
+-void showErrorDialog(epro::stringview context, epro::stringview message){
+-	@autoreleasepool {
+-		NSString *nscontext = [NSString stringWithUTF8String:context.data()];
+-		NSString *nsmessage = [NSString stringWithUTF8String:message.data()];
+-		if (alert_controller != nil) {
+-			UIAlertController *alert = [alert_controller alertControllerWithTitle:nscontext message:nsmessage preferredStyle:UIAlertControllerStyleAlert];
+-			UIAlertAction *ok = [alert_action actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull) {
+-				exit(0);
+-			}];
+-			[alert addAction:ok];
+-			[getRootViewController() presentViewController:alert animated:YES completion:nil];
+-		} else {
+-			UIAlertView* alert = [[uialert_view alloc] initWithTitle:nscontext message:nsmessage delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+-			[alert show];
+-			while([alert isVisible]) {
+-				[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+-			}
+-			exit(0);
+-		}
+-	}
++void showErrorDialog(epro::stringview context, epro::stringview message) {
++	NSString* title = [NSString stringWithUTF8String:std::string(context.data(), context.size()).c_str()];
++	NSString* text = [NSString stringWithUTF8String:std::string(message.data(), message.size()).c_str()];
++	dispatch_async(dispatch_get_main_queue(), ^{
++		UIAlertController* alert = [UIAlertController alertControllerWithTitle:title message:text preferredStyle:UIAlertControllerStyleAlert];
++		[alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction*) { exit(0); }]];
++		[getRootViewController() presentViewController:alert animated:YES completion:nil];
++	});
+ }
+ 
+ void showComboBox(const std::vector<std::string>& parameters, int selected) {
+-	if(parameters.empty())
+-		return;
+-	@autoreleasepool {
+-		NSMutableArray* objc_parameters = [NSMutableArray new];
+-		for(const auto& param : parameters)
+-			[objc_parameters addObject: [NSString stringWithUTF8String:param.data()]];
++	if(parameters.empty()) return;
++	NSMutableArray* entries = [NSMutableArray arrayWithCapacity:parameters.size()];
++	for(const auto& parameter : parameters)
++		[entries addObject:[NSString stringWithUTF8String:parameter.c_str()] ?: @""];
++	const NSInteger initial = selected >= 0 && selected < (int)parameters.size() ? selected : 0;
++	dispatch_async(dispatch_get_main_queue(), ^{
+ 		UiPickerDelegate* delegate = [[UiPickerDelegate alloc] init];
+-		[delegate setElements:objc_parameters elements_size:parameters.size()];
+-		UIPickerView * picker = [UIPickerView new];
++		[delegate setElements:entries elements_size:entries.count];
++		UIPickerView* picker = [[UIPickerView alloc] initWithFrame:CGRectMake(5, 20, 250, 140)];
+ 		picker.delegate = delegate;
+ 		picker.dataSource = delegate;
+-		picker.showsSelectionIndicator = YES;
+-		if (alert_controller != nil) {
+-			picker.frame = CGRectMake(5, 20, 250, 140);
+-			UIAlertController *alert = [alert_controller alertControllerWithTitle:@"" message:@"\n\n\n\n\n\n" preferredStyle:UIAlertControllerStyleAlert];
+-			[alert.view addSubview:picker];
+-			[alert addAction:[alert_action actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:nil]];
+-			[alert addAction:[alert_action actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull) {
+-				sendComboBoxResult([ delegate getSelected]);
+-			}]];
+-			[picker selectRow:selected inComponent:0 animated:true];
+-			[getRootViewController() presentViewController:alert animated:YES completion:nil];
+-		} else {
+-			auto* picker_view_delegate = [[UiPickerViewDelegate alloc] init];
+-			picker_view_delegate.picker = picker;
+-			picker.frame = CGRectMake(10, 5, 263, 80);
+-			UIAlertView* alert = [[uialert_view alloc] initWithTitle:@"" message:@"\n\n\n\n\n\n\n" delegate:picker_view_delegate cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
+-			[picker selectRow:selected inComponent:0 animated:true];
+-			[alert addSubview:picker];
+-			[alert show];
+-		}
+-	}
++		[picker selectRow:initial inComponent:0 animated:NO];
++		[delegate pickerView:picker didSelectRow:initial inComponent:0];
++		UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"" message:@"\n\n\n\n\n\n" preferredStyle:UIAlertControllerStyleAlert];
++		[alert.view addSubview:picker];
++		[alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
++		// Capturing the delegate keeps both weak picker delegates alive until dismissal.
++		[alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction*) {
++			sendComboBoxResult((int)[delegate getSelected]);
++		}]];
++		[getRootViewController() presentViewController:alert animated:YES completion:nil];
++		// The copied action block owns delegate; alert.view owns picker.
++		[delegate release];
++		[picker release];
++	});
+ }
+ 
+ void showTextInputWindow(epro::stringview curtext) {
+-	@autoreleasepool {
+-		if (alert_controller != nil) {
+-			UIAlertController *alert = [alert_controller alertControllerWithTitle:@"Text input" message:@"" preferredStyle:UIAlertControllerStyleAlert];
+-			[alert addAction:[alert_action actionWithTitle:@"Done" style:UIAlertActionStyleDefault handler:nil]];
+-			[alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+-				textField.placeholder = @"Enter text:";
+-				textField.text = [NSString stringWithUTF8String:curtext.data()];
+-				textField.delegate = [[ActionCallbackDelegate alloc] init];
+-			}];
+-			[getRootViewController() presentViewController:alert animated:YES completion:nil];
+-		} else {
+-			UIAlertView *alert = [[uialert_view alloc] initWithTitle:@"Text Input" message:@"" delegate:[TextInputDelegate alloc] cancelButtonTitle:@"Done" otherButtonTitles:nil];
+-			alert.alertViewStyle = UIAlertViewStylePlainTextInput;
+-			[alert textFieldAtIndex:0].text = [NSString stringWithUTF8String:curtext.data()];
+-			[alert show];
+-		}
+-	}
++	NSString* text = [NSString stringWithUTF8String:std::string(curtext.data(), curtext.size()).c_str()];
++	dispatch_async(dispatch_get_main_queue(), ^{
++		UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Text input" message:@"" preferredStyle:UIAlertControllerStyleAlert];
++		[alert addTextFieldWithConfigurationHandler:^(UITextField* field) {
++			field.placeholder = @"Enter text:";
++			field.text = text;
++		}];
++		// Capture the child field, not its alert controller, to avoid a retain cycle.
++		UITextField* field = alert.textFields.firstObject;
++		[alert addAction:[UIAlertAction actionWithTitle:@"Done" style:UIAlertActionStyleDefault handler:^(UIAlertAction*) {
++			sendTextInputResult(field.text ?: @"");
++		}]];
++		[getRootViewController() presentViewController:alert animated:YES completion:nil];
++	});
  }
  
 -epro::path_string getWorkDir() {
@@ -31,8 +241,7 @@ index bfe00c1..f74076a 100644
 +		return bootstrapFailure(error, [@"Missing or invalid game file: " stringByAppendingString:url.lastPathComponent]);
 +	return true;
 +}
- 
--		docsDir = [dirPaths objectAtIndex:0];
++
 +NSData* validateGameFolder(NSFileManager* manager, NSURL* directory, NSError** error) {
 +	NSDictionary* attributes = [manager attributesOfItemAtPath:directory.path error:error];
 +	if(!attributes)
@@ -61,15 +270,12 @@ index bfe00c1..f74076a 100644
 +	return data;
 +}
  
--		if ([filemgr fileExistsAtPath: docsDir isDirectory:&isDir] == NO)
--		{
--			NSError* error;
--			[filemgr createDirectoryAtPath:docsDir withIntermediateDirectories:YES attributes:nil error:&error];
+-		docsDir = [dirPaths objectAtIndex:0];
 +bool hasNoSymbolicLinks(NSFileManager* manager, NSURL* directory, NSError** error) {
 +	__block NSError* enumerationError = nil;
 +	NSDirectoryEnumerator* entries = [manager enumeratorAtURL:directory
 +		includingPropertiesForKeys:@[NSURLIsSymbolicLinkKey] options:0
-+		errorHandler:^BOOL(NSURL* url, NSError* failure) { enumerationError = failure; return NO; }];
++		errorHandler:^BOOL(NSURL* url, NSError* failure) { enumerationError = [failure retain]; return NO; }];
 +	if(!entries)
 +		return bootstrapFailure(error, @"Cannot inspect bundled game assets.");
 +	for(NSURL* entry in entries) {
@@ -81,11 +287,16 @@ index bfe00c1..f74076a 100644
 +	}
 +	if(enumerationError) {
 +		if(error) *error = enumerationError;
++		[enumerationError autorelease];
 +		return false;
 +	}
 +	return true;
 +}
-+
+ 
+-		if ([filemgr fileExistsAtPath: docsDir isDirectory:&isDir] == NO)
+-		{
+-			NSError* error;
+-			[filemgr createDirectoryAtPath:docsDir withIntermediateDirectories:YES attributes:nil error:&error];
 +void reportBootstrapError(NSString* message) {
 +	fprintf(stderr, "EDOPro bootstrap failed: %s\n", message.UTF8String);
 +	dispatch_async(dispatch_get_main_queue(), ^{
@@ -96,9 +307,23 @@ index bfe00c1..f74076a 100644
 +				if(window.isKeyWindow) { root = window.rootViewController; break; }
 +			}
 +			if(root) break;
++		}
++		// Irrlicht uses UIApplicationDelegate, so connectedScenes may be empty.
++		if(!root) {
++			for(UIWindow* window in [UIApplication sharedApplication].windows)
++				if(window.isKeyWindow) { root = window.rootViewController; break; }
  		}
++		if(!root) {
++			// Bootstrap can fail before Irrlicht creates its window. Show a useful error.
++			static UIWindow* failureWindow = nil;
++			failureWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
++			root = [[UIViewController alloc] init];
++			root.view.backgroundColor = [UIColor systemBackgroundColor];
++			failureWindow.rootViewController = root;
++			[root release]; // UIWindow retains its root controller.
++			[failureWindow makeKeyAndVisible];
++		}
 +		while(root.presentedViewController) root = root.presentedViewController;
-+		if(!root) return;
 +		UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"EDOPro data unavailable"
 +			message:message preferredStyle:UIAlertControllerStyleAlert];
 +		[alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
@@ -155,7 +380,7 @@ index bfe00c1..f74076a 100644
  	}
  }
  
-@@ -352,7 +457,10 @@ void irrlicht_main(){
+@@ -352,7 +415,10 @@ void irrlicht_main(){
  	std::deque<std::function<void()>> _events;
  	events = &_events;
  

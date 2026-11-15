@@ -1,0 +1,424 @@
+diff --git a/gframe/game.cpp b/gframe/game.cpp
+index f4aa146..ce7c73e 100644
+--- a/gframe/game.cpp
++++ b/gframe/game.cpp
+@@ -1,5 +1,6 @@
+ #include <sstream>
+ #include <nlohmann/json.hpp>
++#include "OfflineAI.h"
+ #include <irrlicht.h>
+ #include "client_updater.h"
+ #include "game_config.h"
+@@ -245,7 +246,7 @@ void Game::Initialize() {
+ 	int mainMenuWidth = std::max(280, static_cast<int>(titleWidth / dpi_scale + 15));
+ 	mainMenuLeftX = 510 - mainMenuWidth / 2;
+ 	mainMenuRightX = 510 + mainMenuWidth / 2;
+-	wMainMenu = env->addWindow(Scale(mainMenuLeftX, 200, mainMenuRightX, 450), false, EDOPRO_VERSION_STRING);
++	wMainMenu = env->addWindow(Scale(mainMenuLeftX, 200, mainMenuRightX, 485), false, EDOPRO_VERSION_STRING);
+ 	wMainMenu->getCloseButton()->setVisible(false);
+ 	//wMainMenu->setVisible(!is_from_discord);
+ #define OFFSET(x1, y1, x2, y2) Scale(10, 30 + offset, mainMenuWidth - 10, 60 + offset)
+@@ -259,6 +260,8 @@ void Game::Initialize() {
+ 	btnSingleMode = env->addButton(OFFSET(10, 65, 270, 95), wMainMenu, BUTTON_SINGLE_MODE, gDataManager->GetSysString(1201).data());
+ 	defaultStrings.emplace_back(btnSingleMode, 1201);
+ 	offset += 35;
++	btnOfflineAI = env->addButton(OFFSET(10, 100, 270, 130), wMainMenu, OfflineAI::MENU_OPEN, L"Offline vs AI");
++	offset += 35;
+ 	btnReplayMode = env->addButton(OFFSET(10, 100, 270, 130), wMainMenu, BUTTON_REPLAY_MODE, gDataManager->GetSysString(1202).data());
+ 	defaultStrings.emplace_back(btnReplayMode, 1202);
+ 	offset += 35;
+@@ -269,6 +272,16 @@ void Game::Initialize() {
+ 	defaultStrings.emplace_back(btnModeExit, 1210);
+ 	offset += 35;
+ #undef OFFSET
++	wOfflineDuel = env->addWindow(Scale(220, 140, 800, 460), false, L"Offline vs AI - MR5");
++	wOfflineDuel->getCloseButton()->setVisible(false);
++	wOfflineDuel->setVisible(false);
++	env->addStaticText(L"Your deck", Scale(20, 40, 550, 60), false, true, wOfflineDuel);
++	cbOfflinePlayer = AddComboBox(env, Scale(20, 65, 550, 95), wOfflineDuel, -1);
++	env->addStaticText(L"AI deck", Scale(20, 110, 550, 130), false, true, wOfflineDuel);
++	cbOfflineOpponent = AddComboBox(env, Scale(20, 135, 550, 165), wOfflineDuel, -1);
++	env->addStaticText(L"Real local duel. Basic AI, no banlist. Replay saving is not supported yet.", Scale(20, 180, 550, 225), false, true, wOfflineDuel);
++	btnOfflineStart = env->addButton(Scale(300, 245, 550, 280), wOfflineDuel, OfflineAI::MENU_START, L"Start duel");
++	env->addButton(Scale(20, 245, 270, 280), wOfflineDuel, OfflineAI::MENU_CANCEL, L"Back");
+ 	//lan mode
+ 	wLanWindow = env->addWindow(Scale(220, 100, 800, 520), false, gDataManager->GetSysString(1200).data());
+ 	defaultStrings.emplace_back(wLanWindow, 1200);
+@@ -3644,7 +3657,7 @@ void Game::OnResize() {
+ 		stAbout->setRelativePosition(irr::core::recti(10, 10, minwidth, minheight));
+ 	}
+ 	wRoomListPlaceholder->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
+-	wMainMenu->setRelativePosition(ResizeWin(mainMenuLeftX, 200, mainMenuRightX, 450));
++	wMainMenu->setRelativePosition(ResizeWin(mainMenuLeftX, 200, mainMenuRightX, 485));
+ 	wBtnSettings->setRelativePosition(ResizeWin(0, 610, 30, 640));
+ 	SetCentered(wCommitsLog);
+ 	SetCentered(updateWindow, false);
+@@ -3680,6 +3693,7 @@ void Game::OnResize() {
+ 	wRules->setRelativePosition(ResizeWin(630, 100, 1000, 310));
+ 	wReplay->setRelativePosition(ResizeWin(220, 100, 800, 520));
+ 	wSinglePlay->setRelativePosition(ResizeWin(220, 100, 800, 520));
++	wOfflineDuel->setRelativePosition(ResizeWin(220, 140, 800, 460));
+ 	gBot.window->setRelativePosition(irr::core::vector2di(wHostPrepare->getAbsolutePosition().LowerRightCorner.X, wHostPrepare->getAbsolutePosition().UpperLeftCorner.Y));
+ 
+ 	wHand->setRelativePosition(ResizeWin(500, 450, 825, 605));
+@@ -4029,6 +4043,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
+ 		}
+ 	} else
+ 		gGameConfig->locale = EPRO_TEXT("en");
++	imageManager.ClearTexture(false);
+ 	ReloadElementsStrings();
+ }
+ 
+diff --git a/gframe/game.h b/gframe/game.h
+index b6016b5..f623e3d 100644
+--- a/gframe/game.h
++++ b/gframe/game.h
+@@ -177,6 +177,11 @@ struct main_menu_panel_elements {
+ 	irr::gui::IGUIButton* btnOnlineMode;
+ 	irr::gui::IGUIButton* btnLanMode;
+ 	irr::gui::IGUIButton* btnSingleMode;
++	irr::gui::IGUIButton* btnOfflineAI;
++	irr::gui::IGUIWindow* wOfflineDuel;
++	irr::gui::IGUIComboBox* cbOfflinePlayer;
++	irr::gui::IGUIComboBox* cbOfflineOpponent;
++	irr::gui::IGUIButton* btnOfflineStart;
+ 	irr::gui::IGUIButton* btnReplayMode;
+ 	irr::gui::IGUIButton* btnTestMode;
+ 	irr::gui::IGUIButton* btnDeckEdit;
+diff --git a/gframe/menu_handler.cpp b/gframe/menu_handler.cpp
+index 7b3360f..9a7ed4f 100644
+--- a/gframe/menu_handler.cpp
++++ b/gframe/menu_handler.cpp
+@@ -7,6 +7,7 @@
+ #include "deck_manager.h"
+ #include "replay_mode.h"
+ #include "single_mode.h"
++#include "OfflineAI.h"
+ #include "image_manager.h"
+ #include "game.h"
+ #include "server_lobby.h"
+@@ -366,6 +367,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+ 				mainGame->RefreshReplay();
+ 				break;
+ 			}
++			case OfflineAI::MENU_OPEN: {
++				mainGame->HideElement(mainGame->wMainMenu);
++				mainGame->RefreshDeck(mainGame->cbOfflinePlayer);
++				mainGame->RefreshDeck(mainGame->cbOfflineOpponent);
++				mainGame->btnOfflineStart->setEnabled(true);
++				mainGame->ShowElement(mainGame->wOfflineDuel);
++				break;
++			}
++			case OfflineAI::MENU_CANCEL: {
++				if(mainGame->dInfo.isSingleMode) break;
++				mainGame->HideElement(mainGame->wOfflineDuel);
++				mainGame->ShowElement(mainGame->wMainMenu);
++				break;
++			}
++			case OfflineAI::MENU_START: {
++				const auto player = mainGame->cbOfflinePlayer->getSelected();
++				const auto opponent = mainGame->cbOfflineOpponent->getSelected();
++				if(player < 0 || opponent < 0) break;
++				SingleMode::DuelOptions options;
++				options.offlineAI = true;
++				options.duelFlags = DUEL_MODE_MR5;
++				options.playerDeck = Utils::ToPathString(mainGame->cbOfflinePlayer->getItem(player));
++				options.opponentDeck = Utils::ToPathString(mainGame->cbOfflineOpponent->getItem(opponent));
++				SingleMode::singleSignal.SetNoWait(false);
++				mainGame->btnOfflineStart->setEnabled(false);
++				if(!SingleMode::StartPlay(std::move(options))) mainGame->btnOfflineStart->setEnabled(true);
++				break;
++			}
+ 			case BUTTON_SINGLE_MODE: {
+ 				mainGame->HideElement(mainGame->wMainMenu);
+ 				mainGame->stSinglePlayInfo->setText(L"");
+diff --git a/gframe/single_mode.cpp b/gframe/single_mode.cpp
+index 3aabc46..02ab6e7 100644
+--- a/gframe/single_mode.cpp
++++ b/gframe/single_mode.cpp
+@@ -1,4 +1,6 @@
+ #include "single_mode.h"
++#include "OfflineAI.h"
++#include "deck_manager.h"
+ #include "game_config.h"
+ #include "duelclient.h"
+ #include "game.h"
+@@ -21,6 +23,8 @@ DuelPtr SingleMode::pduel = nullptr;
+ bool SingleMode::is_closing = false;
+ bool SingleMode::is_continuing = false;
+ bool SingleMode::is_restarting = false;
++bool SingleMode::is_offline_ai = false;
++bool SingleMode::last_response_ai = false;
+ Replay SingleMode::last_replay;
+ Replay SingleMode::new_replay;
+ ReplayStream SingleMode::replay_stream;
+@@ -32,6 +36,7 @@ bool SingleMode::StartPlay(DuelOptions&& duelOptions) {
+ 		return false;
+ 	if(single_mode_thread.joinable())
+ 		single_mode_thread.join();
++	mainGame->dInfo.isSingleMode = true;
+ 	single_mode_thread = epro::thread(SinglePlayThread, std::move(duelOptions));
+ 	return true;
+ }
+@@ -54,8 +59,11 @@ void SingleMode::Restart() {
+ void SingleMode::SetResponse(void* resp, size_t len) {
+ 	if(!pduel)
+ 		return;
+-	last_replay.Write<uint8_t>(static_cast<uint8_t>(len), false);
+-	last_replay.WriteData(resp, len);
++	last_response_ai = false;
++	if(!is_offline_ai) {
++		last_replay.Write<uint8_t>(static_cast<uint8_t>(len), false);
++		last_replay.WriteData(resp, len);
++	}
+ 	pduel->DuelSetResponse(resp, static_cast<uint32_t>(len));
+ }
+ int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
+@@ -83,14 +91,23 @@ int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
+ 	is_continuing = false;
+ 	is_restarting = false;
+ 	auto rnd = Utils::GetRandomNumberGenerator();
++	Deck offline_decks[2];
++	std::string offline_error;
+ restart:
+ 	mainGame->dInfo.isSingleMode = true;
++	is_offline_ai = duelOptions.offlineAI;
++	last_response_ai = false;
++	OfflineAI::Stop();
++	if(is_offline_ai) opt &= ~(uint64_t(DUEL_TEST_MODE) | DUEL_SIMPLE_AI | DUEL_ATTACK_FIRST_TURN);
++	bool offline_loaded = !is_offline_ai ||
++		(OfflineAI::LoadDeck(duelOptions.playerDeck, offline_decks[0], offline_error) &&
++		 OfflineAI::LoadDeck(duelOptions.opponentDeck, offline_decks[1], offline_error) && OfflineAI::Start(offline_error));
+ 	OCG_Player team = { duelOptions.startingLP, duelOptions.startingDrawCount, duelOptions.drawCountPerTurn };
+ 	bool hand_test = mainGame->dInfo.isHandTest = (duelOptions.scriptName == "hand-test-mode");
+ 	if(hand_test)
+ 		opt |= DUEL_ATTACK_FIRST_TURN;
+ 	const auto seed = Utils::GetRandomNumberGeneratorSeed();
+-	pduel = mainGame->SetupDuel({ { seed[0], seed[1], seed[2], seed[3] }, opt, team, team });
++	pduel = offline_loaded ? mainGame->SetupDuel({ { seed[0], seed[1], seed[2], seed[3] }, opt, team, team }) : nullptr;
+ 	mainGame->dInfo.duel_params = opt;
+ 	mainGame->dInfo.duel_field = mainGame->GetMasterRule(mainGame->dInfo.duel_params);
+ 	matManager.SetActiveVertices(mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD),
+@@ -100,11 +117,13 @@ restart:
+ 	mainGame->dInfo.startlp = mainGame->dInfo.lp[0] = mainGame->dInfo.lp[1] = duelOptions.startingLP;
+ 	mainGame->dInfo.strLP[0] = mainGame->dInfo.strLP[1] = epro::to_wstring(mainGame->dInfo.lp[0]);
+ 	mainGame->dInfo.selfnames = { mainGame->ebNickName->getText() };
+-	mainGame->dInfo.opponames = { L"" };
++	mainGame->dInfo.opponames = { is_offline_ai ? L"Offline AI" : L"" };
++	mainGame->dInfo.team1 = mainGame->dInfo.team2 = 1;
++	mainGame->dInfo.current_player[0] = mainGame->dInfo.current_player[1] = 0;
+ 	mainGame->dInfo.player_type = 0;
+ 	mainGame->dInfo.turn = 0;
+-	bool loaded = true;
+-	bool saveReplay = !hand_test || gGameConfig->saveHandTest;
++	bool loaded = pduel != nullptr;
++	bool saveReplay = !is_offline_ai && (!hand_test || gGameConfig->saveHandTest);
+ 	if(saveReplay) {
+ 		auto replay_header = ExtendedReplayHeader::CreateDefaultHeader(REPLAY_YRP1, static_cast<uint32_t>(time(nullptr)));
+ 		replay_header.SetSeed(seed);
+@@ -119,7 +138,21 @@ restart:
+ 		new_replay.WriteHeader(replay_header);
+ 		replay_stream.clear();
+ 	}
+-	if(hand_test) {
++	if(!pduel) {
++		loaded = false;
++		if(offline_error.empty()) offline_error = "Could not create the duel engine.";
++	} else if(is_offline_ai) {
++		for(uint8_t player = 0; player < 2; ++player) {
++			auto deck = offline_decks[player];
++			std::shuffle(deck.main.begin(), deck.main.end(), rnd);
++			OCG_NewCardInfo info = { player, 0, 0, player, LOCATION_DECK, 0, POS_FACEDOWN_DEFENSE };
++			for(auto it = deck.main.rbegin(); it != deck.main.rend(); ++it) { info.code = (*it)->code; pduel->DuelNewCard(&info); }
++			info.loc = LOCATION_EXTRA;
++			for(auto it = deck.extra.rbegin(); it != deck.extra.rend(); ++it) { info.code = (*it)->code; pduel->DuelNewCard(&info); }
++		}
++		const char setup[] = "Debug.ReloadFieldEnd()";
++		loaded = pduel->LoadScript(setup, sizeof(setup) - 1, "offline-ai-setup");
++	} else if(hand_test) {
+ 		script_name = "hand-test-mode";
+ 		InitReplay();
+ 		Deck playerdeck(mainGame->deckBuilder.GetCurrentDeck());
+@@ -166,6 +199,13 @@ restart:
+ 		InitReplay();
+ 	}
+ 	if(!loaded) {
++		OfflineAI::Stop();
++		if(is_offline_ai) {
++			std::lock_guard<epro::mutex> lock(mainGame->gMutex);
++			mainGame->btnOfflineStart->setEnabled(true);
++			mainGame->stMessage->setText(BufferIO::DecodeUTF8(offline_error.empty() ? "Offline duel initialization failed." : offline_error).data());
++			mainGame->PopupElement(mainGame->wMessage);
++		}
+ 		pduel = nullptr;
+ 		mainGame->dInfo.isSingleMode = false;
+ 		mainGame->dInfo.isHandTest = false;
+@@ -184,7 +224,7 @@ restart:
+ 			}
+ 			mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+ 			if(!hand_test) {
+-				mainGame->ShowElement(mainGame->wSinglePlay);
++				mainGame->ShowElement(is_offline_ai ? mainGame->wOfflineDuel : mainGame->wSinglePlay);
+ 				mainGame->stTip->setVisible(false);
+ 			}
+ 			mainGame->SetMessageWindow();
+@@ -207,7 +247,7 @@ restart:
+ 	}
+ 	mainGame->gMutex.lock();
+ 	if(!hand_test && !is_restarting) {
+-		mainGame->HideElement(mainGame->wSinglePlay);
++		mainGame->HideElement(is_offline_ai ? mainGame->wOfflineDuel : mainGame->wSinglePlay);
+ 		mainGame->ClearCardInfo();
+ 	}
+ 	is_restarting = false;
+@@ -245,6 +285,7 @@ restart:
+ 		} while(is_continuing && engFlag && mainGame->dInfo.curMsg != MSG_WIN);
+ 	}
+ 	pduel = nullptr;
++	OfflineAI::Stop();
+ 	if(saveReplay && !is_restarting) {
+ 		last_replay.EndRecord(0x1000);
+ 		auto oldbuffer = last_replay.GetSerializedBuffer();
+@@ -305,13 +346,14 @@ restart:
+ 		mainGame->dInfo.isStarted = false;
+ 		mainGame->dInfo.isSingleMode = false;
+ 		mainGame->dInfo.isHandTest = false;
++		if(is_offline_ai) mainGame->btnOfflineStart->setEnabled(true);
+ 		if(!hand_test) {
+ 			mainGame->closeDuelWindow = true;
+ 			mainGame->closeDoneSignal.Wait(lock);
+ 		}
+ 		mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+ 		if(!hand_test) {
+-			mainGame->ShowElement(mainGame->wSinglePlay);
++			mainGame->ShowElement(is_offline_ai ? mainGame->wOfflineDuel : mainGame->wSinglePlay);
+ 			mainGame->stTip->setVisible(false);
+ 		}
+ 		mainGame->SetMessageWindow();
+@@ -333,9 +375,41 @@ restart:
+ }
+ 
+ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+-	auto Analyze = [&packet]()->bool {
++	if(is_closing || !is_continuing) return false;
++	auto FailAI = [](const std::string& message)->bool {
++		is_continuing = false;
++		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
++		mainGame->stMessage->setText(BufferIO::DecodeUTF8("Offline AI stopped: " + message).data());
++		mainGame->PopupElement(mainGame->wMessage);
++		mainGame->actionSignal.Wait(lock);
++		return false;
++	};
++	std::string error;
++	if(is_offline_ai) {
++		if(packet.message == MSG_RETRY && last_response_ai) return FailAI("Engine rejected the last response. No automatic retry was sent.");
++		if(!OfflineAI::Observe(packet.message, packet.data(), packet.buff_size(), error)) return FailAI(error);
++		if(OfflineAI::Handles(packet.message)) {
++			if(packet.buff_size() == 0 || packet.data()[0] > 1) return FailAI("Malformed selecting-player prompt.");
++			if(packet.data()[0] == 1) {
++				SinglePlayRefresh();
++				std::vector<uint8_t> response;
++				if(!OfflineAI::Respond(packet.message, packet.data(), packet.buff_size(), response, error)) return FailAI(error);
++				pduel->DuelSetResponse(response.data(), static_cast<uint32_t>(response.size()));
++				last_response_ai = true;
++				return true;
++			}
++		}
++	}
++	auto Analyze = [&packet, &FailAI]()->bool {
+ 		DuelClient::answered = false;
+-		return DuelClient::ClientAnalyze(packet);
++		if(!is_offline_ai) return DuelClient::ClientAnalyze(packet);
++		std::vector<uint8_t> bytes;
++		bool visible = true;
++		std::string error;
++		if(!OfflineAI::FilterForHuman(packet.message, packet.data(), packet.buff_size(), bytes, visible, error)) return FailAI(error);
++		if(!visible) return true;
++		CoreUtils::Packet filtered(packet.message, bytes.data(), bytes.size());
++		return DuelClient::ClientAnalyze(filtered);
+ 	};
+ 	replay_stream.clear();
+ 	if(is_closing || !is_continuing)
+@@ -411,7 +485,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 		case MSG_SELECT_IDLECMD: {
+ 			record = false;
+ 			SinglePlayRefresh();
+-			if(!Analyze())
++			if(!Analyze() && is_continuing)
+ 				singleSignal.Wait();
+ 			break;
+ 		}
+@@ -442,7 +516,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 				SinglePlayRefresh(1, LOCATION_SZONE);
+ 				record_last = true;
+ 			}
+-			if(!Analyze())
++			if(!Analyze() && is_continuing)
+ 				singleSignal.Wait();
+ 			break;
+ 		}
+@@ -451,6 +525,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 			break;
+ 		}
+ 	}
++	if(!is_continuing) return false;
+ 	auto* pbuf = packet.data();
+ 	switch(mainGame->dInfo.curMsg) {
+ 		case MSG_SHUFFLE_DECK: {
+@@ -508,8 +583,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+ 	}
+ 	if(record)
+ 		replay_stream.insert(record_last ? replay_stream.end() : replay_stream.begin(), std::move(packet));
+-	new_replay.WriteStream(replay_stream);
+-	new_replay.Flush();
++	if(!is_offline_ai) { new_replay.WriteStream(replay_stream); new_replay.Flush(); }
+ 	return is_continuing;
+ }
+ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t flag) {
+@@ -519,8 +593,9 @@ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t fl
+ 	auto buff = pduel->DuelQueryLocation(&len, &info);
+ 	if(len == 0)
+ 		return;
+-	buffer.resize(buffer.size() + len);
+-	memcpy(buffer.data(), buff, len);
++	if(is_offline_ai && (player == 1 || location == LOCATION_DECK))
++		CoreUtils::QueryStream(reinterpret_cast<const uint8_t*>(buff)).GeneratePublicBuffer(buffer);
++	else { buffer.resize(len); memcpy(buffer.data(), buff, len); }
+ 	mainGame->gMutex.lock();
+ 	mainGame->dField.UpdateFieldCard(mainGame->LocalPlayer(player), location, buffer.data());
+ 	mainGame->gMutex.unlock();
+@@ -535,8 +610,9 @@ void SingleMode::SinglePlayRefreshSingle(uint8_t player, uint8_t location, uint8
+ 	auto buff = pduel->DuelQuery(&len, &info);
+ 	if(buff == nullptr)
+ 		return;
+-	buffer.resize(buffer.size() + len);
+-	memcpy(buffer.data(), buff, len);
++	if(is_offline_ai && (player == 1 || location == LOCATION_DECK))
++		CoreUtils::Query(reinterpret_cast<const uint8_t*>(buff)).GenerateBuffer(buffer, true, true);
++	else { buffer.resize(len); memcpy(buffer.data(), buff, len); }
+ 	mainGame->gMutex.lock();
+ 	mainGame->dField.UpdateCard(mainGame->LocalPlayer(player), location, sequence, buffer.data());
+ 	mainGame->gMutex.unlock();
+diff --git a/gframe/single_mode.h b/gframe/single_mode.h
+index dc88c1e..83b3256 100644
+--- a/gframe/single_mode.h
++++ b/gframe/single_mode.h
+@@ -16,6 +16,8 @@ private:
+ 	static bool is_closing;
+ 	static bool is_continuing;
+ 	static bool is_restarting;
++	static bool is_offline_ai;
++	static bool last_response_ai;
+ 	static epro::thread single_mode_thread;
+ 
+ public:
+@@ -25,6 +27,9 @@ public:
+ 		uint32_t drawCountPerTurn{ 1 };
+ 		uint64_t duelFlags{ 0 };
+ 		bool handTestNoOpponent{ true };
++		bool offlineAI{ false };
++		epro::path_string playerDeck;
++		epro::path_string opponentDeck;
+ 		std::string scriptName;
+ 		DuelOptions() {};
+ 		explicit DuelOptions(epro::stringview filename) : scriptName(filename.data(), filename.size()) {};

@@ -7,12 +7,13 @@ import re
 import subprocess
 import sys
 
-from apply_native_patches import apply_native_patch, PatchError
+from apply_native_patches import apply_native_integration, PatchError
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_RUNTIME = (
     'cards.cdb', 'script/constant.lua', 'script/utility.lua', 'config/strings.conf',
     'config/configs.json', 'fonts/NotoSansJP-Regular.otf', 'reports/upstream.lock.json',
+    'offline-ai/offline_ai.js',
 )
 
 
@@ -146,7 +147,7 @@ def inspect(runtime, root=None):
     errors += [f'Missing {path}' for path, present in files.items() if not present]
     patch_verified = False
     try:
-        apply_native_patch(root / lock['client']['path'], root / required[-1],
+        apply_native_integration(root / lock['client']['path'], root / 'NativeClient/patches/series.json',
                            expected_revision=lock['client']['commit'], check_only=True)
         patch_verified = True
     except (PatchError, OSError) as error:
@@ -154,12 +155,19 @@ def inspect(runtime, root=None):
     coverage_path = root / 'YuGiOhNativeIOS/GeneratedData/ocg-coverage.json'
     coverage_errors = validate_coverage(coverage_path, lock)
     runtime_errors = validate_runtime(runtime, lock)
+    ai_source = root / 'NativeClient/overlays/offline-ai/offline_ai.js'
+    ai_bundled = Path(runtime) / 'offline-ai/offline_ai.js'
+    ai_matches = ai_source.is_file() and ai_bundled.is_file() and digest(ai_source) == digest(ai_bundled)
+    if not ai_matches:
+        runtime_errors.append('Runtime AI script differs from the tested source module or is missing')
     errors += coverage_errors + runtime_errors
     return {
-        'scope': 'Pinned source, exact applied bootstrap patch, coverage provenance, runtime manifest and required-resource hashes only',
+        'scope': 'Pinned source, exact applied patch series and native overlays, coverage provenance, runtime manifest and required-resource hashes only',
         'pins': pins, 'files': files, 'errors': errors,
         'sourcePreparationValid': not errors, 'bootstrapPatchVerified': patch_verified,
+        'nativeIntegrationVerified': patch_verified,
         'coverageAuditValid': not coverage_errors, 'runtimePackageValid': not runtime_errors,
+        'offlineAIScriptMatchesSource': ai_matches,
         'runtimePackageManifestPresent': (Path(runtime) / 'package-manifest.json').is_file(),
         'fullPackageHashesVerified': False,
         'buildHeld': not gate(status) or bool(errors),
@@ -170,7 +178,7 @@ def inspect(runtime, root=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v2')
+    parser.add_argument('--runtime', type=Path, default=ROOT / 'outputs/edopro-game-v3')
     parser.add_argument('--report', type=Path, default=ROOT / 'NativeClient/native-readiness.json')
     parser.add_argument('--require-ready', action='store_true')
     args = parser.parse_args()

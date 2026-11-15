@@ -1,0 +1,233 @@
+diff --git a/gframe/image_manager.cpp b/gframe/image_manager.cpp
+index aed71e8..369fa7d 100644
+--- a/gframe/image_manager.cpp
++++ b/gframe/image_manager.cpp
+@@ -5,6 +5,9 @@
+ #include <IVideoDriver.h>
+ #include <IrrlichtDevice.h>
+ #include <IReadFile.h>
++#include <IFileSystem.h>
++#include "data_manager.h"
++#include "bufferio.h"
+ #include "logging.h"
+ #include "image_manager.h"
+ #include "image_downloader.h"
+@@ -390,6 +393,7 @@ void ImageManager::RefreshCachedTextures() {
+ 			auto* texture = loaded.texture;
+ 			if(texture->getDimension().Width != static_cast<irr::u32>(size.first) || texture->getDimension().Height != static_cast<irr::u32>(size.second)) {
+ 				readd.push_back(loaded.code);
++				texture->drop();
+ 				ret_texture = nullptr;
+ 				continue;
+ 			}
+@@ -399,7 +403,7 @@ void ImageManager::RefreshCachedTextures() {
+ 		if(readd.size()) {
+ 			std::lock_guard<epro::mutex> lck(pic_load);
+ 			for(auto& code : readd)
+-				to_load.emplace_front(code, type, index, std::ref(size.first), std::ref(size.second), timestamp_id, std::ref(timestamp_id));
++				to_load.emplace_front(code, type, index, std::ref(size.first), std::ref(size.second), timestamp_id, std::ref(timestamp_id), SnapshotCardFace(code, type));
+ 			cv_load.notify_all();
+ 		}
+ 	};
+@@ -458,13 +462,17 @@ void ImageManager::LoadPic() {
+ 		auto loaded = std::move(to_load.front());
+ 		to_load.pop_front();
+ 		lck.unlock();
+-		auto load_status = LoadCardTexture(loaded.code, loaded.type, loaded.reference_width, loaded.reference_height, loaded.timestamp, loaded.reference_timestamp);
++		auto load_status = LoadCardTexture(loaded.code, loaded.type, loaded.reference_width, loaded.reference_height, loaded.timestamp, loaded.reference_timestamp, loaded.face.get());
+ 		lck.lock();
++		if(loaded.timestamp != loaded.reference_timestamp.load()) {
++			if(load_status.texture) load_status.texture->drop();
++			continue;
++		}
+ 		loaded_pics[loaded.index].push_front(std::move(load_status));
+ 	}
+ }
+ void ImageManager::ClearCachedTextures() {
+-	timestamp_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
++	++timestamp_id;
+ 	std::lock_guard<epro::mutex> lck(obj_clear_lock);
+ 	{
+ 		std::lock_guard<epro::mutex> lck2(pic_load);
+@@ -575,15 +583,71 @@ irr::video::ITexture* ImageManager::GetTextureFromFile(const irr::io::path& file
+ 	}
+ 	return driver->getTexture(file);
+ }
+-ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType type, const std::atomic<irr::s32>& _width, const std::atomic<irr::s32>& _height, chrono_time call_timestamp_id, const std::atomic<chrono_time>& source_timestamp_id) {
++std::shared_ptr<const CardFaceData> ImageManager::SnapshotCardFace(uint32_t code, imgType type) const {
++#if EDOPRO_IOS
++	if(type != imgType::ART && type != imgType::THUMB) return nullptr;
++	auto face = std::make_shared<CardFaceData>();
++	face->code = code;
++	face->name = "Card " + std::to_string(code);
++	face->description = "Card metadata unavailable.";
++	const auto* card = gDataManager->GetCardData(code);
++	if(!card) card = gDataManager->GetMappedCardData(code);
++	if(card) {
++		face->known = true;
++		face->type = card->type; face->attribute = card->attribute; face->level = card->level;
++		face->attack = card->attack; face->defense = card->defense;
++		face->leftScale = card->lscale; face->rightScale = card->rscale; face->linkMarkers = card->link_marker;
++		face->name = BufferIO::EncodeUTF8(gDataManager->GetName(card->code));
++		face->description = BufferIO::EncodeUTF8(gDataManager->GetText(card->code));
++		face->typeLine = BufferIO::EncodeUTF8(gDataManager->FormatType(card->type));
++		if(card->type & TYPE_MONSTER)
++			face->typeLine = BufferIO::EncodeUTF8(gDataManager->FormatRace(card->race)) + " / " + face->typeLine;
++		face->attributeText = (card->type & TYPE_SPELL) ? "SPELL" : (card->type & TYPE_TRAP) ? "TRAP"
++			: BufferIO::EncodeUTF8(gDataManager->FormatAttribute(card->attribute));
++	}
++	return face;
++#else
++	(void)code; (void)type;
++	return nullptr;
++#endif
++}
++
++ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType type, const std::atomic<irr::s32>& _width, const std::atomic<irr::s32>& _height, chrono_time call_timestamp_id, const std::atomic<chrono_time>& source_timestamp_id, const CardFaceData* face) {
+ 	int width = _width;
+ 	int height = _height;
+ 	if(type == imgType::THUMB)
+ 		type = imgType::ART;
+ 	load_return ret{ loadStatus::LOAD_FAIL, code };
++	bool composed = false;
+ 	auto LoadImg = [&](irr::video::IImage* base_img)->irr::video::IImage* {
+-		if(!base_img)
+-			return nullptr;
++#if EDOPRO_IOS
++		if(face && type == imgType::ART) {
++			const auto dim = base_img ? base_img->getDimension() : irr::core::dimension2d<irr::u32>(0, 0);
++			const bool squareArt = base_img && dim.Height && dim.Width * 10 >= dim.Height * 9 && dim.Width * 10 <= dim.Height * 11;
++			if(!base_img || squareArt) {
++				std::vector<uint8_t> rgba;
++				if(base_img && dim.Width <= 4096 && dim.Height <= 4096) {
++					rgba.reserve(static_cast<size_t>(dim.Width) * dim.Height * 4);
++					for(irr::u32 y = 0; y < dim.Height; ++y) for(irr::u32 x = 0; x < dim.Width; ++x) {
++						const auto pixel = base_img->getPixel(x, y);
++						rgba.insert(rgba.end(), {static_cast<uint8_t>(pixel.getRed()), static_cast<uint8_t>(pixel.getGreen()),
++							static_cast<uint8_t>(pixel.getBlue()), static_cast<uint8_t>(pixel.getAlpha())});
++					}
++				}
++				if(base_img) base_img->drop();
++				auto png = RenderIOSCardFace(*face, rgba, dim.Width, dim.Height);
++				base_img = nullptr;
++				if(!png.empty()) {
++					auto file = device->getFileSystem()->createMemoryReadFile(png.data(), static_cast<irr::s32>(png.size()), "card-face.png", false);
++					if(file) { base_img = driver->createImageFromFile(file); file->drop(); }
++				}
++				composed = base_img != nullptr;
++			}
++		}
++#else
++		(void)face;
++#endif
++		if(!base_img) return nullptr;
+ 		if(width != _width || height != _height) {
+ 			width = _width;
+ 			height = _height;
+@@ -610,6 +674,9 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
+ 	irr::video::IImage* img;
+ 
+ 	auto status = gImageDownloader->GetDownloadStatus(code, type);
++#if EDOPRO_IOS
++	if(face && type == imgType::ART) status = ImageDownloader::downloadStatus::NONE;
++#endif
+ 	if(status == ImageDownloader::downloadStatus::DOWNLOADED) {
+ 		if(call_timestamp_id != source_timestamp_id.load())
+ 			return ret;
+@@ -641,14 +708,24 @@ ImageManager::load_return ImageManager::LoadCardTexture(uint32_t code, imgType t
+ 					file = epro::format(EPRO_TEXT("{}{}{}"), path, code, extension);
+ 					base_img = driver->createImageFromFile({ file.data(), static_cast<irr::u32>(file.size()) });
+ 				}
+-				if((img = LoadImg(base_img)) != nullptr) {
++				if(base_img && (img = LoadImg(base_img)) != nullptr) {
+ 					ret.status = loadStatus::LOAD_OK;
+-					ret.path = file;
++					ret.path = composed ? epro::format(EPRO_TEXT("card-face-{}-{}-{}x{}.png"), code, call_timestamp_id, width, height) : file;
+ 					ret.texture = img;
+ 					return ret;
+ 				}
+ 			}
+ 		}
++#if EDOPRO_IOS
++		if(face && type == imgType::ART) {
++			if((img = LoadImg(nullptr)) != nullptr) {
++				ret.status = loadStatus::LOAD_OK;
++				ret.path = epro::format(EPRO_TEXT("card-face-{}-{}-{}x{}.png"), code, call_timestamp_id, width, height);
++				ret.texture = img;
++			}
++			return ret;
++		}
++#endif
+ 		gImageDownloader->AddToDownloadQueue(code, type);
+ 		ret.status = loadStatus::WAIT_DOWNLOAD;
+ 		return ret;
+@@ -688,6 +765,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+ 	auto& elem = map[code];
+ 	if(elem.preload_status != preloadStatus::LOADED) {
+ 		auto status = gImageDownloader->GetDownloadStatus(code, type);
++#if EDOPRO_IOS
++		if(type == imgType::ART || type == imgType::THUMB) status = ImageDownloader::downloadStatus::NONE;
++#endif
+ 		if(status == ImageDownloader::downloadStatus::DOWNLOADING) {
+ 			if(chk)
+ 				*chk = 2;
+@@ -706,8 +786,9 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+ 			*chk = 2;
+ 		if(elem.preload_status == preloadStatus::NONE || (elem.preload_status == preloadStatus::WAIT_DOWNLOAD && status == ImageDownloader::downloadStatus::DOWNLOADED)) {
+ 			elem.preload_status = preloadStatus::LOADING;
++			auto face = SnapshotCardFace(code, type);
+ 			if(wait) {
+-				auto load_result = LoadCardTexture(code, type, sizes[size_index].first, sizes[size_index].second, timestamp_id, timestamp_id);
++				auto load_result = LoadCardTexture(code, type, sizes[size_index].first, sizes[size_index].second, timestamp_id, timestamp_id, face.get());
+ 				auto& rmap = map[code].texture;
+ 				if(load_result.status == loadStatus::LOAD_OK) {
+ 					rmap = driver->addTexture(load_result.path.data(), load_result.texture);
+@@ -722,7 +803,7 @@ irr::video::ITexture* ImageManager::GetTextureCard(uint32_t code, imgType type,
+ 				return (rmap) ? rmap : ret_unk;
+ 			} else {
+ 				std::lock_guard<epro::mutex> lck(pic_load);
+-				to_load.emplace_front(code, type, index, std::ref(sizes[size_index].first), std::ref(sizes[size_index].second), timestamp_id.load(), std::ref(timestamp_id));
++				to_load.emplace_front(code, type, index, std::ref(sizes[size_index].first), std::ref(sizes[size_index].second), timestamp_id.load(), std::ref(timestamp_id), std::move(face));
+ 				cv_load.notify_one();
+ 			}
+ 		}
+diff --git a/gframe/image_manager.h b/gframe/image_manager.h
+index fad467a..c45e8c5 100644
+--- a/gframe/image_manager.h
++++ b/gframe/image_manager.h
+@@ -8,6 +8,9 @@
+ #include <map>
+ #include <atomic>
+ #include <queue>
++#include <memory>
++#include <utility>
++#include "iOS/card_face.h"
+ #include "epro_mutex.h"
+ #include "epro_condition_variable.h"
+ #include "epro_thread.h"
+@@ -59,11 +62,13 @@ private:
+ 		const std::atomic<irr::s32>& reference_height;
+ 		chrono_time timestamp;
+ 		const std::atomic<chrono_time>& reference_timestamp;
++		std::shared_ptr<const CardFaceData> face;
+ 		load_parameter(uint32_t code_, imgType type_, size_t index_, const std::atomic<irr::s32>& reference_width_,
+-					   const std::atomic<irr::s32>& reference_height_, chrono_time timestamp_, const std::atomic<chrono_time>& reference_timestamp_) :
++					   const std::atomic<irr::s32>& reference_height_, chrono_time timestamp_, const std::atomic<chrono_time>& reference_timestamp_,
++					   std::shared_ptr<const CardFaceData> face_ = nullptr) :
+ 			code(code_), type(type_), index(index_), reference_width(reference_width_),
+ 			reference_height(reference_height_), timestamp(timestamp_),
+-			reference_timestamp(reference_timestamp_) {
++			reference_timestamp(reference_timestamp_), face(std::move(face_)) {
+ 		}
+ 	};
+ 	enum class loadStatus {
+@@ -146,7 +151,8 @@ private:
+ 	irr::video::ITexture* loadTextureAnySize(epro::path_stringview texture_name);
+ 	void replaceTextureLoadingFixedSize(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_stringview texture_name, int width, int height);
+ 	void replaceTextureLoadingAnySize(irr::video::ITexture*& texture, irr::video::ITexture* fallback, epro::path_stringview texture_name);
+-	load_return LoadCardTexture(uint32_t code, imgType type, const std::atomic<irr::s32>& width, const std::atomic<irr::s32>& height, chrono_time timestamp_id, const std::atomic<chrono_time>& source_timestamp_id);
++	std::shared_ptr<const CardFaceData> SnapshotCardFace(uint32_t code, imgType type) const;
++	load_return LoadCardTexture(uint32_t code, imgType type, const std::atomic<irr::s32>& width, const std::atomic<irr::s32>& height, chrono_time timestamp_id, const std::atomic<chrono_time>& source_timestamp_id, const CardFaceData* face = nullptr);
+ 	epro::path_string textures_path;
+ 	std::pair<std::atomic<irr::s32>, std::atomic<irr::s32>> sizes[3];
+ 	std::atomic<chrono_time> timestamp_id;

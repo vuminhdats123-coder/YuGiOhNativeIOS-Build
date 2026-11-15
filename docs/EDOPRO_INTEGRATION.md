@@ -4,7 +4,10 @@
 
 Dùng lại client native EDOPro để nhận toàn bộ luồng bàn đấu và các prompt của engine. Tránh tiếp tục mở rộng engine Swift bằng danh sách thẻ riêng lẻ. SwiftUI prototype có thể giữ làm công cụ đối chiếu, nhưng việc parse dữ liệu thành công không chứng minh duel đã chơi đúng luật.
 
-Không chạy build ở giai đoạn hiện tại. Các lệnh dưới đây là recipe dự kiến cho macOS/Xcode sau khi việc chuẩn bị và kiểm tra dữ liệu hoàn tất; chúng **chưa được chạy hoặc xác nhận**.
+Không chạy build ở giai đoạn hiện tại. Đã sinh project Xcode bằng Premake trên
+Windows để kiểm tra cấu trúc, không gọi compiler. Cấu hình hiện hành và dependency
+đã khóa được ghi tại [NativeClient/iOS/README.md](../NativeClient/iOS/README.md);
+project phải được sinh lại trên macOS với đường dẫn của runner trước khi build.
 
 ## Pin và nguồn bằng chứng
 
@@ -46,7 +49,7 @@ Giữ core gitlink theo client và init submodule Lua. Chuẩn bị dependency s
 
 ```sh
 premake5 xcode4 --os=ios --architecture=arm64 \
-  --vcpkg-root="$EDOPRO_VCPKG_ROOT" --sound=miniaudio \
+  --vcpkg-root="$EDOPRO_VCPKG_ROOT" --ios-game-data="$EDOPRO_GAME_DATA" --sound=miniaudio \
   --no-joystick=true --no-direct3d
 ```
 
@@ -62,13 +65,12 @@ Patch `0001-bundled-game.patch` chuẩn bị `Documents/EDOPro` từ `Bundle/gam
 `edopro_main`. Lần đầu copy qua staging rồi đổi tên nguyên tử. Khi đã có dữ liệu,
 chỉ dùng lại nếu manifest trùng và các file bắt buộc hợp lệ; nếu khác thì báo lỗi và
 giữ nguyên dữ liệu người dùng. Migration giữa phiên bản chưa được triển khai. Bước
-thêm `game` vào app bundle và thực thi bootstrap trên iOS chưa được kiểm chứng.
+copy `game` đã được triển khai và kiểm tra bằng toàn bộ payload trong một fixture;
+thực thi bootstrap trên iOS vẫn chưa được kiểm chứng.
 
-Khi chuẩn bị Xcode, thêm toàn bộ payload thành một folder resource tên `game`,
-giữ nguyên cây thư mục. Điểm cấu hình iOS hiện nằm ở `gframe/premake5.lua:203`.
-Không thêm từng file bằng glob vào resources: cách đó có thể làm phẳng các thư mục
-`script`, `config`, `fonts` và khiến bootstrap thất bại. Folder reference hoặc một
-bước copy thư mục có kiểm soát vẫn cần kiểm tra trên bundle thực sau khi được build.
+Xcode dùng resource phase gọi `copy_bundle_resources.py`, kiểm tra toàn bộ manifest
+và chép nguyên cây payload thành `game`. Bản fixture đã giữ đúng các thư mục
+`script`, `config`, `fonts` và `deck`; bundle có executable thực vẫn chưa được build.
 
 Gói tối thiểu cần đủ:
 
@@ -94,7 +96,12 @@ Full client đã có các decoder/prompt tại `gframe/duelclient.cpp`, `gframe/
 
 ## Offline AI và giới hạn hiện tại
 
-WindBot Ignite là chương trình C# riêng; nhánh iOS trong `gframe/windbot.cpp` không chạy bot cục bộ. `DUEL_SIMPLE_AI` trong core có các lựa chọn đơn giản (ví dụ chọn option đầu, các card đầu đạt min), không phải AI theo deck tương đương WindBot. Vì vậy engine/rules đầy đủ và AI offline mạnh là hai tiêu chí riêng.
+WindBot Ignite không được nhúng vào bản này. `0003-offline-ai.patch` thêm duel hai
+deck qua OCG core và adapter JavaScriptCore dùng `offline_ai.js` trong bundle.
+Mô-đun xử lý 21 nhóm prompt theo API 11, giữ GUI cho player 0 và tự chọn cho player
+1; có kiểm thử Node về lựa chọn, chain và thông tin ẩn. Không bật `DUEL_SIMPLE_AI`.
+AI heuristic có giới hạn tìm kiếm, không tương đương WindBot theo từng bộ bài;
+native bridge và trận đấu hoàn chỉnh chưa được chạy. Replay offline chưa hỗ trợ.
 
 Trước khi tuyên bố hoàn tất cần kiểm tra: bootstrap sạch không mạng, card/script coverage và hashes, chọn deck và đấu đủ các prompt, effect/chain/replay/summon, lưu deck/replay, AI iPhone nếu có, suspend/resume, cảm ứng và bố cục, file unsigned đúng platform và không chứa key/profile. Những mục runtime này chưa kiểm chứng trong giai đoạn chưa build.
 

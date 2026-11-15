@@ -6,11 +6,35 @@
   "runtimeVerified": false,
   "fullGameReady": false,
   "remaining": [
-    "Verify packaged database, script and OBB mappings against the pinned core at runtime",
-    "Complete offline duel entry and AI on iOS",
-    "Render OBB square artwork as complete card faces and supply absent artwork",
-    "Pin and prepare all iOS native dependency libraries",
-    "Compile and execute full matches only after the build hold is lifted",
-    "Verify touch UI, lifecycle and audio on an iPhone"
+    "Verify native compile/link and full matches after source preparation is complete and build hold permits it",
+    "Verify native rendering, touch input, suspend/resume and audio on an iPhone",
+    "Validate complex AI selections against the running pinned OCG core"
+  ],
+  "sourceFeaturesImplemented": {
+    "twoDeckOfflineEntry": true,
+    "offlineAIDecisionModule": true,
+    "nativeAIAdapter": true,
+    "cardFaceCompositor": true,
+    "directoryPreservingBundleResources": true,
+    "pinnedIPhoneOSDependencies": true
+  },
+  "verification": {
+    "javascriptPromptFamilies": 21,
+    "javascriptCoreIOSExecuted": false,
+    "nativeMatchExecuted": false,
+    "nativeRendererExecuted": false,
+    "nativeCompilerExecuted": false,
+    "xcodeProjectGenerated": true,
+    "generatedProjectStructureChecked": true,
+    "fullResourceCopyVerified": true,
+    "pythonTestsRun": 60,
+    "pythonTestsPassed": 59,
+    "pythonTestsSkipped": 1
+  },
+  "limitations": [
+    "Generic bounded AI, not a competitive deck-specific bot",
+    "Offline replay saving is disabled",
+    "Legacy Vietnamese text can differ from current effect scripts",
+    "Installed package upgrades preserve user data by refusing automatic migration"
   ]
 }

@@ -119,7 +119,7 @@ def copy_tree(source: Path, target: Path) -> None:
 
 def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: Path,
             output: Path, reviewed_mappings: Path | None = None, source_lock: Path | None = None,
-            include_vi: bool = False) -> dict:
+            include_vi: bool = False, offline_ai: Path | None = None) -> dict:
     obb, cdb, scripts, base_assets, audit_path, output = map(Path.resolve,
         (obb, cdb, scripts, base_assets, audit_path, output))
     if output.exists():
@@ -361,6 +361,10 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
             locale_report = create_locale(obb, cdb, mapping, audit, stage / "config/languages/vi-obb")
         if source_lock:
             copy_file(source_lock, stage / "reports/upstream.lock.json")
+        if offline_ai is not None:
+            if not offline_ai.is_file() or offline_ai.stat().st_size == 0:
+                raise ValueError("Missing offline AI decision module")
+            copy_file(offline_ai, stage / "offline-ai/offline_ai.js")
         for filename, data in (("decks.json", deck_report), ("images.json", image_report),
                                ("audio.json", audio_report),
                                ("reviewed-mappings.json", overrides), ("mapping-audit.json", audit),
@@ -380,8 +384,9 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                    "pictureFormat": "art-only from OBB", "nativeCardFaceRenderingRequired": True,
                    "missingMappedPictures": sorted(set(mapping.values()) - codes_written),
                    "optionalLocale": locale_report,
+                   "offlineAIIncluded": offline_ai is not None,
                    "scriptFiles": len(source_scripts), "buildExecuted": False,
-                   "limitations": ["No runtime verification", "No banlist legality check", "No offline iOS WindBot integration",
+                   "limitations": ["No runtime verification", "No banlist legality check", "Native offline AI bridge not runtime verified",
                                    "Current database/errata may differ from original OBB effects; consult mapping audit"],
                    "files": manifest}
         (stage / "package-manifest.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -407,7 +412,8 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     result = prepare(args.obb, args.cdb, args.scripts, args.base_assets, args.audit, args.out,
-                     args.reviewed_mappings, args.source_lock, args.include_vi)
+                     args.reviewed_mappings, args.source_lock, args.include_vi,
+                     Path(__file__).resolve().parents[1] / "NativeClient/overlays/offline-ai/offline_ai.js")
     print(json.dumps({key: value for key, value in result.items() if key != "files"}, ensure_ascii=False, indent=2))
 
 
