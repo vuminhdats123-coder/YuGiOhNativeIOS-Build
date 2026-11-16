@@ -28,6 +28,18 @@ index 05b5092..a711ca6 100644
  			return true;
  		}
  		mainGame->PopupElement(mainGame->wANCard);
+@@ -1625,6 +1625,11 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
+ 		mainGame->showcard = 101;
++#if EDOPRO_IOS
++		mainGame->offlineResultText = mainGame->dInfo.vic_string;
++		mainGame->offlineResultLP[0] = mainGame->dInfo.lp[0];
++		mainGame->offlineResultLP[1] = mainGame->dInfo.lp[1];
++#endif
+ 		mainGame->WaitFrameSignal(120, lock);
+ 		mainGame->dInfo.vic_string = L"";
+ 		mainGame->showcard = 0;
+ 		break;
+ 	}
 diff --git a/gframe/game.cpp b/gframe/game.cpp
 index f4aa146..06cb066 100644
 --- a/gframe/game.cpp
@@ -122,7 +134,7 @@ index f4aa146..06cb066 100644
  	btnReplayMode = env->addButton(OFFSET(10, 100, 270, 130), wMainMenu, BUTTON_REPLAY_MODE, gDataManager->GetSysString(1202).data());
  	defaultStrings.emplace_back(btnReplayMode, 1202);
  	offset += 35;
-@@ -269,6 +319,56 @@ void Game::Initialize() {
+@@ -269,6 +319,57 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnModeExit, 1210);
  	offset += 35;
 +	env->addButton(OFFSET(10, 170, 270, 200), wMainMenu, BUTTON_SHOW_SETTINGS, L"Help & Options");
@@ -136,8 +148,9 @@ index f4aa146..06cb066 100644
 +	env->addStaticText(L"AI deck", Scale(20, 110, 550, 130), false, true, wOfflineDuel);
 +	cbOfflineOpponent = AddComboBox(env, Scale(20, 135, 550, 165), wOfflineDuel, -1);
 +	env->addStaticText(L"Real local duel. Basic AI, no banlist. Replay saving is not supported yet.", Scale(20, 180, 550, 225), false, true, wOfflineDuel);
++	stOfflineResult = env->addStaticText(L"", Scale(20, 285, 550, 330), false, true, wOfflineDuel);
 +	btnOfflineStart = env->addButton(Scale(300, 245, 550, 280), wOfflineDuel, OfflineAI::MENU_START, L"Start duel");
-+	env->addButton(Scale(20, 245, 270, 280), wOfflineDuel, OfflineAI::MENU_CANCEL, L"Back");
++	btnOfflineBack = env->addButton(Scale(20, 245, 270, 280), wOfflineDuel, OfflineAI::MENU_CANCEL, L"Back");
 +	// Campaign shell: ten touch-friendly stages reuse the existing offline duel deck flow.
 +	campaignStage = 1;
 +	campaignUnlocked = campaignui::LoadProgress("./config/campaign-progress.json");
@@ -179,7 +192,7 @@ index f4aa146..06cb066 100644
  	//lan mode
  	wLanWindow = env->addWindow(Scale(220, 100, 800, 520), false, gDataManager->GetSysString(1200).data());
  	defaultStrings.emplace_back(wLanWindow, 1200);
-@@ -331,6 +431,11 @@ void Game::Initialize() {
+@@ -331,6 +432,11 @@ void Game::Initialize() {
  	btnM2->setVisible(false);
  	btnEP = AlignElementWithParent(env->addButton(Scale(320, 0, 370, 20), wPhase, BUTTON_EP, L"\xff25\xff30"));
  	btnEP->setVisible(false);
@@ -191,7 +204,7 @@ index f4aa146..06cb066 100644
  
  	PopulateTabSettingsWindow();
  	PopulateSettingsWindow();
-@@ -443,31 +548,44 @@ void Game::Initialize() {
+@@ -443,31 +549,44 @@ void Game::Initialize() {
  	wCardSelect = env->addWindow(Scale(320, 100, 1000, 400), false, L"");
  	wCardSelect->getCloseButton()->setVisible(false);
  	wCardSelect->setVisible(false);
@@ -242,7 +255,7 @@ index f4aa146..06cb066 100644
  	//announce number
  	wANNumber = env->addWindow(Scale(550, 200, 780, 295), false, L"");
  	wANNumber->getCloseButton()->setVisible(false);
-@@ -544,7 +662,9 @@ void Game::Initialize() {
+@@ -544,7 +663,9 @@ void Game::Initialize() {
  	btnReset = env->addButton(Scale(1, 190, 99, 210), wCmdMenu, BUTTON_CMD_RESET, gDataManager->GetSysString(1162).data());
  	defaultStrings.emplace_back(btnReset, 1162);
  	//deck edit
@@ -253,7 +266,7 @@ index f4aa146..06cb066 100644
  	wDeckEdit->setVisible(false);
  	stBanlist = env->addStaticText(gDataManager->GetSysString(1300).data(), Scale(10, 9, 100, 29), false, false, wDeckEdit);
  	defaultStrings.emplace_back(stBanlist, 1300);
-@@ -571,6 +691,12 @@ void Game::Initialize() {
+@@ -571,6 +692,12 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnClearDeck, 1304);
  	btnDeleteDeck = AlignElementWithParent(env->addButton(Scale(225, 95, 290, 120), wDeckEdit, BUTTON_DELETE_DECK, gDataManager->GetSysString(1308).data()));
  	defaultStrings.emplace_back(btnDeleteDeck, 1308);
@@ -266,7 +279,7 @@ index f4aa146..06cb066 100644
  	btnSideOK = AlignElementWithParent(env->addButton(Scale(510, 40, 820, 80), nullptr, BUTTON_SIDE_OK, gDataManager->GetSysString(1334).data()));
  	defaultStrings.emplace_back(btnSideOK, 1334);
  	btnSideOK->setVisible(false);
-@@ -881,6 +1005,24 @@ void Game::Initialize() {
+@@ -881,6 +1006,24 @@ void Game::Initialize() {
  	btnRestartSingle = AlignElementWithParent(env->addButton(Scale(205, 50, 295, 90), 0, BUTTON_RESTART_SINGLE, gDataManager->GetSysString(1366).data()));
  	defaultStrings.emplace_back(btnRestartSingle, 1366);
  	btnRestartSingle->setVisible(false);
@@ -291,7 +304,7 @@ index f4aa146..06cb066 100644
  	//tip
  	stTip = env->addStaticText(L"", Scale(0, 0, 150, 150), false, true, 0, -1, true);
  	stTip->setBackgroundColor(skin::DUELFIELD_TOOLTIP_TEXT_BACKGROUND_COLOR_VAL);
-@@ -1512,6 +1651,11 @@ void Game::PopulateTabSettingsWindow() {
+@@ -1512,6 +1652,11 @@ void Game::PopulateTabSettingsWindow() {
  		tabSettings.chkAlternativePhaseLayout = env->addCheckBox(gGameConfig->alternative_phase_layout, GetNextRect(), tabPanel, CHECKBOX_ALTERNATIVE_PHASE_LAYOUT, gDataManager->GetSysString(1298).data());
  		menuHandler.MakeElementSynchronized(tabSettings.chkAlternativePhaseLayout);
  		defaultStrings.emplace_back(tabSettings.chkAlternativePhaseLayout, 1298);
@@ -303,7 +316,7 @@ index f4aa146..06cb066 100644
  		tabSettings.chkHideChainButtons = env->addCheckBox(gGameConfig->chkHideHintButton, GetNextRect(), tabPanel, CHECKBOX_CHAIN_BUTTONS, gDataManager->GetSysString(1355).data());
  		menuHandler.MakeElementSynchronized(tabSettings.chkHideChainButtons);
  		defaultStrings.emplace_back(tabSettings.chkHideChainButtons, 1355);
-@@ -1701,6 +1845,12 @@ void Game::PopulateSettingsWindow() {
+@@ -1701,6 +1846,12 @@ void Game::PopulateSettingsWindow() {
  		gSettings.chkAlternativePhaseLayout = env->addCheckBox(gGameConfig->alternative_phase_layout, GetNextRect(), sPanel, CHECKBOX_ALTERNATIVE_PHASE_LAYOUT, gDataManager->GetSysString(1298).data());
  		menuHandler.MakeElementSynchronized(gSettings.chkAlternativePhaseLayout);
  		defaultStrings.emplace_back(gSettings.chkAlternativePhaseLayout, 1298);
@@ -316,7 +329,7 @@ index f4aa146..06cb066 100644
  		gSettings.chkHideChainButtons = env->addCheckBox(gGameConfig->chkHideHintButton, GetNextRect(), sPanel, CHECKBOX_CHAIN_BUTTONS, gDataManager->GetSysString(1355).data());
  		menuHandler.MakeElementSynchronized(gSettings.chkHideChainButtons);
  		defaultStrings.emplace_back(gSettings.chkHideChainButtons, 1355);
-@@ -1936,6 +2086,21 @@ bool Game::MainLoop() {
+@@ -1936,6 +2087,21 @@ bool Game::MainLoop() {
  	irr::core::matrix4 mProjection;
  	camera = smgr->addCameraSceneNode(0);
  	auto UpdateAspectRatio = [this]() {
@@ -338,7 +351,7 @@ index f4aa146..06cb066 100644
  		if(!gGameConfig->keep_aspect_ratio) {
  			camera->setProjectionMatrix(defaultProjection);
  			return;
-@@ -1953,6 +2118,9 @@ bool Game::MainLoop() {
+@@ -1953,6 +2119,9 @@ bool Game::MainLoop() {
  
  	current_topdown = gGameConfig->topdown_view;
  	current_keep_aspect_ratio = gGameConfig->keep_aspect_ratio;
@@ -348,7 +361,7 @@ index f4aa146..06cb066 100644
  
  	camera->setTarget(irr::core::vector3df(FIELD_X, 0, 0));
  	UpdateCameraPosition();
-@@ -1971,6 +2139,9 @@ bool Game::MainLoop() {
+@@ -1971,6 +2140,9 @@ bool Game::MainLoop() {
  	bool was_connected = false;
  	bool update_prompted = false;
  	bool update_checked = false;
@@ -358,7 +371,7 @@ index f4aa146..06cb066 100644
  #if (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
  	if(auto driver_type = driver->getDriverType(); driver_type == irr::video::EDT_OGLES1 || driver_type == irr::video::EDT_OGLES2) {
  		auto SetClamp = [](irr::video::SMaterialLayer layer[irr::video::MATERIAL_MAX_TEXTURES]) {
-@@ -2022,14 +2193,28 @@ bool Game::MainLoop() {
+@@ -2022,14 +2194,28 @@ bool Game::MainLoop() {
  			repoInfoGui[repo.first].progress2->setProgress(repo.second);
  		}
  		gSoundManager->Tick();
@@ -388,7 +401,7 @@ index f4aa146..06cb066 100644
  #if EDOPRO_LINUX
  		prev_window_size = std::exchange(window_size, size);
  		if(prev_window_size != window_size && !last_resize && prev_window_size.Width != 0 && prev_window_size.Height != 0) {
-@@ -2037,9 +2222,19 @@ bool Game::MainLoop() {
+@@ -2037,9 +2223,19 @@ bool Game::MainLoop() {
  		} else if((prev_window_size == window_size && last_resize) || (prev_window_size.Width == 0 && prev_window_size.Height == 0)) {
  			last_resize = false;
  #else
@@ -409,7 +422,7 @@ index f4aa146..06cb066 100644
  			window_size = size;
  			window_scale.X = (window_size.Width / 1024.0) / gGameConfig->dpi_scale;
  			window_scale.Y = (window_size.Height / 640.0) / gGameConfig->dpi_scale;
-@@ -2060,6 +2255,18 @@ bool Game::MainLoop() {
+@@ -2060,6 +2256,18 @@ bool Game::MainLoop() {
  		atkdy = (float)sin(atkframe);
  		driver->beginScene(true, true, irr::video::SColor(0, 0, 0, 0));
  		gMutex.lock();
@@ -428,7 +441,7 @@ index f4aa146..06cb066 100644
  		if(dInfo.isInDuel) {
  			if(dInfo.isReplay)
  				discord.UpdatePresence(DiscordWrapper::REPLAY);
-@@ -2136,6 +2343,11 @@ bool Game::MainLoop() {
+@@ -2136,6 +2344,11 @@ bool Game::MainLoop() {
  			fpsCounter->setRelativePosition(Resize(1024 - fpsCounterWidth, 620, 1024, 640));
  		}
  		wBtnSettings->setVisible(!(is_building || is_siding || dInfo.isInDuel || open_file));
@@ -440,7 +453,7 @@ index f4aa146..06cb066 100644
  		DrawGUI();
  		DrawSpec();
  		if(cardimagetextureloading) {
-@@ -2158,9 +2370,10 @@ bool Game::MainLoop() {
+@@ -2158,9 +2371,10 @@ bool Game::MainLoop() {
  			}
  		}
  		driver->endScene();
@@ -452,7 +465,7 @@ index f4aa146..06cb066 100644
  		if (DuelClient::try_needed) {
  			DuelClient::try_needed = false;
  			DuelClient::StartClient(DuelClient::temp_ip, DuelClient::temp_port, dInfo.secret.game_id, false);
-@@ -2587,6 +2800,10 @@ void Game::Suspend() {
+@@ -2587,6 +2801,10 @@ void Game::Suspend() {
  }
  void Game::Resume() {
  	gSoundManager->PauseMusic(false);
@@ -463,7 +476,7 @@ index f4aa146..06cb066 100644
  	suspend = false;
  }
  Game::RepoGui* Game::AddGithubRepositoryStatusWindow(const GitRepo* repo) {
-@@ -2799,7 +3016,14 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
+@@ -2799,7 +3017,14 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
  	if(resize) {
  		//Update the text fields beforehand when resizing so that their horizontal size
  		//is correct when the text is set and is then broken into pieces
@@ -479,7 +492,7 @@ index f4aa146..06cb066 100644
  		stInfo->setRelativePosition(widthRect);
  		stDataInfo->setRelativePosition(widthRect);
  		stSetName->setRelativePosition(widthRect);
-@@ -2883,9 +3107,17 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
+@@ -2883,9 +3108,17 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
  	stText->setText(gDataManager->GetText(code).data());
  }
  void Game::RefreshCardInfoTextPositions() {
@@ -499,7 +512,7 @@ index f4aa146..06cb066 100644
  	auto offsetIfVisibleWithContent = [&](irr::gui::IGUIStaticText* st) {
  		if (st->isVisible() && wcscmp(st->getText(), L"")) {
  			st->setRelativePosition(irr::core::recti(xLeft, offset, xRight, offset + st->getTextHeight()));
-@@ -2896,6 +3128,13 @@ void Game::RefreshCardInfoTextPositions() {
+@@ -2896,6 +3129,13 @@ void Game::RefreshCardInfoTextPositions() {
  	offsetIfVisibleWithContent(stDataInfo);
  	offsetIfVisibleWithContent(stSetName);
  	offsetIfVisibleWithContent(stPasscodeScope);
@@ -513,7 +526,7 @@ index f4aa146..06cb066 100644
  	stText->setRelativePosition(irr::core::recti(xLeft, offset, xRight, stText->getParent()->getAbsolutePosition().getHeight() - Scale(1)));
  }
  void Game::ClearCardInfo(int player) {
-@@ -2996,13 +3235,18 @@ void Game::ClearTextures() {
+@@ -2996,13 +3236,18 @@ void Game::ClearTextures() {
  	imgCard->setImage(imageManager.tCover[0]);
  	btnPSAU->setImage();
  	btnPSDU->setImage();
@@ -533,7 +546,7 @@ index f4aa146..06cb066 100644
  	for(auto wit = fadingList.begin(); wit != fadingList.end(); ++wit) {
  		if(wit->isFadein)
  			wit->autoFadeoutFrame = 1;
-@@ -3210,6 +3454,21 @@ int Game::GetMasterRule(uint64_t param, uint32_t forbidden, int* truerule) {
+@@ -3210,6 +3455,21 @@ int Game::GetMasterRule(uint64_t param, uint32_t forbidden, int* truerule) {
  		return 2;
  }
  void Game::ResizePhaseButtons() {
@@ -555,7 +568,7 @@ index f4aa146..06cb066 100644
  	if(gGameConfig->alternative_phase_layout) {
  		wPhase->setRelativePosition(Resize(940, 80, 990, 340));
  		return;
-@@ -3252,6 +3511,10 @@ void Game::SetPhaseButtons(bool visibility) {
+@@ -3252,6 +3512,10 @@ void Game::SetPhaseButtons(bool visibility) {
  		btnBP->setVisible(gGameConfig->alternative_phase_layout || btnBP->isSubElement());
  		btnEP->setVisible(gGameConfig->alternative_phase_layout || btnEP->isSubElement());
  	}
@@ -566,7 +579,7 @@ index f4aa146..06cb066 100644
  
  	// set the phase window to the "default" size so that it's easier to
  	// work with the relative button positions by using non scaled values
-@@ -3322,6 +3585,17 @@ void Game::SetMessageWindow() {
+@@ -3322,6 +3586,17 @@ void Game::SetMessageWindow() {
  	}
  }
  void Game::ResizeCardinfoWindow(bool keep_ratio) {
@@ -584,7 +597,7 @@ index f4aa146..06cb066 100644
  	const auto rect = keep_ratio ?
  		ResizeWithCappedWidth(1, 1, 1 + CARD_IMG_WRAPPER_WIDTH, 1 + CARD_IMG_WRAPPER_HEIGHT, CARD_IMG_WRAPPER_ASPECT_RATIO) :
  		Resize(1, 1, 1 + CARD_IMG_WIDTH + 20, 1 + CARD_IMG_HEIGHT + 18);
-@@ -3632,7 +3906,99 @@ void Game::ReloadElementsStrings() {
+@@ -3632,7 +3907,99 @@ void Game::ReloadElementsStrings() {
  
  	ReloadCBCurrentSkin();
  }
@@ -684,7 +697,7 @@ index f4aa146..06cb066 100644
  	env->getRootGUIElement()->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
  	{
  		const auto waboutcorner = wAbout->getAbsolutePosition().UpperLeftCorner;
-@@ -3644,7 +4010,16 @@ void Game::OnResize() {
+@@ -3644,7 +4011,16 @@ void Game::OnResize() {
  		stAbout->setRelativePosition(irr::core::recti(10, 10, minwidth, minheight));
  	}
  	wRoomListPlaceholder->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
@@ -702,7 +715,7 @@ index f4aa146..06cb066 100644
  	wBtnSettings->setRelativePosition(ResizeWin(0, 610, 30, 640));
  	SetCentered(wCommitsLog);
  	SetCentered(updateWindow, false);
-@@ -3680,6 +4055,8 @@ void Game::OnResize() {
+@@ -3680,6 +4056,8 @@ void Game::OnResize() {
  	wRules->setRelativePosition(ResizeWin(630, 100, 1000, 310));
  	wReplay->setRelativePosition(ResizeWin(220, 100, 800, 520));
  	wSinglePlay->setRelativePosition(ResizeWin(220, 100, 800, 520));
@@ -711,7 +724,7 @@ index f4aa146..06cb066 100644
  	gBot.window->setRelativePosition(irr::core::vector2di(wHostPrepare->getAbsolutePosition().LowerRightCorner.X, wHostPrepare->getAbsolutePosition().UpperLeftCorner.Y));
  
  	wHand->setRelativePosition(ResizeWin(500, 450, 825, 605));
-@@ -3688,8 +4065,12 @@ void Game::OnResize() {
+@@ -3688,8 +4066,12 @@ void Game::OnResize() {
  	wQuery->setRelativePosition(ResizeWin(490, 200, 840, 340));
  	wOptions->setRelativePosition(ResizeWinFromCenter(0, 0, wOptions->getRelativePosition().getWidth(), wOptions->getRelativePosition().getHeight(), 135));
  	wPosSelect->setRelativePosition(ResizeWin(340, 200, 935, 410));
@@ -724,7 +737,7 @@ index f4aa146..06cb066 100644
  	wANNumber->setRelativePosition(ResizeWin(550, 200, 780, 295));
  	wANCard->setRelativePosition(ResizeWin(430, 170, 840, 370));
  	wANAttribute->setRelativePosition(ResizeWin(500, 200, 830, 285));
-@@ -3723,6 +4104,10 @@ void Game::OnResize() {
+@@ -3723,6 +4105,10 @@ void Game::OnResize() {
  	btnPSAD->setImage(imageManager.tCover[0]);
  	btnPSDD->setImage(imageManager.tCover[0]);
  
@@ -735,7 +748,7 @@ index f4aa146..06cb066 100644
  	ShowCardInfo(showingcard, true);
  
  	tabSystem->setRelativePosition({ {}, tabSystem->getParent()->getAbsolutePosition().getSize() });
-@@ -3739,6 +4124,7 @@ void Game::OnResize() {
+@@ -3739,6 +4125,7 @@ void Game::OnResize() {
  	SetCentered(gSettings.window);
  
  	ResizePhaseButtons();
@@ -743,7 +756,7 @@ index f4aa146..06cb066 100644
  
  	auto prev = roomListTable->getSelected();
  
-@@ -4029,6 +4415,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
+@@ -4029,6 +4416,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
  		}
  	} else
  		gGameConfig->locale = EPRO_TEXT("en");
@@ -785,7 +798,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIWindow* wCommitsLog;
  	irr::gui::IGUIContextMenu* mTopMenu;
  	irr::gui::IGUIContextMenu* mRepositoriesInfo;
-@@ -177,6 +186,21 @@ struct main_menu_panel_elements {
+@@ -177,6 +186,25 @@ struct main_menu_panel_elements {
  	irr::gui::IGUIButton* btnOnlineMode;
  	irr::gui::IGUIButton* btnLanMode;
  	irr::gui::IGUIButton* btnSingleMode;
@@ -794,6 +807,10 @@ index b6016b5..0ea7521 100644
 +	irr::gui::IGUIComboBox* cbOfflinePlayer;
 +	irr::gui::IGUIComboBox* cbOfflineOpponent;
 +	irr::gui::IGUIButton* btnOfflineStart;
++	irr::gui::IGUIButton* btnOfflineBack;
++	irr::gui::IGUIStaticText* stOfflineResult;
++	std::wstring offlineResultText;
++	int offlineResultLP[2]{};
 +	irr::gui::IGUIWindow* wCampaign;
 +	irr::gui::IGUIButton* btnCampaign;
 +	irr::gui::IGUIButton* btnCampaignBack;
@@ -807,7 +824,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIButton* btnReplayMode;
  	irr::gui::IGUIButton* btnTestMode;
  	irr::gui::IGUIButton* btnDeckEdit;
-@@ -336,6 +360,9 @@ struct deck_edit_page_elements {
+@@ -336,6 +364,9 @@ struct deck_edit_page_elements {
  	irr::gui::IGUIEditBox* ebDeckname;
  	irr::gui::IGUIStaticText* stBanlist;
  	irr::gui::IGUIStaticText* stDeck;
@@ -817,7 +834,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIStaticText* stCategory;
  	irr::gui::IGUIStaticText* stLimit;
  	irr::gui::IGUIStaticText* stAttribute;
-@@ -434,16 +459,23 @@ struct game_field_elements {
+@@ -434,16 +463,23 @@ struct game_field_elements {
  	irr::gui::CGUIImageButton* btnPSDD;
  	//card selection
  	irr::gui::IGUIWindow* wCardSelect;
@@ -845,7 +862,7 @@ index b6016b5..0ea7521 100644
  	//announce number
  	irr::gui::IGUIWindow* wANNumber;
  	irr::gui::IGUIComboBox* cbANNumber;
-@@ -496,6 +528,9 @@ struct game_field_elements {
+@@ -496,6 +532,9 @@ struct game_field_elements {
  	irr::gui::IGUIButton* btnLeaveGame;
  	//restart
  	irr::gui::IGUIButton* btnRestartSingle;
@@ -855,7 +872,7 @@ index b6016b5..0ea7521 100644
  	//swap
  	irr::gui::IGUIButton* btnSpectatorSwap;
  	//chain control
-@@ -581,6 +616,12 @@ public:
+@@ -581,6 +620,12 @@ public:
  	void SetPhaseButtons(bool visibility = false);
  	void SetMessageWindow();
  	void ResizeCardinfoWindow(bool keep_ratio);
@@ -868,7 +885,7 @@ index b6016b5..0ea7521 100644
  
  	bool HasFocus(irr::gui::EGUI_ELEMENT_TYPE type) const;
  
-@@ -655,6 +696,9 @@ public:
+@@ -655,6 +700,9 @@ public:
  	std::map<std::string, RepoGui> repoInfoGui;
  
  	bool suspend{false};
@@ -974,12 +991,17 @@ index 7b3360f..fa43abf 100644
  			case BUTTON_LAN_REFRESH2: {
  				ServerLobby::RefreshRooms();
  				break;
-@@ -366,6 +444,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -366,6 +444,39 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->RefreshReplay();
  				break;
  			}
 +			case OfflineAI::MENU_OPEN: {
 +				mainGame->HideElement(mainGame->wMainMenu);
++				mainGame->offlineResultText.clear();
++				mainGame->offlineResultLP[0] = mainGame->offlineResultLP[1] = 0;
++				mainGame->stOfflineResult->setText(L"");
++				mainGame->btnOfflineStart->setText(L"Start duel");
++				mainGame->btnOfflineBack->setText(L"Back");
 +				mainGame->RefreshDeck(mainGame->cbOfflinePlayer);
 +				mainGame->RefreshDeck(mainGame->cbOfflineOpponent);
 +				mainGame->btnOfflineStart->setEnabled(true);
@@ -1350,7 +1372,7 @@ index 3aabc46..65e9f9e 100644
  		auto now = std::time(nullptr);
  		std::unique_lock<epro::mutex> lock(mainGame->gMutex);
  		mainGame->PopupSaveWindow(gDataManager->GetSysString(1340), epro::format(L"{:%Y-%m-%d %H-%M-%S}", epro::localtime(now)), gDataManager->GetSysString(1342));
-@@ -278,44 +392,67 @@ restart:
+@@ -278,44 +392,73 @@ restart:
  	mainGame->dField.Clear();
  	mainGame->gMutex.unlock();
  	if(!is_closing) {
@@ -1427,6 +1449,12 @@ index 3aabc46..65e9f9e 100644
 +#endif
  		if(!hand_test) {
 -			mainGame->ShowElement(mainGame->wSinglePlay);
++			if(is_offline_ai) {
++				std::wstring result = mainGame->offlineResultText.empty() ? L"Duel finished." : mainGame->offlineResultText;
++				mainGame->stOfflineResult->setText(epro::format(L"{}\nLP {} - {}", result, mainGame->offlineResultLP[0], mainGame->offlineResultLP[1]).data());
++				mainGame->btnOfflineStart->setText(L"New duel");
++				mainGame->btnOfflineBack->setText(L"Main menu");
++			}
 +			mainGame->ShowElement(is_offline_ai ? mainGame->wOfflineDuel : mainGame->wSinglePlay);
  			mainGame->stTip->setVisible(false);
  		}
@@ -1439,7 +1467,7 @@ index 3aabc46..65e9f9e 100644
  		if(hand_test) {
  			mainGame->btnChainIgnore->setVisible(false);
  			mainGame->btnChainAlways->setVisible(false);
-@@ -333,9 +470,54 @@ restart:
+@@ -333,9 +476,54 @@ restart:
  }
  
  bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
@@ -1496,7 +1524,7 @@ index 3aabc46..65e9f9e 100644
  	};
  	replay_stream.clear();
  	if(is_closing || !is_continuing)
-@@ -345,10 +527,9 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -345,10 +533,9 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  	bool record_last = false;
  	switch(mainGame->dInfo.curMsg) {
  		case MSG_RETRY:	{
@@ -1510,7 +1538,7 @@ index 3aabc46..65e9f9e 100644
  			return false;
  		}
  		case MSG_HINT: {
-@@ -398,6 +579,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -398,6 +585,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  				break;
  			pbuf[len] = 0;
  			if(packet.message == MSG_AI_NAME) {
@@ -1518,7 +1546,7 @@ index 3aabc46..65e9f9e 100644
  				mainGame->dInfo.opponames[0] = BufferIO::DecodeUTF8({ reinterpret_cast<char*>(pbuf), len });
  			} else {
  				std::unique_lock<epro::mutex> lock(mainGame->gMutex);
-@@ -411,8 +593,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -411,8 +599,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  		case MSG_SELECT_IDLECMD: {
  			record = false;
  			SinglePlayRefresh();
@@ -1528,7 +1556,7 @@ index 3aabc46..65e9f9e 100644
  			break;
  		}
  		case MSG_SELECT_EFFECTYN:
-@@ -442,8 +623,13 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -442,8 +629,13 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  				SinglePlayRefresh(1, LOCATION_SZONE);
  				record_last = true;
  			}
@@ -1544,7 +1572,7 @@ index 3aabc46..65e9f9e 100644
  			break;
  		}
  		default: {
-@@ -451,6 +637,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -451,6 +643,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  			break;
  		}
  	}
@@ -1552,7 +1580,7 @@ index 3aabc46..65e9f9e 100644
  	auto* pbuf = packet.data();
  	switch(mainGame->dInfo.curMsg) {
  		case MSG_SHUFFLE_DECK: {
-@@ -508,8 +695,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
+@@ -508,8 +701,7 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
  	}
  	if(record)
  		replay_stream.insert(record_last ? replay_stream.end() : replay_stream.begin(), std::move(packet));
@@ -1562,7 +1590,7 @@ index 3aabc46..65e9f9e 100644
  	return is_continuing;
  }
  void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t flag) {
-@@ -519,8 +705,9 @@ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t fl
+@@ -519,8 +711,9 @@ void SingleMode::SinglePlayRefresh(uint8_t player, uint8_t location, uint32_t fl
  	auto buff = pduel->DuelQueryLocation(&len, &info);
  	if(len == 0)
  		return;
@@ -1574,7 +1602,7 @@ index 3aabc46..65e9f9e 100644
  	mainGame->gMutex.lock();
  	mainGame->dField.UpdateFieldCard(mainGame->LocalPlayer(player), location, buffer.data());
  	mainGame->gMutex.unlock();
-@@ -535,8 +722,9 @@ void SingleMode::SinglePlayRefreshSingle(uint8_t player, uint8_t location, uint8
+@@ -535,8 +728,9 @@ void SingleMode::SinglePlayRefreshSingle(uint8_t player, uint8_t location, uint8
  	auto buff = pduel->DuelQuery(&len, &info);
  	if(buff == nullptr)
  		return;
