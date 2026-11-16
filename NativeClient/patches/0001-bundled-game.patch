@@ -760,11 +760,11 @@ index bfe00c1..c9fad8c 100644
 +		if(gameRoot.empty()) return;
 +		const auto workdir = gameRoot + "/";
 +		if(!porting::changeWorkDir(workdir.data())) return;
-+		ErrorLog("DIAG phase=workdir.ready");
++		ygo::ErrorLog("DIAG phase=workdir.ready");
 +		std::array<const char*, 3> args{ {"", "-C", workdir.data()} };
-+		ErrorLog("DIAG phase=edopro_main.enter");
++		ygo::ErrorLog("DIAG phase=edopro_main.enter");
 +		result = edopro_main(args.size(), (char**)args.data());
-+		ErrorLog(epro::format("DIAG phase=edopro_main.exit code={}", result));
++		ygo::ErrorLog(epro::format("DIAG phase=edopro_main.exit code={}", result));
 +	}
 +	if(result == EXIT_SUCCESS)
  		exit(0);
