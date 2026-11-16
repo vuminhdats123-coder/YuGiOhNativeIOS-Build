@@ -22,6 +22,7 @@
     {"source": "overlays/ui-layout/sum_selection.h", "target": "gframe/sum_selection.h"},
     {"source": "overlays/ui-layout/ios_view_metrics.h", "target": "gframe/iOS/ios_view_metrics.h"},
     {"source": "overlays/ui-layout/ios_input_gate.h", "target": "gframe/iOS/ios_input_gate.h"},
+    {"source": "overlays/ui-layout/campaign_catalog.h", "target": "gframe/campaign_catalog.h"},
     {"source": "overlays/offline-ai/OfflineAI.mm", "target": "gframe/iOS/OfflineAI.mm"},
     {"source": "overlays/card-renderer/card_face.h", "target": "gframe/iOS/card_face.h"},
     {"source": "overlays/card-renderer/card_face_layout.h", "target": "gframe/iOS/card_face_layout.h"},
