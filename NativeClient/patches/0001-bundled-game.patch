@@ -1,5 +1,5 @@
 diff --git a/gframe/iOS/porting_ios.mm b/gframe/iOS/porting_ios.mm
-index bfe00c1..33ff741 100644
+index bfe00c1..dc265bf 100644
 --- a/gframe/iOS/porting_ios.mm
 +++ b/gframe/iOS/porting_ios.mm
 @@ -10,75 +10,90 @@
@@ -187,7 +187,7 @@ index bfe00c1..33ff741 100644
  }
  
  - (void)pickerView:(UIPickerView *)thePickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component {
-@@ -119,162 +143,320 @@ static void sendTextInputResult(NSString* nstext) {
+@@ -119,162 +143,334 @@ static void sendTextInputResult(NSString* nstext) {
  
  @end
  
@@ -562,7 +562,7 @@ index bfe00c1..33ff741 100644
 +		if(!root) {
 +			for(UIWindow* window in [UIApplication sharedApplication].windows)
 +				if(window.isKeyWindow) { root = window.rootViewController; break; }
-+		}
+ 		}
 +		if(!root) {
 +			// Bootstrap can fail before Irrlicht creates its window. Show a useful error.
 +			static UIWindow* failureWindow = nil;
@@ -572,7 +572,7 @@ index bfe00c1..33ff741 100644
 +			failureWindow.rootViewController = root;
 +			[root release]; // UIWindow retains its root controller.
 +			[failureWindow makeKeyAndVisible];
- 		}
++		}
 +		while(root.presentedViewController) root = root.presentedViewController;
 +		UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"EDOPro data unavailable"
 +			message:message preferredStyle:UIAlertControllerStyleAlert];
@@ -604,23 +604,37 @@ index bfe00c1..33ff741 100644
 +			return {};
 +		}
 +		NSURL* destination = [documents URLByAppendingPathComponent:@"EDOPro" isDirectory:YES];
-+		if([manager fileExistsAtPath:destination.path]) {
++		const bool destinationExists = [manager fileExistsAtPath:destination.path];
++		if(destinationExists) {
 +			NSData* installedManifest = validateGameFolder(manager, destination, &error);
-+			// shortcut: preserve existing user data on package changes; add explicit migration before supporting upgrades.
-+			if(!installedManifest || ![installedManifest isEqualToData:bundledManifest]
-+				|| !hasNoSymbolicLinks(manager, destination, &error)) {
-+				reportBootstrapError(@"Documents/EDOPro contains a different or invalid game package. Nothing was overwritten. Back up your decks/replays; automatic migration is not implemented.");
++			if(!installedManifest || !hasNoSymbolicLinks(manager, destination, &error)) {
++				reportBootstrapError(@"Documents/EDOPro is not a valid game package. Nothing was overwritten.");
 +				return {};
 +			}
-+			return epro::path_string(destination.path.UTF8String);
++			if([installedManifest isEqualToData:bundledManifest])
++				return epro::path_string(destination.path.UTF8String);
 +		}
 +		NSString* stageName = [@".EDOPro-staging-" stringByAppendingString:[NSUUID UUID].UUIDString];
 +		NSURL* staging = [documents URLByAppendingPathComponent:stageName isDirectory:YES];
 +		bool copied = [manager copyItemAtURL:bundledGame toURL:staging error:&error];
++		if(copied && destinationExists) {
++			for(NSString* relative in @[@"deck", @"replay", @"config/system.conf", @"config/campaign-progress.json"]) {
++				NSURL* oldURL = [destination URLByAppendingPathComponent:relative];
++				BOOL isDirectory = NO;
++				if(![manager fileExistsAtPath:oldURL.path isDirectory:&isDirectory]) continue;
++				NSURL* newURL = [staging URLByAppendingPathComponent:relative];
++				if([manager fileExistsAtPath:newURL.path] && ![manager removeItemAtURL:newURL error:&error]) { copied = false; break; }
++				if(![manager copyItemAtURL:oldURL toURL:newURL error:&error]) { copied = false; break; }
++			}
++		}
 +		NSData* stagedManifest = copied ? validateGameFolder(manager, staging, &error) : nil;
-+		if(copied && stagedManifest && [stagedManifest isEqualToData:bundledManifest]
-+			&& [manager moveItemAtURL:staging toURL:destination error:&error])
++		NSString* backupName = [@".EDOPro-backup-" stringByAppendingString:[NSUUID UUID].UUIDString];
++		NSURL* backup = [documents URLByAppendingPathComponent:backupName isDirectory:YES];
++		bool movedOld = !destinationExists || [manager moveItemAtURL:destination toURL:backup error:&error];
++		if(copied && stagedManifest && [stagedManifest isEqualToData:bundledManifest] && movedOld && [manager moveItemAtURL:staging toURL:destination error:&error])
 +			return epro::path_string(destination.path.UTF8String);
++		if(destinationExists && ![manager fileExistsAtPath:destination.path] && [manager fileExistsAtPath:backup.path])
++			[manager moveItemAtURL:backup toURL:destination error:nil];
 +		NSString* message = error.localizedDescription ?: @"Could not complete the bundled game installation.";
 +		NSError* cleanupError = nil;
 +		if([manager fileExistsAtPath:staging.path] && ![manager removeItemAtURL:staging error:&cleanupError])
@@ -630,7 +644,7 @@ index bfe00c1..33ff741 100644
  	}
  }
  
-@@ -283,7 +465,6 @@ int changeWorkDir(const char* newdir) {
+@@ -283,7 +479,6 @@ int changeWorkDir(const char* newdir) {
  }
  
  int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
@@ -638,7 +652,7 @@ index bfe00c1..33ff741 100644
  	switch(event.EventType) {
  		case irr::EET_MOUSE_INPUT_EVENT: {
  			if(event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN) {
-@@ -291,9 +472,10 @@ int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
+@@ -291,9 +486,10 @@ int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
  				if(hovered && hovered->isEnabled()) {
  					if(hovered->getType() == irr::gui::EGUIET_EDIT_BOX) {
  						bool retval = hovered->OnEvent(event);
@@ -651,7 +665,7 @@ index bfe00c1..33ff741 100644
  						stopPropagation = retval;
  						return retval;
  					}
-@@ -325,14 +507,57 @@ int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
+@@ -325,14 +521,57 @@ int transformEvent(const irr::SEvent& event, bool& stopPropagation) {
  }
  
  void dispatchQueuedMessages() {
@@ -717,7 +731,7 @@ index bfe00c1..33ff741 100644
  	}
  }
  
-@@ -347,15 +572,22 @@ void nameThread(const char* name) {
+@@ -347,15 +586,22 @@ void nameThread(const char* name) {
  extern "C" int edopro_main(int argc, char* argv[]);
  
  void irrlicht_main(){
