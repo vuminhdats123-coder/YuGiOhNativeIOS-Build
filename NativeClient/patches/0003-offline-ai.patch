@@ -1,5 +1,5 @@
 diff --git a/gframe/duelclient.cpp b/gframe/duelclient.cpp
-index 05b50921e49e382336c6b44eeb35e824d0914ca3..a711ca6ba761598b09b434da782eb0653c0eb0a6 100644
+index 05b5092..a711ca6 100644
 --- a/gframe/duelclient.cpp
 +++ b/gframe/duelclient.cpp
 @@ -2317,6 +2317,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
@@ -29,7 +29,7 @@ index 05b50921e49e382336c6b44eeb35e824d0914ca3..a711ca6ba761598b09b434da782eb065
  		}
  		mainGame->PopupElement(mainGame->wANCard);
 diff --git a/gframe/game.cpp b/gframe/game.cpp
-index f4aa14660d1c79085f4179b8e7074b0187e7a6c6..4d9ed6d5ae82e19aa83d67a5e6483a5cdab73907 100644
+index f4aa146..4d9ed6d 100644
 --- a/gframe/game.cpp
 +++ b/gframe/game.cpp
 @@ -1,5 +1,11 @@
@@ -698,7 +698,7 @@ index f4aa14660d1c79085f4179b8e7074b0187e7a6c6..4d9ed6d5ae82e19aa83d67a5e6483a5c
  }
  
 diff --git a/gframe/game.h b/gframe/game.h
-index b6016b5d7ebb3c639a5cccd257ed9a448335d862..decc646f0478e59700f5885160ddc92904e269cf 100644
+index b6016b5..decc646 100644
 --- a/gframe/game.h
 +++ b/gframe/game.h
 @@ -9,6 +9,8 @@
@@ -808,19 +808,20 @@ index b6016b5d7ebb3c639a5cccd257ed9a448335d862..decc646f0478e59700f5885160ddc929
  	uint32_t delta_time;
  	uint32_t delta_frames;
 diff --git a/gframe/menu_handler.cpp b/gframe/menu_handler.cpp
-index 7b3360f69682774fb7881abd4655b3b0327e2135..ec0dec0fe824030b663ac356ab90bcd2f46fcd3d 100644
+index 7b3360f..0107911 100644
 --- a/gframe/menu_handler.cpp
 +++ b/gframe/menu_handler.cpp
-@@ -7,6 +7,8 @@
+@@ -7,6 +7,9 @@
  #include "deck_manager.h"
  #include "replay_mode.h"
  #include "single_mode.h"
 +#include "OfflineAI.h"
++#include "campaign_catalog.h"
 +#include <algorithm>
  #include "image_manager.h"
  #include "game.h"
  #include "server_lobby.h"
-@@ -146,6 +148,53 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -146,6 +149,65 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->ShowElement(mainGame->wRoomListPlaceholder);
  				break;
  			}
@@ -847,6 +848,18 @@ index 7b3360f69682774fb7881abd4655b3b0327e2135..ec0dec0fe824030b663ac356ab90bcd2
 +				mainGame->HideElement(mainGame->wCampaign);
 +				mainGame->RefreshDeck(mainGame->cbOfflinePlayer);
 +				mainGame->RefreshDeck(mainGame->cbOfflineOpponent);
++				const auto campaignCatalog = campaignui::Load("./config/campaign-stages.json");
++				if(mainGame->campaignStage >= 1 && mainGame->campaignStage <= static_cast<int>(campaignCatalog.size())) {
++					auto normalizeDeckKey = [](std::string value) {
++						if(value.rfind("OBB_", 0) == 0) value.erase(0, 4);
++						const auto separator = value.rfind('_');
++						if(separator != std::string::npos && value.size() - separator - 1 == 10) value.erase(separator);
++						return value;
++					};
++					const auto target = normalizeDeckKey(campaignCatalog[mainGame->campaignStage - 1].deckKey);
++					for(irr::u32 i = 0; i < mainGame->cbOfflineOpponent->getItemCount(); ++i)
++						if(target == normalizeDeckKey(Utils::ToUTF8IfNeeded(mainGame->cbOfflineOpponent->getItem(i)))) { mainGame->cbOfflineOpponent->setSelected(static_cast<irr::s32>(i)); break; }
++				}
 +				mainGame->btnOfflineStart->setEnabled(true);
 +				mainGame->ShowElement(mainGame->wOfflineDuel);
 +				break;
@@ -874,7 +887,7 @@ index 7b3360f69682774fb7881abd4655b3b0327e2135..ec0dec0fe824030b663ac356ab90bcd2
  			case BUTTON_LAN_REFRESH2: {
  				ServerLobby::RefreshRooms();
  				break;
-@@ -366,6 +415,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -366,6 +428,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->RefreshReplay();
  				break;
  			}
@@ -910,7 +923,7 @@ index 7b3360f69682774fb7881abd4655b3b0327e2135..ec0dec0fe824030b663ac356ab90bcd2
  				mainGame->HideElement(mainGame->wMainMenu);
  				mainGame->stSinglePlayInfo->setText(L"");
 diff --git a/gframe/single_mode.cpp b/gframe/single_mode.cpp
-index 3aabc4673ddb2502ecdd203394759a7d6173ed3a..36db864fdad7a4d3b0bbce68fe43522f7f33cb05 100644
+index 3aabc46..36db864 100644
 --- a/gframe/single_mode.cpp
 +++ b/gframe/single_mode.cpp
 @@ -1,4 +1,6 @@
@@ -1485,7 +1498,7 @@ index 3aabc4673ddb2502ecdd203394759a7d6173ed3a..36db864fdad7a4d3b0bbce68fe43522f
  	mainGame->dField.UpdateCard(mainGame->LocalPlayer(player), location, sequence, buffer.data());
  	mainGame->gMutex.unlock();
 diff --git a/gframe/single_mode.h b/gframe/single_mode.h
-index dc88c1ef04811878cdfeab788096d014e7c51345..e3de31c96d903deaaf1811c57ba909757e2894f6 100644
+index dc88c1e..e3de31c 100644
 --- a/gframe/single_mode.h
 +++ b/gframe/single_mode.h
 @@ -7,15 +7,24 @@

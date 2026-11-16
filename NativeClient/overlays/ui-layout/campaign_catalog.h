@@ -11,22 +11,23 @@
 namespace ygo::campaignui {
 struct Stage {
 	std::string title;
+	std::string deckKey;
 	std::string icon;
 	int unlockAfterWins = 0;
 };
 
 inline std::array<Stage, 10> Defaults() {
 	return {{
-		{"Stage 1-1", "icon_YGOMD_First_Weevil.png", 0},
-		{"Stage 1-2", "icon_YGOMD_First_Kaiba.png", 1},
-		{"Stage 1-3", "icon_YGOMD_First_Yugi.png", 2},
-		{"Stage 1-4", "icon_YGOMD_First_Mai.png", 3},
-		{"Stage 1-5", "icon_YGOMD_First_Pegasus.png", 4},
-		{"Stage 2-1", "icon_YGOMD_GX_Jaden.png", 5},
-		{"Stage 2-2", "icon_YGOMD_5DS_Yusei.png", 6},
-		{"Stage 2-3", "icon_YGOMD_ZEXAL_Yuma.png", 7},
-		{"Stage 2-4", "icon_YGOMD_Arcv_Yuya.png", 8},
-		{"Stage 2-5", "icon_YGOMD_First_YamiYugi.png", 9}
+		{"Stage 1-1", "OBB_NPC-TeaGardner-A_1840e9a418", "icon_YGOMD_First_Tea.png", 0},
+		{"Stage 1-2", "OBB_NPC-SolomonMuto-A_991f6181e7", "icon_YGOMD_First_Solomon.png", 1},
+		{"Stage 1-3", "OBB_NPC-WeevilUnderwood-A_05ec7cda94", "icon_YGOMD_First_Weevil.png", 2},
+		{"Stage 1-4", "OBB_NPC-BanditKeith-A_d2a2f75abc", "icon_YGOMD_First_Keith.png", 3},
+		{"Stage 1-5", "OBB_NPC-MaximillionPegasus-A_8513ed0de6", "icon_YGOMD_First_Pegasus.png", 4},
+		{"Stage 2-1", "OBB_NPC-YamiYugi-A_e237a13630", "icon_YGOMD_First_YamiYugi.png", 5},
+		{"Stage 2-2", "OBB_NPC-JoeyWheeler-A_c5dfe7b5a6", "icon_YGOMD_First_joey.png", 6},
+		{"Stage 2-3", "OBB_NPC-SetoKaiba-A_e923c6f749", "icon_YGOMD_First_Kaiba.png", 7},
+		{"Stage 2-4", "OBB_NPC-MarikIshtar-A_6aebd9e87a", "icon_YGOMD_First_Marik.png", 8},
+		{"Stage 2-5", "OBB_NPC-MokubaKaiba-A_fa0fe3e55a", "icon_YGOMD_First_Mokuba.png", 9}
 	}};
 }
 
@@ -45,10 +46,11 @@ inline std::array<Stage, 10> Load(std::string_view path) {
 			const auto& stage = stages.at(i);
 			if(stage.value("id", 0) != static_cast<int>(i + 1)
 				|| !stage.contains("title") || !stage["title"].is_string()
+				|| !stage.contains("deckKey") || !stage["deckKey"].is_string()
 				|| !stage.contains("icon") || !stage["icon"].is_string()) return Defaults();
 			const int unlock = stage.value("unlockAfterWins", -1);
 			if(unlock < previousUnlock) return Defaults();
-			result[i] = {stage.value("title", result[i].title), stage.value("icon", result[i].icon), unlock};
+			result[i] = {stage.value("title", result[i].title), stage.value("deckKey", result[i].deckKey), stage.value("icon", result[i].icon), unlock};
 			previousUnlock = unlock;
 		}
 	} catch(...) {
