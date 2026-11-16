@@ -337,7 +337,7 @@ index f4aa146..3cae020 100644
  			for(const auto& _locale : locales) {
  				auto& locale = _locale.first;
 -				auto itemIndex = gSettings.cbCurrentLocale->addItem(Utils::ToUnicodeIfNeeded(locale).data());
-+				const auto displayLocale = locale == EPRO_TEXT("vi-obb") ? EPRO_TEXT("Tiếng Việt") : Utils::ToUnicodeIfNeeded(locale);
++				const auto displayLocale = locale == EPRO_TEXT("vi-obb") ? std::wstring{L"Tiếng Việt"} : Utils::ToUnicodeIfNeeded(locale);
 +				auto itemIndex = gSettings.cbCurrentLocale->addItem(displayLocale.data());
  				if(gGameConfig->locale == locale) {
  					selectedLocale = itemIndex;
