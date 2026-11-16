@@ -88,7 +88,7 @@ index f4aa146..06cb066 100644
 +	wMenuArt = env->addWindow(Scale(0, 0, 1024, 640), false, L"");
 +	wMenuArt->getCloseButton()->setVisible(false);
 +	wMenuArt->setDrawTitlebar(false);
-+	wMenuArt->setBackgroundColor(0x00000000);
++	wMenuArt->setDrawBackground(false);
 +	menuCardLeft = env->addImage(Scale(12, 70, 232, 330), wMenuArt);
 +	menuCardRight = env->addImage(Scale(792, 70, 1012, 330), wMenuArt);
 +	for(auto* image : {menuCardLeft, menuCardRight}) {
