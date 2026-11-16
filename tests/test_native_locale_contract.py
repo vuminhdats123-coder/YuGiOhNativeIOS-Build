@@ -10,9 +10,9 @@ class NativeLocaleContractTests(unittest.TestCase):
         patch = (ROOT / "NativeClient/patches/0003-offline-ai.patch").read_text(encoding="utf-8")
         self.assertIn('locale == EPRO_TEXT("vi-obb")', patch)
         self.assertIn('Tiếng Việt', patch)
-        self.assertIn('config/languages/{}', patch)
         source = (ROOT / "NativeClient/edopro/gframe/game.cpp").read_text(encoding="utf-8")
         self.assertIn("LoadLocaleDB", source)
+        self.assertIn("config/languages/{}", source)
 
 
 if __name__ == "__main__":
