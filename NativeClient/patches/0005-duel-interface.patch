@@ -619,10 +619,10 @@ index 918406c..7119262 100644
  			DrawSelectionLine(matManager.vCardOutliner, true, 2, outline_color);
  	}
 +	// Moving cards receive a short cyan pulse so summons/effect resolution read as an animation.
-+	if(pcard->is_moving || pcard->is_fading) {
++	if(pcard->is_moving || pcard->is_fading || pcard->is_showtarget || pcard->is_showchaintarget || pcard->is_showequip || (pcard->cmdFlag & COMMAND_ATTACK)) {
 +		const float pulse = 0.45f + 0.35f * std::sin(static_cast<float>(pcard->aniFrame % 500) * 0.012f);
 +		const auto alpha = static_cast<irr::u32>(std::clamp(int(255.0f * pulse), 0, 255)) << 24;
-+		const auto glow = irr::video::SColor(alpha | 0x50d8ff);
++		const auto glow = irr::video::SColor(alpha | ((pcard->cmdFlag & COMMAND_ATTACK) ? 0x5070ff : ((pcard->is_showtarget || pcard->is_showchaintarget || pcard->is_showequip) ? 0x50ff80 : 0x50d8ff)));
 +		DrawSelectionLine(matManager.vCardOutline, true, 3, glow);
 +	}
  	if(pcard->is_showequip) {
