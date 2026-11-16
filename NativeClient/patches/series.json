@@ -6,7 +6,9 @@
     {"file": "patches/0003-offline-ai.patch", "targets": ["gframe/single_mode.cpp", "gframe/single_mode.h", "gframe/game.cpp", "gframe/game.h", "gframe/menu_handler.cpp", "gframe/duelclient.cpp"]},
     {"file": "patches/card-face-renderer.patch", "targets": ["gframe/image_manager.cpp", "gframe/image_manager.h"]},
     {"file": "patches/0004-touch-menu.patch", "targets": ["gframe/event_handler.cpp"]},
-    {"file": "patches/0005-duel-interface.patch", "targets": ["gframe/client_field.cpp", "gframe/client_field.h", "gframe/drawing.cpp"]}
+    {"file": "patches/0005-duel-interface.patch", "targets": ["gframe/client_field.cpp", "gframe/client_field.h", "gframe/drawing.cpp"]},
+    {"file": "patches/0006-deck-counter.patch", "targets": ["gframe/deck_con.cpp", "gframe/deck_con.h"]},
+    {"file": "patches/0007-mobile-shell-header.patch", "targets": ["gframe/menu_handler.h"]}
   ],
   "overlays": [
     {"source": "overlays/ios-config/native_config.lua", "target": "gframe/iOS/native_config.lua"},

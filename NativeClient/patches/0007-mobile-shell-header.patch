@@ -1,0 +1,24 @@
+diff --git a/gframe/menu_handler.h b/gframe/menu_handler.h
+index 5536864..feff5cb 100644
+--- a/gframe/menu_handler.h
++++ b/gframe/menu_handler.h
+@@ -260,6 +260,19 @@ enum GUI {
+ 	CHECK_SHOW_ACTIVE_ROOMS,
+ 	BUTTON_ROOMPASSWORD_CANCEL,
+ 	BUTTON_ONLINE_MULTIPLAYER, // first button on main menu
++	CAMPAIGN_OPEN,
++	CAMPAIGN_BACK,
++	CAMPAIGN_DUEL,
++	CAMPAIGN_STAGE_0,
++	CAMPAIGN_STAGE_1,
++	CAMPAIGN_STAGE_2,
++	CAMPAIGN_STAGE_3,
++	CAMPAIGN_STAGE_4,
++	CAMPAIGN_STAGE_5,
++	CAMPAIGN_STAGE_6,
++	CAMPAIGN_STAGE_7,
++	CAMPAIGN_STAGE_8,
++	CAMPAIGN_STAGE_9,
+ 
+ 	ACTION_UPDATE_PROMPT,
+ 	ACTION_ACKNOWLEDGE_HOST,

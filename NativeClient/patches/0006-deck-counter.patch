@@ -1,0 +1,44 @@
+diff --git a/gframe/deck_con.cpp b/gframe/deck_con.cpp
+index 9be7878..ab6a25b 100644
+--- a/gframe/deck_con.cpp
++++ b/gframe/deck_con.cpp
+@@ -88,6 +88,7 @@ void DeckBuilder::Initialize(bool refresh) {
+ 	is_lastcard = 0;
+ 	is_draging = false;
+ 	prev_deck = mainGame->cbDBDecks->getSelected();
++	RefreshDeckCounter();
+ 	prev_operation = 0;
+ 	mainGame->SetMessageWindow();
+ 	mainGame->device->setEventReceiver(this);
+@@ -1471,6 +1472,7 @@ void DeckBuilder::RefreshLimitationStatus() {
+ 	side_monster_count = DeckManager::TypeCount(current_deck.side, TYPE_MONSTER);
+ 	side_spell_count = DeckManager::TypeCount(current_deck.side, TYPE_SPELL);
+ 	side_trap_count = DeckManager::TypeCount(current_deck.side, TYPE_TRAP);
++	RefreshDeckCounter();
+ }
+ void DeckBuilder::RefreshLimitationStatusOnRemoved(const CardDataC* card, DeckType location) {
+ 	switch(location) {
+@@ -1700,4 +1702,11 @@ void DeckBuilder::RefreshCurrentDeck() {
+ 	DeckManager::RefreshDeck(current_deck);
+ 	RefreshLimitationStatus();
+ }
++
++void DeckBuilder::RefreshDeckCounter() {
++	if(!mainGame->stDeckCount)
++		return;
++	mainGame->stDeckCount->setText(epro::format(L"Main {}/60  |  Extra {}/15  |  Side {}/15",
++		current_deck.main.size(), current_deck.extra.size(), current_deck.side.size()).data());
++}
+ }
+diff --git a/gframe/deck_con.h b/gframe/deck_con.h
+index a2f78c3..41f559a 100644
+--- a/gframe/deck_con.h
++++ b/gframe/deck_con.h
+@@ -86,6 +86,7 @@ private:
+ 	void SortList();
+ 
+ 	void ClearDeck();
++	void RefreshDeckCounter();
+ 	void RefreshLimitationStatus();
+ 	enum DeckType {
+ 		MAIN,
