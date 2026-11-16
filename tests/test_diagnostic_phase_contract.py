@@ -11,7 +11,7 @@ class DiagnosticPhaseContractTests(unittest.TestCase):
         game = (ROOT / "NativeClient/patches/0003-offline-ai.patch").read_text(encoding="utf-8")
         for token in ("DIAG phase=workdir.ready", "DIAG phase=edopro_main.enter", "DIAG phase=edopro_main.exit code={}"):
             self.assertIn(token, bootstrap)
-        for token in ("DIAG phase=game.initialize.enter", "DIAG phase=game.initialize.ui_ready", "DIAG phase=mainloop.first_frame"):
+        for token in ("DIAG phase=game.initialize.enter", "DIAG phase=game.initialize.settings", "DIAG phase=game.initialize.ui_ready", "DIAG phase=game.initialize.complete", "DIAG phase=mainloop.first_frame"):
             self.assertIn(token, game)
 
 
