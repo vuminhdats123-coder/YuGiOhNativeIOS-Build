@@ -29,7 +29,7 @@ index 05b5092..a711ca6 100644
  		}
  		mainGame->PopupElement(mainGame->wANCard);
 diff --git a/gframe/game.cpp b/gframe/game.cpp
-index f4aa146..30bef68 100644
+index f4aa146..06cb066 100644
 --- a/gframe/game.cpp
 +++ b/gframe/game.cpp
 @@ -1,5 +1,11 @@
@@ -676,17 +676,25 @@ index f4aa146..30bef68 100644
  	env->getRootGUIElement()->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
  	{
  		const auto waboutcorner = wAbout->getAbsolutePosition().UpperLeftCorner;
-@@ -3644,7 +4007,8 @@ void Game::OnResize() {
+@@ -3644,7 +4007,16 @@ void Game::OnResize() {
  		stAbout->setRelativePosition(irr::core::recti(10, 10, minwidth, minheight));
  	}
  	wRoomListPlaceholder->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
 -	wMainMenu->setRelativePosition(ResizeWin(mainMenuLeftX, 200, mainMenuRightX, 450));
-+	if(wMenuArt) wMenuArt->setRelativePosition(ResizeWin(0, 0, 1024, 640));
++	if(wMenuArt) {
++		wMenuArt->setRelativePosition(ResizeWin(0, 0, 1024, 640));
++		if(menuCardLeft) menuCardLeft->setRelativePosition(Scale(12, 70, 232, 330));
++		if(menuCardRight) menuCardRight->setRelativePosition(Scale(792, 70, 1012, 330));
++		if(menuPlayerAvatar) menuPlayerAvatar->setRelativePosition(Scale(12, 430, 112, 530));
++		if(menuPlayerPanel) menuPlayerPanel->setRelativePosition(Scale(120, 430, 300, 530));
++		for(int i = 0; i < 4; ++i) if(menuIconButtons[i])
++			menuIconButtons[i]->setRelativePosition(Scale(770 + i * 58, 570, 818 + i * 58, 618));
++	}
 +	wMainMenu->setRelativePosition(ResizeWin(mainMenuLeftX, 145, mainMenuRightX, 540));
  	wBtnSettings->setRelativePosition(ResizeWin(0, 610, 30, 640));
  	SetCentered(wCommitsLog);
  	SetCentered(updateWindow, false);
-@@ -3680,6 +4044,8 @@ void Game::OnResize() {
+@@ -3680,6 +4052,8 @@ void Game::OnResize() {
  	wRules->setRelativePosition(ResizeWin(630, 100, 1000, 310));
  	wReplay->setRelativePosition(ResizeWin(220, 100, 800, 520));
  	wSinglePlay->setRelativePosition(ResizeWin(220, 100, 800, 520));
@@ -695,7 +703,7 @@ index f4aa146..30bef68 100644
  	gBot.window->setRelativePosition(irr::core::vector2di(wHostPrepare->getAbsolutePosition().LowerRightCorner.X, wHostPrepare->getAbsolutePosition().UpperLeftCorner.Y));
  
  	wHand->setRelativePosition(ResizeWin(500, 450, 825, 605));
-@@ -3688,8 +4054,12 @@ void Game::OnResize() {
+@@ -3688,8 +4062,12 @@ void Game::OnResize() {
  	wQuery->setRelativePosition(ResizeWin(490, 200, 840, 340));
  	wOptions->setRelativePosition(ResizeWinFromCenter(0, 0, wOptions->getRelativePosition().getWidth(), wOptions->getRelativePosition().getHeight(), 135));
  	wPosSelect->setRelativePosition(ResizeWin(340, 200, 935, 410));
@@ -708,7 +716,7 @@ index f4aa146..30bef68 100644
  	wANNumber->setRelativePosition(ResizeWin(550, 200, 780, 295));
  	wANCard->setRelativePosition(ResizeWin(430, 170, 840, 370));
  	wANAttribute->setRelativePosition(ResizeWin(500, 200, 830, 285));
-@@ -3723,6 +4093,10 @@ void Game::OnResize() {
+@@ -3723,6 +4101,10 @@ void Game::OnResize() {
  	btnPSAD->setImage(imageManager.tCover[0]);
  	btnPSDD->setImage(imageManager.tCover[0]);
  
@@ -719,7 +727,7 @@ index f4aa146..30bef68 100644
  	ShowCardInfo(showingcard, true);
  
  	tabSystem->setRelativePosition({ {}, tabSystem->getParent()->getAbsolutePosition().getSize() });
-@@ -3739,6 +4113,7 @@ void Game::OnResize() {
+@@ -3739,6 +4121,7 @@ void Game::OnResize() {
  	SetCentered(gSettings.window);
  
  	ResizePhaseButtons();
@@ -727,7 +735,7 @@ index f4aa146..30bef68 100644
  
  	auto prev = roomListTable->getSelected();
  
-@@ -4029,6 +4404,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
+@@ -4029,6 +4412,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
  		}
  	} else
  		gGameConfig->locale = EPRO_TEXT("en");
