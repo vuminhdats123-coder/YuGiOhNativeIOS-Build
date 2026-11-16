@@ -17,6 +17,7 @@ class NativeLobbyContractTests(unittest.TestCase):
             "GetTextureCard(84794011",
             "menuIconButtons[4]",
             "imageManager.tSettings",
+            "BUTTON_SHOW_SETTINGS, L\"Help & Options\"",
             "wMenuArt->setVisible",
         ):
             self.assertIn(token, source)
