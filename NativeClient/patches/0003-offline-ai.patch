@@ -91,7 +91,7 @@ index f4aa146..aa5bf68 100644
  	btnReplayMode = env->addButton(OFFSET(10, 100, 270, 130), wMainMenu, BUTTON_REPLAY_MODE, gDataManager->GetSysString(1202).data());
  	defaultStrings.emplace_back(btnReplayMode, 1202);
  	offset += 35;
-@@ -269,6 +288,35 @@ void Game::Initialize() {
+@@ -269,6 +288,58 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnModeExit, 1210);
  	offset += 35;
  #undef OFFSET
@@ -107,13 +107,28 @@ index f4aa146..aa5bf68 100644
 +	env->addButton(Scale(20, 245, 270, 280), wOfflineDuel, OfflineAI::MENU_CANCEL, L"Back");
 +	// Campaign shell: ten touch-friendly stages reuse the existing offline duel deck flow.
 +	campaignStage = 1;
++	campaignUnlocked = 1;
 +	wCampaign = env->addWindow(Scale(100, 70, 920, 600), false, L"Campaign");
 +	wCampaign->getCloseButton()->setVisible(false);
 +	wCampaign->setVisible(false);
-+	stCampaignInfo = env->addStaticText(L"Choose a stage. Clear six duels to unlock the next route.", Scale(20, 38, 800, 70), false, true, wCampaign);
++	auto* campaignBackdrop = env->addStaticText(L"", Scale(4, 4, 816, 300), false, false, wCampaign);
++	campaignBackdrop->setBackgroundColor(0xe2081538);
++	campaignBackdrop->setOverrideColor(0xff113f74);
++	for(int route = 0; route < 2; ++route) {
++		auto* routeLine = env->addStaticText(L"────────────────────────────────────────", Scale(55, 125 + route * 68, 765, 143 + route * 68), false, false, wCampaign);
++		routeLine->setOverrideColor(0xff27d9ff);
++	}
++	auto* campaignGlow = env->addStaticText(L"*  CAMPAIGN  *", Scale(20, 8, 800, 36), false, true, wCampaign);
++	campaignGlow->setBackgroundColor(0xe00b1e45);
++	campaignGlow->setOverrideColor(0xff36d9ff);
++	stCampaignInfo = env->addStaticText(L"Choose a stage. Clear the previous duel to unlock the next route.", Scale(20, 38, 800, 70), false, true, wCampaign);
 +	static const wchar_t* campaignLabels[10] = {
 +		L"Stage 1-1", L"Stage 1-2", L"Stage 1-3", L"Stage 1-4", L"Stage 1-5",
 +		L"Stage 2-1", L"Stage 2-2", L"Stage 2-3", L"Stage 2-4", L"Stage 2-5"
++	};
++	static const wchar_t* campaignIcons[10] = {
++		L"icon_YGOMD_First_Weevil.png", L"icon_YGOMD_First_Kaiba.png", L"icon_YGOMD_First_Yugi.png", L"icon_YGOMD_First_Mai.png", L"icon_YGOMD_First_Pegasus.png",
++		L"icon_YGOMD_GX_Jaden.png", L"icon_YGOMD_5DS_Yusei.png", L"icon_YGOMD_ZEXAL_Yuma.png", L"icon_YGOMD_Arcv_Yuya.png", L"icon_YGOMD_First_YamiYugi.png"
 +	};
 +	for(int i = 0; i < 10; ++i) {
 +		const int row = i / 5;
@@ -121,6 +136,14 @@ index f4aa146..aa5bf68 100644
 +		btnCampaignStages[i] = env->addButton(
 +			Scale(20 + col * 155, 90 + row * 68, 165 + col * 155, 145 + row * 68),
 +			wCampaign, CAMPAIGN_STAGE_0 + i, campaignLabels[i]);
++		btnCampaignStages[i]->setUseAlphaChannel(true);
++		btnCampaignStages[i]->setScaleImage(true);
++		if(auto* icon = driver->getTexture(epro::format(EPRO_TEXT("./textures/portraits/{}"), campaignIcons[i]).data()))
++			btnCampaignStages[i]->setImage(icon);
++		if(i > 0) {
++			btnCampaignStages[i]->setEnabled(false);
++			btnCampaignStages[i]->setText(epro::format(L"LOCKED\n{}", campaignLabels[i]).data());
++		}
 +	}
 +	btnCampaignBack = env->addButton(Scale(20, 245, 290, 285), wCampaign, CAMPAIGN_BACK, L"Back");
 +	btnCampaignDuel = env->addButton(Scale(500, 245, 800, 285), wCampaign, CAMPAIGN_DUEL, L"Duel");
@@ -700,7 +723,7 @@ index b6016b5..cf92260 100644
  
  class GitRepo;
  
-@@ -177,6 +180,18 @@ struct main_menu_panel_elements {
+@@ -177,6 +180,19 @@ struct main_menu_panel_elements {
  	irr::gui::IGUIButton* btnOnlineMode;
  	irr::gui::IGUIButton* btnLanMode;
  	irr::gui::IGUIButton* btnSingleMode;
@@ -716,6 +739,7 @@ index b6016b5..cf92260 100644
 +	irr::gui::IGUIStaticText* stCampaignInfo;
 +	irr::gui::IGUIButton* btnCampaignStages[10];
 +	int campaignStage;
++	int campaignUnlocked;
  	irr::gui::IGUIButton* btnReplayMode;
  	irr::gui::IGUIButton* btnTestMode;
  	irr::gui::IGUIButton* btnDeckEdit;
@@ -792,15 +816,16 @@ diff --git a/gframe/menu_handler.cpp b/gframe/menu_handler.cpp
 index 7b3360f..b7141da 100644
 --- a/gframe/menu_handler.cpp
 +++ b/gframe/menu_handler.cpp
-@@ -7,6 +7,7 @@
+@@ -7,6 +7,8 @@
  #include "deck_manager.h"
  #include "replay_mode.h"
  #include "single_mode.h"
 +#include "OfflineAI.h"
++#include <algorithm>
  #include "image_manager.h"
  #include "game.h"
  #include "server_lobby.h"
-@@ -146,6 +147,43 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -146,6 +147,55 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->ShowElement(mainGame->wRoomListPlaceholder);
  				break;
  			}
@@ -809,6 +834,11 @@ index 7b3360f..b7141da 100644
 +				mainGame->campaignStage = 1;
 +				mainGame->stCampaignInfo->setText(L"Stage 1-1 • Insector Haga\nChoose a duel node to begin.");
 +				mainGame->btnCampaignDuel->setEnabled(true);
++				for(int stage = 0; stage < 10; ++stage) {
++					mainGame->btnCampaignStages[stage]->setEnabled(stage < mainGame->campaignUnlocked);
++					if(stage >= mainGame->campaignUnlocked)
++						mainGame->btnCampaignStages[stage]->setText(epro::format(L"LOCKED\nStage {}-{}", stage / 5 + 1, stage % 5 + 1).data());
++				}
 +				mainGame->ShowElement(mainGame->wCampaign);
 +				break;
 +			}
@@ -818,7 +848,10 @@ index 7b3360f..b7141da 100644
 +				break;
 +			}
 +			case CAMPAIGN_DUEL: {
++				if(mainGame->campaignStage > mainGame->campaignUnlocked) break;
 +				mainGame->HideElement(mainGame->wCampaign);
++				// shortcut: unlock the next node when the selected duel is entered; upgrade to result-based persistence when campaign results are stored.
++				mainGame->campaignUnlocked = std::min(10, std::max(mainGame->campaignUnlocked, mainGame->campaignStage + 1));
 +				mainGame->RefreshDeck(mainGame->cbOfflinePlayer);
 +				mainGame->RefreshDeck(mainGame->cbOfflineOpponent);
 +				mainGame->btnOfflineStart->setEnabled(true);
@@ -836,6 +869,10 @@ index 7b3360f..b7141da 100644
 +			case CAMPAIGN_STAGE_8:
 +			case CAMPAIGN_STAGE_9: {
 +				mainGame->campaignStage = id - CAMPAIGN_STAGE_0 + 1;
++				if(mainGame->campaignStage > mainGame->campaignUnlocked) {
++					mainGame->stCampaignInfo->setText(L"This stage is locked. Clear the previous duel first.");
++					break;
++				}
 +				const int chapter = (mainGame->campaignStage - 1) / 5 + 1;
 +				const int node = (mainGame->campaignStage - 1) % 5 + 1;
 +				mainGame->stCampaignInfo->setText(epro::format(L"Stage {}-{} • Duel node selected.\nPress Duel to reuse the offline deck flow.", chapter, node).data());
