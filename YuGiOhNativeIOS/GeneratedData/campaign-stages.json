@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "stages": [
+    {"id": 1, "chapter": 1, "node": 1, "title": "Insector Haga", "deckKey": "OBB_NPC-TeaGardner-A_1840e9a418", "icon": "icon_YGOMD_First_Tea.png", "unlockAfterWins": 0},
+    {"id": 2, "chapter": 1, "node": 2, "title": "Dinosaur Ryuzaki", "deckKey": "OBB_NPC-SolomonMuto-A_991f6181e7", "icon": "icon_YGOMD_First_Solomon.png", "unlockAfterWins": 1},
+    {"id": 3, "chapter": 1, "node": 3, "title": "Ryota Kajiki", "deckKey": "OBB_NPC-WeevilUnderwood-A_05ec7cda94", "icon": "icon_YGOMD_First_Weevil.png", "unlockAfterWins": 2},
+    {"id": 4, "chapter": 1, "node": 4, "title": "Keith Howard", "deckKey": "OBB_NPC-BanditKeith-A_d2a2f75abc", "icon": "icon_YGOMD_First_Keith.png", "unlockAfterWins": 3},
+    {"id": 5, "chapter": 1, "node": 5, "title": "Pegasus J. Crawford", "deckKey": "OBB_NPC-MaximillionPegasus-A_8513ed0de6", "icon": "icon_YGOMD_First_Pegasus.png", "unlockAfterWins": 4},
+    {"id": 6, "chapter": 2, "node": 1, "title": "Yami Yugi", "deckKey": "OBB_NPC-YamiYugi-A_e237a13630", "icon": "icon_YGOMD_First_YamiYugi.png", "unlockAfterWins": 5},
+    {"id": 7, "chapter": 2, "node": 2, "title": "Bakura Ryou", "deckKey": "OBB_NPC-JoeyWheeler-A_c5dfe7b5a6", "icon": "icon_YGOMD_First_joey.png", "unlockAfterWins": 6},
+    {"id": 8, "chapter": 2, "node": 3, "title": "Marik Ishtar", "deckKey": "OBB_NPC-SetoKaiba-A_e923c6f749", "icon": "icon_YGOMD_First_Kaiba.png", "unlockAfterWins": 7},
+    {"id": 9, "chapter": 2, "node": 4, "title": "Dartz", "deckKey": "OBB_NPC-MarikIshtar-A_6aebd9e87a", "icon": "icon_YGOMD_First_Marik.png", "unlockAfterWins": 8},
+    {"id": 10, "chapter": 2, "node": 5, "title": "Ishizu Ishtar", "deckKey": "OBB_NPC-MokubaKaiba-A_fa0fe3e55a", "icon": "icon_YGOMD_First_Mokuba.png", "unlockAfterWins": 9}
+  ]
+}

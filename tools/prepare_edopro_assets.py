@@ -19,6 +19,7 @@ import uuid
 import zipfile
 
 BASE_DIRS = ("config", "fonts", "textures", "skin", "sound", "lflists")
+CAMPAIGN_STAGES_SOURCE = Path(__file__).resolve().parents[1] / "YuGiOhNativeIOS/GeneratedData/campaign-stages.json"
 TEXTURES = ("cover", "unknown", "act", "attack", "chain", "negated", "number", "lp", "lpf",
             "mask", "equip", "target", "chaintarget", "lim", "ot", "f1", "f2", "f3", "bg", "settings")
 TEXTURES += tuple(f"{prefix}{suffix}" for prefix in ("field", "field-transparent", "fieldSP", "field-transparentSP")
@@ -328,6 +329,8 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
         for folder in BASE_DIRS:
             if (base_assets / folder).is_dir():
                 copy_tree(base_assets / folder, stage / folder)
+        if CAMPAIGN_STAGES_SOURCE.is_file():
+            copy_file(CAMPAIGN_STAGES_SOURCE, stage / "config/campaign-stages.json")
         copy_file(base_assets / "LICENSE", stage / "licenses/Distribution-LICENSE")
         if (base_assets / "README.md").is_file():
             copy_file(base_assets / "README.md", stage / "licenses/Distribution-README.md")
