@@ -1,16 +1,28 @@
 diff --git a/gframe/deck_con.cpp b/gframe/deck_con.cpp
-index 9be7878..ab6a25b 100644
+index 9be7878..c24c43d 100644
 --- a/gframe/deck_con.cpp
 +++ b/gframe/deck_con.cpp
-@@ -88,6 +88,7 @@ void DeckBuilder::Initialize(bool refresh) {
+@@ -88,6 +88,8 @@ void DeckBuilder::Initialize(bool refresh) {
  	is_lastcard = 0;
  	is_draging = false;
  	prev_deck = mainGame->cbDBDecks->getSelected();
++	snapshot_deck = current_deck;
 +	RefreshDeckCounter();
  	prev_operation = 0;
  	mainGame->SetMessageWindow();
  	mainGame->device->setEventReceiver(this);
-@@ -1471,6 +1472,7 @@ void DeckBuilder::RefreshLimitationStatus() {
+@@ -245,6 +247,10 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
+ 				ClearDeck();
+ 				break;
+ 			}
++			case BUTTON_REVERT_DECK: {
++				RevertDeck();
++				break;
++			}
+ 			case BUTTON_SORT_DECK: {
+ 				std::sort(current_deck.main.begin(), current_deck.main.end(), DataManager::deck_sort_lv);
+ 				std::sort(current_deck.extra.begin(), current_deck.extra.end(), DataManager::deck_sort_lv);
+@@ -1471,6 +1477,7 @@ void DeckBuilder::RefreshLimitationStatus() {
  	side_monster_count = DeckManager::TypeCount(current_deck.side, TYPE_MONSTER);
  	side_spell_count = DeckManager::TypeCount(current_deck.side, TYPE_SPELL);
  	side_trap_count = DeckManager::TypeCount(current_deck.side, TYPE_TRAP);
@@ -18,11 +30,15 @@ index 9be7878..ab6a25b 100644
  }
  void DeckBuilder::RefreshLimitationStatusOnRemoved(const CardDataC* card, DeckType location) {
  	switch(location) {
-@@ -1700,4 +1702,11 @@ void DeckBuilder::RefreshCurrentDeck() {
+@@ -1700,4 +1707,15 @@ void DeckBuilder::RefreshCurrentDeck() {
  	DeckManager::RefreshDeck(current_deck);
  	RefreshLimitationStatus();
  }
 +
++void DeckBuilder::RevertDeck() {
++	current_deck = snapshot_deck;
++	RefreshLimitationStatus();
++}
 +void DeckBuilder::RefreshDeckCounter() {
 +	if(!mainGame->stDeckCount)
 +		return;
@@ -31,14 +47,23 @@ index 9be7878..ab6a25b 100644
 +}
  }
 diff --git a/gframe/deck_con.h b/gframe/deck_con.h
-index a2f78c3..41f559a 100644
+index a2f78c3..b76e0bd 100644
 --- a/gframe/deck_con.h
 +++ b/gframe/deck_con.h
-@@ -86,6 +86,7 @@ private:
+@@ -86,6 +86,8 @@ private:
  	void SortList();
  
  	void ClearDeck();
++	void RevertDeck();
 +	void RefreshDeckCounter();
  	void RefreshLimitationStatus();
  	enum DeckType {
  		MAIN,
+@@ -131,6 +133,7 @@ private:
+ 	uint16_t main_legend_count_trap;
+ 	uint16_t main_skill_count;
+ 	Deck current_deck;
++	Deck snapshot_deck;
+ public:
+ 	uint32_t hovered_code;
+ 	int hovered_pos;

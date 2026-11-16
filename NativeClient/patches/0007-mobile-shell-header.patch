@@ -2,6 +2,14 @@ diff --git a/gframe/menu_handler.h b/gframe/menu_handler.h
 index 5536864..feff5cb 100644
 --- a/gframe/menu_handler.h
 +++ b/gframe/menu_handler.h
+@@ -16,6 +16,7 @@ enum GUI {
+ 	BUTTON_REPLAY_MODE,
+ 	BUTTON_TEST_MODE,
+ 	BUTTON_DECK_EDIT,
++	BUTTON_REVERT_DECK,
+ 	BUTTON_MODE_EXIT,
+ 	LISTBOX_LAN_HOST,
+ 	BUTTON_JOIN_HOST,
 @@ -260,6 +260,20 @@ enum GUI {
  	CHECK_SHOW_ACTIVE_ROOMS,
  	BUTTON_ROOMPASSWORD_CANCEL,

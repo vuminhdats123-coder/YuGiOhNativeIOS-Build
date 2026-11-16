@@ -253,11 +253,13 @@ index f4aa146..06cb066 100644
  	wDeckEdit->setVisible(false);
  	stBanlist = env->addStaticText(gDataManager->GetSysString(1300).data(), Scale(10, 9, 100, 29), false, false, wDeckEdit);
  	defaultStrings.emplace_back(stBanlist, 1300);
-@@ -571,6 +691,10 @@ void Game::Initialize() {
+@@ -571,6 +691,12 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnClearDeck, 1304);
  	btnDeleteDeck = AlignElementWithParent(env->addButton(Scale(225, 95, 290, 120), wDeckEdit, BUTTON_DELETE_DECK, gDataManager->GetSysString(1308).data()));
  	defaultStrings.emplace_back(btnDeleteDeck, 1308);
-+	stDeckCount = env->addStaticText(L"", Scale(5, 125, 295, 150), false, false, wDeckEdit);
++	btnNewDeck = AlignElementWithParent(env->addButton(Scale(5, 125, 75, 150), wDeckEdit, BUTTON_CLEAR_DECK, L"New"));
++	btnRevertDeck = AlignElementWithParent(env->addButton(Scale(80, 125, 145, 150), wDeckEdit, BUTTON_REVERT_DECK, L"Revert"));
++	stDeckCount = env->addStaticText(L"", Scale(150, 125, 295, 150), false, false, wDeckEdit);
 +	stDeckCount->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 +	stDeckCount->setBackgroundColor(0xe6001026);
 +	stDeckCount->setOverrideColor(0xff36d9ff);
@@ -805,11 +807,13 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIButton* btnReplayMode;
  	irr::gui::IGUIButton* btnTestMode;
  	irr::gui::IGUIButton* btnDeckEdit;
-@@ -336,6 +360,7 @@ struct deck_edit_page_elements {
+@@ -336,6 +360,9 @@ struct deck_edit_page_elements {
  	irr::gui::IGUIEditBox* ebDeckname;
  	irr::gui::IGUIStaticText* stBanlist;
  	irr::gui::IGUIStaticText* stDeck;
 +	irr::gui::IGUIStaticText* stDeckCount;
++	irr::gui::IGUIButton* btnNewDeck;
++	irr::gui::IGUIButton* btnRevertDeck;
  	irr::gui::IGUIStaticText* stCategory;
  	irr::gui::IGUIStaticText* stLimit;
  	irr::gui::IGUIStaticText* stAttribute;
