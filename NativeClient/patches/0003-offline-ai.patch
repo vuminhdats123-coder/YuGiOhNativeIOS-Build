@@ -91,7 +91,7 @@ index f4aa146..06cb066 100644
 +	menuPlayerAvatar->setScaleImage(true);
 +	menuPlayerAvatar->setUseAlphaChannel(true);
 +	menuPlayerAvatar->setImage(driver->getTexture(EPRO_TEXT("./textures/portraits/player.png")));
-+	menuPlayerPanel = env->addStaticText(L"Player\nStarter Deck\n7484 CARDS", Scale(120, 430, 300, 530), false, true, wMenuArt);
++	menuPlayerPanel = env->addStaticText(L"Player\nStarter Deck\nOffline ready", Scale(120, 430, 300, 530), false, true, wMenuArt);
 +	menuPlayerPanel->setBackgroundColor(0xe60b1630);
 +	menuPlayerPanel->setOverrideColor(0xff36d9ff);
 +	irr::video::ITexture* menuIcons[] = {imageManager.tSettings, imageManager.tAct, imageManager.tTarget, imageManager.tHand[0]};
