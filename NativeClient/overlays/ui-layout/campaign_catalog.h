@@ -3,6 +3,7 @@
 #define EDOPRO_CAMPAIGN_CATALOG_H
 
 #include <array>
+#include <algorithm>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -57,6 +58,26 @@ inline std::array<Stage, 10> Load(std::string_view path) {
 		return Defaults();
 	}
 	return result;
+}
+
+inline int LoadProgress(std::string_view path) {
+	std::ifstream input{std::string(path)};
+	if(!input) return 1;
+	try {
+		nlohmann::json root;
+		input >> root;
+		return std::clamp(root.value("unlocked", 1), 1, 10);
+	} catch(...) {
+		return 1;
+	}
+}
+
+inline bool SaveProgress(std::string_view path, int unlocked) {
+	std::ofstream output{std::string(path), std::ios::trunc};
+	if(!output) return false;
+	nlohmann::json root{{"schemaVersion", 1}, {"unlocked", std::clamp(unlocked, 1, 10)}};
+	output << root.dump(2);
+	return static_cast<bool>(output);
 }
 }
 #endif
