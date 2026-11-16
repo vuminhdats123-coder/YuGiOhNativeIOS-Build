@@ -44,7 +44,7 @@ index f4aa146..06cb066 100644
  #include <irrlicht.h>
  #include "client_updater.h"
  #include "game_config.h"
-@@ -82,6 +88,9 @@ static inline epro::path_string NoSkinLabel() {
+@@ -82,6 +89,9 @@ static inline epro::path_string NoSkinLabel() {
  }
  
  Game::~Game() {
@@ -54,7 +54,7 @@ index f4aa146..06cb066 100644
  	if(guiFont)
  		guiFont->drop();
  	if(textFont)
-@@ -99,6 +108,13 @@ Game::~Game() {
+@@ -99,6 +109,13 @@ Game::~Game() {
  }
  
  void Game::Initialize() {
@@ -122,7 +122,7 @@ index f4aa146..06cb066 100644
  	btnReplayMode = env->addButton(OFFSET(10, 100, 270, 130), wMainMenu, BUTTON_REPLAY_MODE, gDataManager->GetSysString(1202).data());
  	defaultStrings.emplace_back(btnReplayMode, 1202);
  	offset += 35;
-@@ -269,6 +319,53 @@ void Game::Initialize() {
+@@ -269,6 +319,54 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnModeExit, 1210);
  	offset += 35;
  #undef OFFSET
@@ -172,11 +172,12 @@ index f4aa146..06cb066 100644
 +		}
 +	}
 +	btnCampaignBack = env->addButton(Scale(20, 245, 290, 285), wCampaign, CAMPAIGN_BACK, L"Back");
++	btnCampaignDeck = env->addButton(Scale(300, 245, 490, 285), wCampaign, CAMPAIGN_DECK, L"Manage Deck");
 +	btnCampaignDuel = env->addButton(Scale(500, 245, 800, 285), wCampaign, CAMPAIGN_DUEL, L"Duel");
  	//lan mode
  	wLanWindow = env->addWindow(Scale(220, 100, 800, 520), false, gDataManager->GetSysString(1200).data());
  	defaultStrings.emplace_back(wLanWindow, 1200);
-@@ -331,6 +428,11 @@ void Game::Initialize() {
+@@ -331,6 +429,11 @@ void Game::Initialize() {
  	btnM2->setVisible(false);
  	btnEP = AlignElementWithParent(env->addButton(Scale(320, 0, 370, 20), wPhase, BUTTON_EP, L"\xff25\xff30"));
  	btnEP->setVisible(false);
@@ -188,7 +189,7 @@ index f4aa146..06cb066 100644
  
  	PopulateTabSettingsWindow();
  	PopulateSettingsWindow();
-@@ -443,31 +545,44 @@ void Game::Initialize() {
+@@ -443,31 +546,44 @@ void Game::Initialize() {
  	wCardSelect = env->addWindow(Scale(320, 100, 1000, 400), false, L"");
  	wCardSelect->getCloseButton()->setVisible(false);
  	wCardSelect->setVisible(false);
@@ -239,7 +240,7 @@ index f4aa146..06cb066 100644
  	//announce number
  	wANNumber = env->addWindow(Scale(550, 200, 780, 295), false, L"");
  	wANNumber->getCloseButton()->setVisible(false);
-@@ -544,7 +659,9 @@ void Game::Initialize() {
+@@ -544,7 +660,9 @@ void Game::Initialize() {
  	btnReset = env->addButton(Scale(1, 190, 99, 210), wCmdMenu, BUTTON_CMD_RESET, gDataManager->GetSysString(1162).data());
  	defaultStrings.emplace_back(btnReset, 1162);
  	//deck edit
@@ -250,7 +251,7 @@ index f4aa146..06cb066 100644
  	wDeckEdit->setVisible(false);
  	stBanlist = env->addStaticText(gDataManager->GetSysString(1300).data(), Scale(10, 9, 100, 29), false, false, wDeckEdit);
  	defaultStrings.emplace_back(stBanlist, 1300);
-@@ -571,6 +688,10 @@ void Game::Initialize() {
+@@ -571,6 +689,10 @@ void Game::Initialize() {
  	defaultStrings.emplace_back(btnClearDeck, 1304);
  	btnDeleteDeck = AlignElementWithParent(env->addButton(Scale(225, 95, 290, 120), wDeckEdit, BUTTON_DELETE_DECK, gDataManager->GetSysString(1308).data()));
  	defaultStrings.emplace_back(btnDeleteDeck, 1308);
@@ -261,7 +262,7 @@ index f4aa146..06cb066 100644
  	btnSideOK = AlignElementWithParent(env->addButton(Scale(510, 40, 820, 80), nullptr, BUTTON_SIDE_OK, gDataManager->GetSysString(1334).data()));
  	defaultStrings.emplace_back(btnSideOK, 1334);
  	btnSideOK->setVisible(false);
-@@ -881,6 +1002,24 @@ void Game::Initialize() {
+@@ -881,6 +1003,24 @@ void Game::Initialize() {
  	btnRestartSingle = AlignElementWithParent(env->addButton(Scale(205, 50, 295, 90), 0, BUTTON_RESTART_SINGLE, gDataManager->GetSysString(1366).data()));
  	defaultStrings.emplace_back(btnRestartSingle, 1366);
  	btnRestartSingle->setVisible(false);
@@ -286,7 +287,7 @@ index f4aa146..06cb066 100644
  	//tip
  	stTip = env->addStaticText(L"", Scale(0, 0, 150, 150), false, true, 0, -1, true);
  	stTip->setBackgroundColor(skin::DUELFIELD_TOOLTIP_TEXT_BACKGROUND_COLOR_VAL);
-@@ -1512,6 +1648,11 @@ void Game::PopulateTabSettingsWindow() {
+@@ -1512,6 +1649,11 @@ void Game::PopulateTabSettingsWindow() {
  		tabSettings.chkAlternativePhaseLayout = env->addCheckBox(gGameConfig->alternative_phase_layout, GetNextRect(), tabPanel, CHECKBOX_ALTERNATIVE_PHASE_LAYOUT, gDataManager->GetSysString(1298).data());
  		menuHandler.MakeElementSynchronized(tabSettings.chkAlternativePhaseLayout);
  		defaultStrings.emplace_back(tabSettings.chkAlternativePhaseLayout, 1298);
@@ -298,7 +299,7 @@ index f4aa146..06cb066 100644
  		tabSettings.chkHideChainButtons = env->addCheckBox(gGameConfig->chkHideHintButton, GetNextRect(), tabPanel, CHECKBOX_CHAIN_BUTTONS, gDataManager->GetSysString(1355).data());
  		menuHandler.MakeElementSynchronized(tabSettings.chkHideChainButtons);
  		defaultStrings.emplace_back(tabSettings.chkHideChainButtons, 1355);
-@@ -1701,6 +1842,12 @@ void Game::PopulateSettingsWindow() {
+@@ -1701,6 +1843,12 @@ void Game::PopulateSettingsWindow() {
  		gSettings.chkAlternativePhaseLayout = env->addCheckBox(gGameConfig->alternative_phase_layout, GetNextRect(), sPanel, CHECKBOX_ALTERNATIVE_PHASE_LAYOUT, gDataManager->GetSysString(1298).data());
  		menuHandler.MakeElementSynchronized(gSettings.chkAlternativePhaseLayout);
  		defaultStrings.emplace_back(gSettings.chkAlternativePhaseLayout, 1298);
@@ -311,7 +312,7 @@ index f4aa146..06cb066 100644
  		gSettings.chkHideChainButtons = env->addCheckBox(gGameConfig->chkHideHintButton, GetNextRect(), sPanel, CHECKBOX_CHAIN_BUTTONS, gDataManager->GetSysString(1355).data());
  		menuHandler.MakeElementSynchronized(gSettings.chkHideChainButtons);
  		defaultStrings.emplace_back(gSettings.chkHideChainButtons, 1355);
-@@ -1936,6 +2083,21 @@ bool Game::MainLoop() {
+@@ -1936,6 +2084,21 @@ bool Game::MainLoop() {
  	irr::core::matrix4 mProjection;
  	camera = smgr->addCameraSceneNode(0);
  	auto UpdateAspectRatio = [this]() {
@@ -333,7 +334,7 @@ index f4aa146..06cb066 100644
  		if(!gGameConfig->keep_aspect_ratio) {
  			camera->setProjectionMatrix(defaultProjection);
  			return;
-@@ -1953,6 +2115,9 @@ bool Game::MainLoop() {
+@@ -1953,6 +2116,9 @@ bool Game::MainLoop() {
  
  	current_topdown = gGameConfig->topdown_view;
  	current_keep_aspect_ratio = gGameConfig->keep_aspect_ratio;
@@ -343,7 +344,7 @@ index f4aa146..06cb066 100644
  
  	camera->setTarget(irr::core::vector3df(FIELD_X, 0, 0));
  	UpdateCameraPosition();
-@@ -1971,6 +2136,9 @@ bool Game::MainLoop() {
+@@ -1971,6 +2137,9 @@ bool Game::MainLoop() {
  	bool was_connected = false;
  	bool update_prompted = false;
  	bool update_checked = false;
@@ -353,7 +354,7 @@ index f4aa146..06cb066 100644
  #if (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
  	if(auto driver_type = driver->getDriverType(); driver_type == irr::video::EDT_OGLES1 || driver_type == irr::video::EDT_OGLES2) {
  		auto SetClamp = [](irr::video::SMaterialLayer layer[irr::video::MATERIAL_MAX_TEXTURES]) {
-@@ -2022,14 +2190,28 @@ bool Game::MainLoop() {
+@@ -2022,14 +2191,28 @@ bool Game::MainLoop() {
  			repoInfoGui[repo.first].progress2->setProgress(repo.second);
  		}
  		gSoundManager->Tick();
@@ -383,7 +384,7 @@ index f4aa146..06cb066 100644
  #if EDOPRO_LINUX
  		prev_window_size = std::exchange(window_size, size);
  		if(prev_window_size != window_size && !last_resize && prev_window_size.Width != 0 && prev_window_size.Height != 0) {
-@@ -2037,9 +2219,19 @@ bool Game::MainLoop() {
+@@ -2037,9 +2220,19 @@ bool Game::MainLoop() {
  		} else if((prev_window_size == window_size && last_resize) || (prev_window_size.Width == 0 && prev_window_size.Height == 0)) {
  			last_resize = false;
  #else
@@ -404,7 +405,7 @@ index f4aa146..06cb066 100644
  			window_size = size;
  			window_scale.X = (window_size.Width / 1024.0) / gGameConfig->dpi_scale;
  			window_scale.Y = (window_size.Height / 640.0) / gGameConfig->dpi_scale;
-@@ -2060,6 +2252,18 @@ bool Game::MainLoop() {
+@@ -2060,6 +2253,18 @@ bool Game::MainLoop() {
  		atkdy = (float)sin(atkframe);
  		driver->beginScene(true, true, irr::video::SColor(0, 0, 0, 0));
  		gMutex.lock();
@@ -423,7 +424,7 @@ index f4aa146..06cb066 100644
  		if(dInfo.isInDuel) {
  			if(dInfo.isReplay)
  				discord.UpdatePresence(DiscordWrapper::REPLAY);
-@@ -2136,6 +2340,11 @@ bool Game::MainLoop() {
+@@ -2136,6 +2341,11 @@ bool Game::MainLoop() {
  			fpsCounter->setRelativePosition(Resize(1024 - fpsCounterWidth, 620, 1024, 640));
  		}
  		wBtnSettings->setVisible(!(is_building || is_siding || dInfo.isInDuel || open_file));
@@ -435,7 +436,7 @@ index f4aa146..06cb066 100644
  		DrawGUI();
  		DrawSpec();
  		if(cardimagetextureloading) {
-@@ -2158,9 +2367,10 @@ bool Game::MainLoop() {
+@@ -2158,9 +2368,10 @@ bool Game::MainLoop() {
  			}
  		}
  		driver->endScene();
@@ -447,7 +448,7 @@ index f4aa146..06cb066 100644
  		if (DuelClient::try_needed) {
  			DuelClient::try_needed = false;
  			DuelClient::StartClient(DuelClient::temp_ip, DuelClient::temp_port, dInfo.secret.game_id, false);
-@@ -2587,6 +2797,10 @@ void Game::Suspend() {
+@@ -2587,6 +2798,10 @@ void Game::Suspend() {
  }
  void Game::Resume() {
  	gSoundManager->PauseMusic(false);
@@ -458,7 +459,7 @@ index f4aa146..06cb066 100644
  	suspend = false;
  }
  Game::RepoGui* Game::AddGithubRepositoryStatusWindow(const GitRepo* repo) {
-@@ -2799,7 +3013,14 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
+@@ -2799,7 +3014,14 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
  	if(resize) {
  		//Update the text fields beforehand when resizing so that their horizontal size
  		//is correct when the text is set and is then broken into pieces
@@ -474,7 +475,7 @@ index f4aa146..06cb066 100644
  		stInfo->setRelativePosition(widthRect);
  		stDataInfo->setRelativePosition(widthRect);
  		stSetName->setRelativePosition(widthRect);
-@@ -2883,9 +3104,17 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
+@@ -2883,9 +3105,17 @@ void Game::ShowCardInfo(uint32_t code, bool resize, imgType type) {
  	stText->setText(gDataManager->GetText(code).data());
  }
  void Game::RefreshCardInfoTextPositions() {
@@ -494,7 +495,7 @@ index f4aa146..06cb066 100644
  	auto offsetIfVisibleWithContent = [&](irr::gui::IGUIStaticText* st) {
  		if (st->isVisible() && wcscmp(st->getText(), L"")) {
  			st->setRelativePosition(irr::core::recti(xLeft, offset, xRight, offset + st->getTextHeight()));
-@@ -2896,6 +3125,13 @@ void Game::RefreshCardInfoTextPositions() {
+@@ -2896,6 +3126,13 @@ void Game::RefreshCardInfoTextPositions() {
  	offsetIfVisibleWithContent(stDataInfo);
  	offsetIfVisibleWithContent(stSetName);
  	offsetIfVisibleWithContent(stPasscodeScope);
@@ -508,7 +509,7 @@ index f4aa146..06cb066 100644
  	stText->setRelativePosition(irr::core::recti(xLeft, offset, xRight, stText->getParent()->getAbsolutePosition().getHeight() - Scale(1)));
  }
  void Game::ClearCardInfo(int player) {
-@@ -2996,13 +3232,18 @@ void Game::ClearTextures() {
+@@ -2996,13 +3233,18 @@ void Game::ClearTextures() {
  	imgCard->setImage(imageManager.tCover[0]);
  	btnPSAU->setImage();
  	btnPSDU->setImage();
@@ -528,7 +529,7 @@ index f4aa146..06cb066 100644
  	for(auto wit = fadingList.begin(); wit != fadingList.end(); ++wit) {
  		if(wit->isFadein)
  			wit->autoFadeoutFrame = 1;
-@@ -3210,6 +3451,21 @@ int Game::GetMasterRule(uint64_t param, uint32_t forbidden, int* truerule) {
+@@ -3210,6 +3452,21 @@ int Game::GetMasterRule(uint64_t param, uint32_t forbidden, int* truerule) {
  		return 2;
  }
  void Game::ResizePhaseButtons() {
@@ -550,7 +551,7 @@ index f4aa146..06cb066 100644
  	if(gGameConfig->alternative_phase_layout) {
  		wPhase->setRelativePosition(Resize(940, 80, 990, 340));
  		return;
-@@ -3252,6 +3508,10 @@ void Game::SetPhaseButtons(bool visibility) {
+@@ -3252,6 +3509,10 @@ void Game::SetPhaseButtons(bool visibility) {
  		btnBP->setVisible(gGameConfig->alternative_phase_layout || btnBP->isSubElement());
  		btnEP->setVisible(gGameConfig->alternative_phase_layout || btnEP->isSubElement());
  	}
@@ -561,7 +562,7 @@ index f4aa146..06cb066 100644
  
  	// set the phase window to the "default" size so that it's easier to
  	// work with the relative button positions by using non scaled values
-@@ -3322,6 +3582,17 @@ void Game::SetMessageWindow() {
+@@ -3322,6 +3583,17 @@ void Game::SetMessageWindow() {
  	}
  }
  void Game::ResizeCardinfoWindow(bool keep_ratio) {
@@ -579,7 +580,7 @@ index f4aa146..06cb066 100644
  	const auto rect = keep_ratio ?
  		ResizeWithCappedWidth(1, 1, 1 + CARD_IMG_WRAPPER_WIDTH, 1 + CARD_IMG_WRAPPER_HEIGHT, CARD_IMG_WRAPPER_ASPECT_RATIO) :
  		Resize(1, 1, 1 + CARD_IMG_WIDTH + 20, 1 + CARD_IMG_HEIGHT + 18);
-@@ -3632,7 +3903,99 @@ void Game::ReloadElementsStrings() {
+@@ -3632,7 +3904,99 @@ void Game::ReloadElementsStrings() {
  
  	ReloadCBCurrentSkin();
  }
@@ -679,7 +680,7 @@ index f4aa146..06cb066 100644
  	env->getRootGUIElement()->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
  	{
  		const auto waboutcorner = wAbout->getAbsolutePosition().UpperLeftCorner;
-@@ -3644,7 +4007,16 @@ void Game::OnResize() {
+@@ -3644,7 +4008,16 @@ void Game::OnResize() {
  		stAbout->setRelativePosition(irr::core::recti(10, 10, minwidth, minheight));
  	}
  	wRoomListPlaceholder->setRelativePosition(irr::core::recti(0, 0, window_size.Width, window_size.Height));
@@ -697,7 +698,7 @@ index f4aa146..06cb066 100644
  	wBtnSettings->setRelativePosition(ResizeWin(0, 610, 30, 640));
  	SetCentered(wCommitsLog);
  	SetCentered(updateWindow, false);
-@@ -3680,6 +4052,8 @@ void Game::OnResize() {
+@@ -3680,6 +4053,8 @@ void Game::OnResize() {
  	wRules->setRelativePosition(ResizeWin(630, 100, 1000, 310));
  	wReplay->setRelativePosition(ResizeWin(220, 100, 800, 520));
  	wSinglePlay->setRelativePosition(ResizeWin(220, 100, 800, 520));
@@ -706,7 +707,7 @@ index f4aa146..06cb066 100644
  	gBot.window->setRelativePosition(irr::core::vector2di(wHostPrepare->getAbsolutePosition().LowerRightCorner.X, wHostPrepare->getAbsolutePosition().UpperLeftCorner.Y));
  
  	wHand->setRelativePosition(ResizeWin(500, 450, 825, 605));
-@@ -3688,8 +4062,12 @@ void Game::OnResize() {
+@@ -3688,8 +4063,12 @@ void Game::OnResize() {
  	wQuery->setRelativePosition(ResizeWin(490, 200, 840, 340));
  	wOptions->setRelativePosition(ResizeWinFromCenter(0, 0, wOptions->getRelativePosition().getWidth(), wOptions->getRelativePosition().getHeight(), 135));
  	wPosSelect->setRelativePosition(ResizeWin(340, 200, 935, 410));
@@ -719,7 +720,7 @@ index f4aa146..06cb066 100644
  	wANNumber->setRelativePosition(ResizeWin(550, 200, 780, 295));
  	wANCard->setRelativePosition(ResizeWin(430, 170, 840, 370));
  	wANAttribute->setRelativePosition(ResizeWin(500, 200, 830, 285));
-@@ -3723,6 +4101,10 @@ void Game::OnResize() {
+@@ -3723,6 +4102,10 @@ void Game::OnResize() {
  	btnPSAD->setImage(imageManager.tCover[0]);
  	btnPSDD->setImage(imageManager.tCover[0]);
  
@@ -730,7 +731,7 @@ index f4aa146..06cb066 100644
  	ShowCardInfo(showingcard, true);
  
  	tabSystem->setRelativePosition({ {}, tabSystem->getParent()->getAbsolutePosition().getSize() });
-@@ -3739,6 +4121,7 @@ void Game::OnResize() {
+@@ -3739,6 +4122,7 @@ void Game::OnResize() {
  	SetCentered(gSettings.window);
  
  	ResizePhaseButtons();
@@ -738,7 +739,7 @@ index f4aa146..06cb066 100644
  
  	auto prev = roomListTable->getSelected();
  
-@@ -4029,6 +4412,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
+@@ -4029,6 +4413,7 @@ void Game::ApplyLocale(size_t index, bool forced) {
  		}
  	} else
  		gGameConfig->locale = EPRO_TEXT("en");
@@ -759,7 +760,7 @@ index b6016b5..0ea7521 100644
  #include "common.h"
  #include "mysignal.h"
  #include <SColor.h>
-@@ -62,6 +64,7 @@ namespace irr {
+@@ -62,6 +65,7 @@ namespace irr {
  	}
  }
  namespace ygo {
@@ -767,7 +768,7 @@ index b6016b5..0ea7521 100644
  
  class GitRepo;
  
-@@ -162,6 +165,12 @@ struct main_menu_panel_elements {
+@@ -162,6 +166,12 @@ struct main_menu_panel_elements {
  	int mainMenuLeftX;
  	int mainMenuRightX;
  	irr::gui::IGUIWindow* wMainMenu;
@@ -780,7 +781,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIWindow* wCommitsLog;
  	irr::gui::IGUIContextMenu* mTopMenu;
  	irr::gui::IGUIContextMenu* mRepositoriesInfo;
-@@ -177,6 +186,20 @@ struct main_menu_panel_elements {
+@@ -177,6 +186,21 @@ struct main_menu_panel_elements {
  	irr::gui::IGUIButton* btnOnlineMode;
  	irr::gui::IGUIButton* btnLanMode;
  	irr::gui::IGUIButton* btnSingleMode;
@@ -792,6 +793,7 @@ index b6016b5..0ea7521 100644
 +	irr::gui::IGUIWindow* wCampaign;
 +	irr::gui::IGUIButton* btnCampaign;
 +	irr::gui::IGUIButton* btnCampaignBack;
++	irr::gui::IGUIButton* btnCampaignDeck;
 +	irr::gui::IGUIButton* btnCampaignDuel;
 +	irr::gui::IGUIStaticText* stCampaignInfo;
 +	irr::gui::IGUIStaticText* stCampaignDetail;
@@ -801,7 +803,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIButton* btnReplayMode;
  	irr::gui::IGUIButton* btnTestMode;
  	irr::gui::IGUIButton* btnDeckEdit;
-@@ -336,6 +359,7 @@ struct deck_edit_page_elements {
+@@ -336,6 +360,7 @@ struct deck_edit_page_elements {
  	irr::gui::IGUIEditBox* ebDeckname;
  	irr::gui::IGUIStaticText* stBanlist;
  	irr::gui::IGUIStaticText* stDeck;
@@ -809,7 +811,7 @@ index b6016b5..0ea7521 100644
  	irr::gui::IGUIStaticText* stCategory;
  	irr::gui::IGUIStaticText* stLimit;
  	irr::gui::IGUIStaticText* stAttribute;
-@@ -434,16 +458,23 @@ struct game_field_elements {
+@@ -434,16 +459,23 @@ struct game_field_elements {
  	irr::gui::CGUIImageButton* btnPSDD;
  	//card selection
  	irr::gui::IGUIWindow* wCardSelect;
@@ -837,7 +839,7 @@ index b6016b5..0ea7521 100644
  	//announce number
  	irr::gui::IGUIWindow* wANNumber;
  	irr::gui::IGUIComboBox* cbANNumber;
-@@ -496,6 +527,9 @@ struct game_field_elements {
+@@ -496,6 +528,9 @@ struct game_field_elements {
  	irr::gui::IGUIButton* btnLeaveGame;
  	//restart
  	irr::gui::IGUIButton* btnRestartSingle;
@@ -847,7 +849,7 @@ index b6016b5..0ea7521 100644
  	//swap
  	irr::gui::IGUIButton* btnSpectatorSwap;
  	//chain control
-@@ -581,6 +615,12 @@ public:
+@@ -581,6 +616,12 @@ public:
  	void SetPhaseButtons(bool visibility = false);
  	void SetMessageWindow();
  	void ResizeCardinfoWindow(bool keep_ratio);
@@ -860,7 +862,7 @@ index b6016b5..0ea7521 100644
  
  	bool HasFocus(irr::gui::EGUI_ELEMENT_TYPE type) const;
  
-@@ -655,6 +695,9 @@ public:
+@@ -655,6 +696,9 @@ public:
  	std::map<std::string, RepoGui> repoInfoGui;
  
  	bool suspend{false};
@@ -884,7 +886,7 @@ index 7b3360f..fa43abf 100644
  #include "image_manager.h"
  #include "game.h"
  #include "server_lobby.h"
-@@ -146,6 +149,72 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -146,6 +149,81 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->ShowElement(mainGame->wRoomListPlaceholder);
  				break;
  			}
@@ -905,6 +907,15 @@ index 7b3360f..fa43abf 100644
 +			case CAMPAIGN_BACK: {
 +				mainGame->HideElement(mainGame->wCampaign);
 +				mainGame->ShowElement(mainGame->wMainMenu);
++				break;
++			}
++			case CAMPAIGN_DECK: {
++				mainGame->HideElement(mainGame->wCampaign);
++				mainGame->RefreshDeck(mainGame->cbDBDecks);
++				if(mainGame->cbDBDecks->getSelected() != -1)
++					mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(mainGame->cbDBDecks->getSelected())), true);
++				mainGame->ebDeckname->setText(L"");
++				mainGame->deckBuilder.Initialize();
 +				break;
 +			}
 +			case CAMPAIGN_DUEL: {
@@ -957,7 +968,7 @@ index 7b3360f..fa43abf 100644
  			case BUTTON_LAN_REFRESH2: {
  				ServerLobby::RefreshRooms();
  				break;
-@@ -366,6 +435,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
+@@ -366,6 +444,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
  				mainGame->RefreshReplay();
  				break;
  			}
