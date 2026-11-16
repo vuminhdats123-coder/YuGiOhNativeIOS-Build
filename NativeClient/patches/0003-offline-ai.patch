@@ -83,8 +83,8 @@ index f4aa146..06cb066 100644
 +		image->setScaleImage(true);
 +		image->setUseAlphaChannel(true);
 +	}
-+	const auto leftCard = imageManager.GetTextureCard(4008, ART, true, true);
-+	const auto rightCard = imageManager.GetTextureCard(4011, ART, true, true);
++	const auto leftCard = imageManager.GetTextureCard(40089744, ART, true, true);
++	const auto rightCard = imageManager.GetTextureCard(84794011, ART, true, true);
 +	menuCardLeft->setImage(leftCard ? leftCard : imageManager.tUnknown);
 +	menuCardRight->setImage(rightCard ? rightCard : imageManager.tUnknown);
 +	menuPlayerAvatar = env->addImage(Scale(12, 430, 112, 530), wMenuArt);
