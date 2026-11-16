@@ -261,7 +261,7 @@ index f4aa146..06cb066 100644
  	btnSideOK = AlignElementWithParent(env->addButton(Scale(510, 40, 820, 80), nullptr, BUTTON_SIDE_OK, gDataManager->GetSysString(1334).data()));
  	defaultStrings.emplace_back(btnSideOK, 1334);
  	btnSideOK->setVisible(false);
-@@ -881,6 +1002,21 @@ void Game::Initialize() {
+@@ -881,6 +1002,24 @@ void Game::Initialize() {
  	btnRestartSingle = AlignElementWithParent(env->addButton(Scale(205, 50, 295, 90), 0, BUTTON_RESTART_SINGLE, gDataManager->GetSysString(1366).data()));
  	defaultStrings.emplace_back(btnRestartSingle, 1366);
  	btnRestartSingle->setVisible(false);
@@ -271,7 +271,10 @@ index f4aa146..06cb066 100644
 +	wDuelTools->setDraggable(false);
 +	wDuelTools->setDrawTitlebar(false);
 +	wDuelTools->setVisible(false);
-+	btnDuelTools = env->addButton(Scale(900, 330, 1016, 400), nullptr, duelui::ControlsMenuID, L"Menu");
++	btnDuelTools = irr::gui::CGUIImageButton::addImageButton(env, Scale(900, 330, 1016, 400), nullptr, duelui::ControlsMenuID);
++	btnDuelTools->setImage(imageManager.tSettings);
++	btnDuelTools->setScaleImage(true);
++	btnDuelTools->setUseAlphaChannel(true);
 +	btnDuelTools->setVisible(false);
 +	btnDuelToolsClose = env->addButton(Scale(10, 5, 320, 50), wDuelTools, duelui::ControlsCloseID, L"Back to duel");
 +	irr::gui::IGUIButton* duelTools[] = {btnChainIgnore, btnChainAlways, btnChainWhenAvail, btnSpectatorSwap, btnRestartSingle, btnLeaveGame};
@@ -839,7 +842,7 @@ index b6016b5..0ea7521 100644
  	//restart
  	irr::gui::IGUIButton* btnRestartSingle;
 +	irr::gui::IGUIWindow* wDuelTools = nullptr;
-+	irr::gui::IGUIButton* btnDuelTools = nullptr;
++	irr::gui::CGUIImageButton* btnDuelTools = nullptr;
 +	irr::gui::IGUIButton* btnDuelToolsClose = nullptr;
  	//swap
  	irr::gui::IGUIButton* btnSpectatorSwap;
