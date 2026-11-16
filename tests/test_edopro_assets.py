@@ -114,6 +114,25 @@ class AssetTests(unittest.TestCase):
         self.assertEqual((self.root / "one/package-manifest.json").read_bytes(),
                          (self.root / "two/package-manifest.json").read_bytes())
 
+    def test_recipe_catalog_preserves_offline_recipe_metadata_and_missing_refs(self):
+        with zipfile.ZipFile(self.obb, "a") as archive:
+            archive.writestr("assets/IAP_YDC_DECK.plist", plistlib.dumps([{
+                "recipe_id": 1, "ydc": "full.ydc", "locNames": {"E": "Fixture Deck"},
+                "locDesc": {"E": "Fixture recipe"}, "featured_card": 101,
+            }]))
+            archive.writestr("assets/IAP_YDC_PACK.plist", plistlib.dumps([{
+                "key": "PACK_MISSING", "ydc": "missing-pack.ydc", "locNames": {"E": "Missing"},
+            }]))
+        self.audit["sources"]["OBB"]["sha256"] = builder.digest(self.obb); self.save_audit()
+        report = self.prepare("recipes")
+        catalog = json.loads((self.root / "recipes/config/recipe-catalog.json").read_text())
+        self.assertEqual(len(catalog["recipes"]), 1)
+        self.assertTrue(catalog["recipes"][0]["available"])
+        self.assertEqual(catalog["recipes"][0]["recipeID"], 1)
+        self.assertEqual(catalog["shop"]["packs"][0]["available"], False)
+        self.assertEqual(catalog["missingYDC"], ["missing-pack.ydc"])
+        self.assertEqual(report["recipeCatalog"]["recipes"], 1)
+
     def test_same_basename_decks_are_distinct_and_visible_without_recursion(self):
         with zipfile.ZipFile(self.obb, "a") as archive:
             archive.writestr("assets/another/full.ydc", ydc(self.main))

@@ -30,6 +30,12 @@ UI_TEXTURES = {
     "assets/card_rear.png": ("textures/cover.png", "textures/cover2.png"),
     "assets/cir_bg.png": ("textures/bg_menu.png",),
 }
+RECIPE_CATALOG_SOURCES = (
+    ("assets/IAP_YDC_DECK.plist", "deck"),
+    ("assets/YGOPOINTS_DECKS.plist", "free-deck"),
+    ("assets/IAP_YDC_PACK.plist", "pack"),
+    ("assets/IAP_YDC_SUPPORT.plist", "support"),
+)
 
 
 def digest(path: Path) -> str:
@@ -114,6 +120,60 @@ def prepare_portraits(source, spec, decks, stage):
             "unmappedDecks": unmapped, "reviewedNPCs": len(reviewed), "images": list(images.values()),
             "sourceAPK_SHA256": spec["sourceAPK_SHA256"], "sourceELF_SHA256": spec["sourceELF_SHA256"],
             "runtimeVerified": False}
+
+
+def prepare_recipe_catalog(source, entries, stage) -> dict:
+    """Copy OBB recipe/shop metadata into a safe offline catalog.
+
+    Purchase, restore and account state stay outside this catalog; only the
+    source-provided preview/recipe metadata is bundled.
+    """
+    catalog = {"schemaVersion": 1, "recipes": [], "shop": {"packs": [], "support": []}, "missingYDC": []}
+    ydc_names = {PurePosixPath(name).name for name in entries if name.lower().endswith(".ydc")}
+    for plist_name, kind in RECIPE_CATALOG_SOURCES:
+        if plist_name not in entries:
+            continue
+        raw = plistlib.loads(source.read(plist_name))
+        if not isinstance(raw, list):
+            raise ValueError(f"Recipe catalog must be an array: {plist_name}")
+        for item in raw:
+            if not isinstance(item, dict) or not isinstance(item.get("ydc"), str):
+                raise ValueError(f"Invalid recipe entry in {plist_name}")
+            ydc = item["ydc"]
+            safe_relative(ydc)
+            if not ydc.lower().endswith(".ydc") or PurePosixPath(ydc).name != ydc:
+                raise ValueError(f"Unsafe recipe deck name: {ydc}")
+            available = ydc in ydc_names
+            if not available:
+                catalog["missingYDC"].append(ydc)
+            row = {
+                "kind": kind,
+                "recipeID": item.get("recipe_id"),
+                "key": item.get("key"),
+                "ydc": ydc,
+                "bundleID": item.get("bundle_id") or item.get("bundle_id_ios"),
+                "featuredCard": item.get("featured_card"),
+                "price": item.get("price", 0),
+                "names": item.get("locNames", {}),
+                "descriptions": item.get("locDesc", {}),
+                "available": available,
+                "source": plist_name,
+            }
+            if kind in ("deck", "free-deck"):
+                catalog["recipes"].append(row)
+            else:
+                catalog["shop"]["packs" if kind == "pack" else "support"].append(row)
+    catalog["missingYDC"] = sorted(set(catalog["missingYDC"]))
+    target = stage / "config/recipe-catalog.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {
+        "catalog": "config/recipe-catalog.json",
+        "recipes": len(catalog["recipes"]),
+        "packs": len(catalog["shop"]["packs"]),
+        "support": len(catalog["shop"]["support"]),
+        "missingYDC": catalog["missingYDC"],
+    }
 
 
 def safe_relative(name: str) -> Path:
@@ -404,6 +464,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
         portrait_report = None
         with zipfile.ZipFile(obb) as source:
             entries = archive_entries(source)
+            recipe_catalog_report = prepare_recipe_catalog(source, entries, stage)
             for name, destinations in UI_TEXTURES.items():
                 if name not in entries:
                     continue
@@ -522,6 +583,7 @@ def prepare(obb: Path, cdb: Path, scripts: Path, base_assets: Path, audit_path: 
                    "sourceJPGs": len(image_report), "passcodePictures": len(codes_written),
                    "sourceMP3s": len(audio_report), "mappedMusicFiles": sum(row["usedAsMusic"] for row in audio_report),
                    "originalUITextures": ui_report,
+                   "recipeCatalog": recipe_catalog_report,
                    "duelPortraits": portrait_report,
                    "pictureFormat": "art-only from OBB", "nativeCardFaceRenderingRequired": True,
                    "missingMappedPictures": sorted(set(mapping.values()) - codes_written),

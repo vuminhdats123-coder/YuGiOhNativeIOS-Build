@@ -14,9 +14,10 @@ data are present as real plist catalogs, not only UI strings.
 - `assets/DeckEditCommonOverlay_en.plist`: Add Recipe, all/unlocked recipes,
   favorites and recipe list labels.
 
-The native port can therefore implement an offline recipe catalog from
-`recipe_id`, `ydc`, `locNames` and `locDesc`. The current Deck Editor already
-has the real New/Revert actions, but it does not yet expose this recipe catalog.
+The asset preparation tool now emits `config/recipe-catalog.json` with
+`recipe_id`, `ydc`, `locNames`, `locDesc`, availability and the missing-file
+list. The current Deck Editor already has the real New/Revert actions, but it
+does not yet expose this recipe catalog.
 
 ## Shop catalogs
 
