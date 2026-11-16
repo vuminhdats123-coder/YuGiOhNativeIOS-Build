@@ -15,7 +15,7 @@ class NativeVisualContractTests(unittest.TestCase):
 
     def test_campaign_nodes_have_neon_route_lock_and_portrait_hooks(self):
         source = (ROOT / "NativeClient/patches/0003-offline-ai.patch").read_text(encoding="utf-8")
-        self.assertIn("campaignUnlocked = 1", source)
+        self.assertIn("campaignUnlocked = campaignui::LoadProgress", source)
         self.assertIn("routeLine->setOverrideColor(0xff27d9ff)", source)
         self.assertIn("campaignui::Load(\"./config/campaign-stages.json\")", source)
         self.assertIn("campaignCatalog[i].icon", source)
