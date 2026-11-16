@@ -1,8 +1,6 @@
 name: Native EDOPro unsigned test IPA
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       payload_release_tag:
@@ -12,7 +10,7 @@ on:
       payload_asset_name:
         description: "Release asset name (.tar.zst or .zip) containing package-manifest.json"
         required: true
-        default: "edopro-game-v12.tar.zst"
+        default: "edopro-game-v13.tar.zst"
         type: string
       dependencies_asset_name:
         description: "Release asset containing the pinned vcpkg iPhoneOS dependency tree"
@@ -40,7 +38,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PAYLOAD_TAG: ${{ inputs.payload_release_tag || 'ios-test-v12' }}
-          PAYLOAD_ASSET: ${{ inputs.payload_asset_name || 'edopro-game-v12.tar.zst' }}
+          PAYLOAD_ASSET: ${{ inputs.payload_asset_name || 'edopro-game-v13.tar.zst' }}
           DEPS_ASSET: ${{ inputs.dependencies_asset_name || 'vcpkg-20260914.tar.zst' }}
         run: |
           mkdir -p "$RUNNER_TEMP/payload"
@@ -69,6 +67,7 @@ jobs:
           PAYLOAD_DIR="$(dirname "$(find "$PAYLOAD_ROOT" -name package-manifest.json -print -quit)")"
           python3 tools/check_native_port.py --runtime "$PAYLOAD_DIR"
           test -f "$PAYLOAD_DIR/offline-ai/offline_ai.js"
+          test -f "$PAYLOAD_DIR/config/campaign-stages.json"
           echo "PAYLOAD_DIR=$PAYLOAD_DIR" >> "$GITHUB_ENV"
 
       - name: Generate Xcode project
