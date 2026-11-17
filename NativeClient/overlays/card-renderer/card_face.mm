@@ -102,6 +102,16 @@ void frameColor(CGContextRef context, uint32_t type) {
     else color(context, 0.75, 0.48, 0.27);
 }
 
+void frameBorder(CGContextRef context, uint32_t type) {
+    const bool spellTrap = (type & (Spell | Trap)) != 0;
+    color(context, spellTrap ? 0.90 : 0.20, spellTrap ? 0.86 : 0.16, spellTrap ? 0.70 : 0.12);
+    CGContextSetLineWidth(context, 5);
+    CGContextStrokeRect(context, box({10, 10, 688, 996}));
+    color(context, spellTrap ? 0.20 : 0.95, spellTrap ? 0.27 : 0.76, spellTrap ? 0.18 : 0.38);
+    CGContextSetLineWidth(context, 2);
+    CGContextStrokeRect(context, box({24, 24, 660, 968}));
+}
+
 std::string number(int32_t value) { return value < 0 ? "?" : std::to_string(value); }
 
 void drawArtwork(CGContextRef context, const std::vector<uint8_t>& bytes, uint32_t width, uint32_t height, Rect area) {
@@ -170,11 +180,12 @@ std::vector<uint8_t> RenderIOSCardFace(const CardFaceData& card, const std::vect
                                                 static_cast<CGBitmapInfo>(kCGBitmapByteOrder32Big | kCGImageAlphaPremultipliedLast));
     CGColorSpaceRelease(space);
     if(!context) return {};
-    fill(context, {0,0,cardface::Width,cardface::Height}, 0.12, 0.13, 0.15);
+    fill(context, {0,0,cardface::Width,cardface::Height}, 0.04, 0.05, 0.07);
     frameColor(context, card.type); CGContextFillRect(context, box({14,14,680,988}));
+    frameBorder(context, card.type);
     if(card.type & Pendulum) fill(context, {20,582,668,414}, 0.25, 0.60, 0.49);
     fill(context, cardface::Title, 0.96, 0.93, 0.82);
-    bool complete = drawText(context, card.name, cardface::Title, 34, 20, true);
+    bool complete = drawText(context, card.name, cardface::Title, 36, 24, true);
     fill(context, cardface::Attribute, 0.16, 0.18, 0.23);
     drawText(context, card.attributeText, {612,48,64,44}, 14, 10, true, true, true);
     fill(context, cardface::Level, 0.16, 0.18, 0.23);
@@ -201,12 +212,12 @@ std::vector<uint8_t> RenderIOSCardFace(const CardFaceData& card, const std::vect
         drawText(context, std::to_string(card.rightScale), cardface::RightScale, 42, 28, true, false, true);
     }
     fill(context, {34,720,640,260}, 0.97, 0.95, 0.87);
-    complete = drawText(context, card.typeLine, cardface::TypeLine, 23, 16, true) && complete;
-    complete = drawText(context, description, cardface::Description, 22, 14) && complete;
+    complete = drawText(context, card.typeLine, cardface::TypeLine, 25, 18, true) && complete;
+    complete = drawText(context, description, cardface::Description, 24, 18) && complete;
     if(card.type & Monster) {
         std::string stats = "ATK/" + number(card.attack);
         stats += (card.type & Link) ? "   LINK-" + std::to_string(card.level) : "   DEF/" + number(card.defense);
-        drawText(context, stats, cardface::Statistics, 25, 20, true);
+        drawText(context, stats, cardface::Statistics, 28, 22, true);
     }
     const std::string footer = "Code " + std::to_string(card.code) + (complete ? "" : "  |  Full text in card details");
     fill(context, cardface::Footer, 0.16, 0.18, 0.23);
@@ -226,3 +237,4 @@ std::vector<uint8_t> RenderIOSCardFace(const CardFaceData& card, const std::vect
     return bytes;
 }
 }
+
