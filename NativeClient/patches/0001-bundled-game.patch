@@ -93,7 +93,7 @@ index bfe00c1..fb6c314 100644
 +void diagnosticUncaughtException(NSException* exception) {
 +	@autoreleasepool {
 +		NSString* text = [NSString stringWithFormat:@"DIAG uncaught ObjC exception %@: %@\n%@", exception.name, exception.reason ?: @"(no reason)", [exception.callStackSymbols componentsJoinedByString:@"\n"]];
-+		ygo::ErrorLog(BufferIO::EncodeUTF8(text.UTF8String));
++		ygo::ErrorLog(text.UTF8String ? text.UTF8String : "");
 +	}
  }
  
